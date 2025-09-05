@@ -205,16 +205,10 @@ async def safety_agent(state: WarehouseState) -> WarehouseState:
             context=state.get("context", {})
         )
         
-        # Store both structured and natural language response
-        state["agent_responses"]["safety"] = {
-            "natural_language": response.natural_language,
-            "structured_data": response.data,
-            "recommendations": response.recommendations,
-            "confidence": response.confidence,
-            "response_type": response.response_type
-        }
+        # Store the response dict directly
+        state["agent_responses"]["safety"] = response
         
-        logger.info(f"Safety agent processed request with confidence: {response.confidence}")
+        logger.info(f"Safety agent processed request with confidence: {response.get('confidence', 0)}")
         
     except Exception as e:
         logger.error(f"Error in safety agent: {e}")
@@ -396,7 +390,9 @@ async def _process_safety_query(query: str, session_id: str, context: Dict) -> A
             context=context
         )
         
-        return response
+        # Convert SafetyResponse to dict
+        from dataclasses import asdict
+        return asdict(response)
         
     except Exception as e:
         logger.error(f"Safety processing failed: {e}")

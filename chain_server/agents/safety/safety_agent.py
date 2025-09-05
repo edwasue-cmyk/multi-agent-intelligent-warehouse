@@ -15,13 +15,14 @@ import asyncio
 from chain_server.services.llm.nim_client import get_nim_client, LLMResponse
 from inventory_retriever.hybrid_retriever import get_hybrid_retriever, SearchContext
 from inventory_retriever.structured.sql_retriever import get_sql_retriever
+from .action_tools import get_safety_action_tools, SafetyActionTools
 
 logger = logging.getLogger(__name__)
 
 @dataclass
 class SafetyQuery:
     """Structured safety query."""
-    intent: str  # "incident_report", "policy_lookup", "compliance_check", "safety_audit", "training"
+    intent: str  # "incident_report", "policy_lookup", "compliance_check", "safety_audit", "training", "start_checklist", "broadcast_alert", "lockout_tagout", "corrective_action", "retrieve_sds", "near_miss"
     entities: Dict[str, Any]  # Extracted entities like incident_type, severity, location, etc.
     context: Dict[str, Any]  # Additional context
     user_query: str  # Original user query
@@ -34,6 +35,7 @@ class SafetyResponse:
     natural_language: str  # Natural language response
     recommendations: List[str]  # Actionable recommendations
     confidence: float  # Confidence score (0.0 to 1.0)
+    actions_taken: List[Dict[str, Any]]  # Actions performed by the agent
 
 @dataclass
 class SafetyIncident:
@@ -63,6 +65,7 @@ class SafetyComplianceAgent:
         self.nim_client = None
         self.hybrid_retriever = None
         self.sql_retriever = None
+        self.action_tools = None
         self.conversation_context = {}  # Maintain conversation context
     
     async def initialize(self) -> None:
@@ -71,6 +74,7 @@ class SafetyComplianceAgent:
             self.nim_client = await get_nim_client()
             self.hybrid_retriever = await get_hybrid_retriever()
             self.sql_retriever = await get_sql_retriever()
+            self.action_tools = await get_safety_action_tools()
             
             logger.info("Safety & Compliance Agent initialized successfully")
         except Exception as e:
@@ -113,10 +117,13 @@ class SafetyComplianceAgent:
             # Step 2: Retrieve relevant data using hybrid retriever and safety queries
             retrieved_data = await self._retrieve_safety_data(safety_query)
             
-            # Step 3: Generate intelligent response using LLM
-            response = await self._generate_safety_response(safety_query, retrieved_data, session_id)
+            # Step 3: Execute action tools if needed
+            actions_taken = await self._execute_action_tools(safety_query, context)
             
-            # Step 4: Update conversation context
+            # Step 4: Generate intelligent response using LLM
+            response = await self._generate_safety_response(safety_query, retrieved_data, session_id, actions_taken)
+            
+            # Step 5: Update conversation context
             self._update_context(session_id, safety_query, response)
             
             return response
@@ -128,7 +135,8 @@ class SafetyComplianceAgent:
                 data={"error": str(e)},
                 natural_language=f"I encountered an error processing your safety query: {str(e)}",
                 recommendations=[],
-                confidence=0.0
+                confidence=0.0,
+                actions_taken=[]
             )
     
     async def _understand_query(
@@ -151,7 +159,7 @@ User Query: "{query}"
 Previous Context: {context_str}
 
 Extract the following information:
-1. Intent: One of ["incident_report", "policy_lookup", "compliance_check", "safety_audit", "training", "general"]
+1. Intent: One of ["incident_report", "policy_lookup", "compliance_check", "safety_audit", "training", "start_checklist", "broadcast_alert", "lockout_tagout", "corrective_action", "retrieve_sds", "near_miss", "general"]
 2. Entities: Extract incident types, severity levels, locations, policy names, compliance requirements, etc.
 3. Context: Any additional relevant context
 
@@ -201,6 +209,18 @@ Respond in JSON format:
         
         if any(word in query_lower for word in ["incident", "accident", "injury", "hazard", "report"]):
             intent = "incident_report"
+        elif any(word in query_lower for word in ["checklist", "start checklist", "safety checklist"]):
+            intent = "start_checklist"
+        elif any(word in query_lower for word in ["alert", "broadcast", "emergency", "urgent"]):
+            intent = "broadcast_alert"
+        elif any(word in query_lower for word in ["lockout", "tagout", "loto", "lock out"]):
+            intent = "lockout_tagout"
+        elif any(word in query_lower for word in ["corrective action", "corrective", "action plan"]):
+            intent = "corrective_action"
+        elif any(word in query_lower for word in ["sds", "safety data sheet", "chemical", "hazardous"]):
+            intent = "retrieve_sds"
+        elif any(word in query_lower for word in ["near miss", "near-miss", "close call"]):
+            intent = "near_miss"
         elif any(word in query_lower for word in ["policy", "procedure", "guideline", "rule"]):
             intent = "policy_lookup"
         elif any(word in query_lower for word in ["compliance", "audit", "check", "inspection"]):
@@ -247,6 +267,228 @@ Respond in JSON format:
         except Exception as e:
             logger.error(f"Safety data retrieval failed: {e}")
             return {"error": str(e)}
+    
+    async def _execute_action_tools(
+        self, 
+        safety_query: SafetyQuery, 
+        context: Optional[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Execute action tools based on query intent and entities."""
+        actions_taken = []
+        
+        try:
+            if not self.action_tools:
+                return actions_taken
+            
+            # Extract entities for action execution
+            severity = safety_query.entities.get("severity", "medium")
+            description = safety_query.entities.get("description", "")
+            location = safety_query.entities.get("location", "unknown")
+            reporter = safety_query.entities.get("reporter", "system")
+            attachments = safety_query.entities.get("attachments", [])
+            checklist_type = safety_query.entities.get("checklist_type")
+            assignee = safety_query.entities.get("assignee")
+            due_in = safety_query.entities.get("due_in", 24)
+            message = safety_query.entities.get("message", "")
+            zone = safety_query.entities.get("zone", "all")
+            channels = safety_query.entities.get("channels", ["PA"])
+            asset_id = safety_query.entities.get("asset_id")
+            reason = safety_query.entities.get("reason", "")
+            requester = safety_query.entities.get("requester", "system")
+            incident_id = safety_query.entities.get("incident_id")
+            action_owner = safety_query.entities.get("action_owner")
+            due_date = safety_query.entities.get("due_date")
+            chemical_name = safety_query.entities.get("chemical_name")
+            
+            # Execute actions based on intent
+            if safety_query.intent == "incident_report":
+                # Extract incident details from query if not in entities
+                if not description:
+                    # Try to extract from the user query
+                    import re
+                    # Look for description after "incident:" or similar patterns
+                    desc_match = re.search(r'(?:incident|accident|hazard)[:\s]+(.+?)(?:,|$)', safety_query.user_query, re.IGNORECASE)
+                    if desc_match:
+                        description = desc_match.group(1).strip()
+                    else:
+                        description = safety_query.user_query
+                
+                if not location:
+                    # Try to extract location
+                    location_match = re.search(r'(?:in|at|zone)\s+([A-Za-z0-9\s]+?)(?:,|$)', safety_query.user_query, re.IGNORECASE)
+                    if location_match:
+                        location = location_match.group(1).strip()
+                    else:
+                        location = "unknown"
+                
+                if not severity:
+                    # Try to extract severity
+                    if any(word in safety_query.user_query.lower() for word in ["high", "critical", "severe"]):
+                        severity = "high"
+                    elif any(word in safety_query.user_query.lower() for word in ["medium", "moderate"]):
+                        severity = "medium"
+                    elif any(word in safety_query.user_query.lower() for word in ["low", "minor"]):
+                        severity = "low"
+                    else:
+                        severity = "medium"
+                
+                if description:
+                    # Log incident
+                    incident = await self.action_tools.log_incident(
+                        severity=severity,
+                        description=description,
+                        location=location,
+                        reporter=reporter,
+                        attachments=attachments
+                    )
+                    actions_taken.append({
+                        "action": "log_incident",
+                        "severity": severity,
+                        "description": description,
+                        "result": asdict(incident),
+                        "timestamp": datetime.now().isoformat()
+                    })
+            
+            elif safety_query.intent == "start_checklist":
+                # Extract checklist details from query if not in entities
+                if not checklist_type:
+                    # Try to extract checklist type
+                    if "forklift" in safety_query.user_query.lower():
+                        checklist_type = "forklift_pre_op"
+                    elif "ppe" in safety_query.user_query.lower():
+                        checklist_type = "PPE"
+                    elif "loto" in safety_query.user_query.lower():
+                        checklist_type = "LOTO"
+                    else:
+                        checklist_type = "general"
+                
+                if not assignee:
+                    # Try to extract assignee
+                    import re
+                    assignee_match = re.search(r'(?:for|assign to|worker)\s+([A-Za-z\s]+?)(?:$|,|\.)', safety_query.user_query, re.IGNORECASE)
+                    if assignee_match:
+                        assignee = assignee_match.group(1).strip()
+                    else:
+                        assignee = "system"
+                
+                if checklist_type and assignee:
+                    # Start safety checklist
+                    checklist = await self.action_tools.start_checklist(
+                        checklist_type=checklist_type,
+                        assignee=assignee,
+                        due_in=due_in
+                    )
+                    actions_taken.append({
+                        "action": "start_checklist",
+                        "checklist_type": checklist_type,
+                        "assignee": assignee,
+                        "result": asdict(checklist),
+                        "timestamp": datetime.now().isoformat()
+                    })
+            
+            elif safety_query.intent == "broadcast_alert":
+                # Extract alert details from query if not in entities
+                if not message:
+                    # Try to extract message from query
+                    import re
+                    alert_match = re.search(r'(?:alert|broadcast|emergency)[:\s]+(.+?)(?:$|,|\.)', safety_query.user_query, re.IGNORECASE)
+                    if alert_match:
+                        message = alert_match.group(1).strip()
+                    else:
+                        message = safety_query.user_query
+                
+                if not zone:
+                    # Try to extract zone
+                    zone_match = re.search(r'(?:zone|area|location)\s+([A-Za-z0-9\s]+?)(?:$|,|\.)', safety_query.user_query, re.IGNORECASE)
+                    if zone_match:
+                        zone = zone_match.group(1).strip()
+                    else:
+                        zone = "all"
+                
+                if message:
+                    # Broadcast safety alert
+                    alert = await self.action_tools.broadcast_alert(
+                        message=message,
+                        zone=zone,
+                        channels=channels
+                    )
+                    actions_taken.append({
+                        "action": "broadcast_alert",
+                        "message": message,
+                        "zone": zone,
+                        "result": asdict(alert),
+                        "timestamp": datetime.now().isoformat()
+                    })
+            
+            elif safety_query.intent == "lockout_tagout" and asset_id and reason:
+                # Create LOTO request
+                loto_request = await self.action_tools.lockout_tagout_request(
+                    asset_id=asset_id,
+                    reason=reason,
+                    requester=requester
+                )
+                actions_taken.append({
+                    "action": "lockout_tagout_request",
+                    "asset_id": asset_id,
+                    "reason": reason,
+                    "result": asdict(loto_request),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            elif safety_query.intent == "corrective_action" and incident_id and action_owner and due_date:
+                # Create corrective action
+                corrective_action = await self.action_tools.create_corrective_action(
+                    incident_id=incident_id,
+                    action_owner=action_owner,
+                    description=description,
+                    due_date=due_date
+                )
+                actions_taken.append({
+                    "action": "create_corrective_action",
+                    "incident_id": incident_id,
+                    "action_owner": action_owner,
+                    "result": asdict(corrective_action),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            elif safety_query.intent == "retrieve_sds" and chemical_name:
+                # Retrieve Safety Data Sheet
+                sds = await self.action_tools.retrieve_sds(
+                    chemical_name=chemical_name,
+                    assignee=assignee
+                )
+                actions_taken.append({
+                    "action": "retrieve_sds",
+                    "chemical_name": chemical_name,
+                    "result": asdict(sds),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            elif safety_query.intent == "near_miss" and description:
+                # Capture near-miss report
+                near_miss = await self.action_tools.near_miss_capture(
+                    description=description,
+                    zone=zone,
+                    reporter=reporter,
+                    severity=severity
+                )
+                actions_taken.append({
+                    "action": "near_miss_capture",
+                    "description": description,
+                    "zone": zone,
+                    "result": asdict(near_miss),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            return actions_taken
+            
+        except Exception as e:
+            logger.error(f"Action tools execution failed: {e}")
+            return [{
+                "action": "error",
+                "error": str(e),
+                "timestamp": datetime.now().isoformat()
+            }]
     
     async def _get_safety_incidents(self) -> List[Dict[str, Any]]:
         """Get safety incidents from database."""
@@ -354,13 +596,19 @@ Respond in JSON format:
         self, 
         safety_query: SafetyQuery, 
         retrieved_data: Dict[str, Any],
-        session_id: str
+        session_id: str,
+        actions_taken: Optional[List[Dict[str, Any]]] = None
     ) -> SafetyResponse:
         """Generate intelligent response using LLM with retrieved context."""
         try:
             # Build context for LLM
             context_str = self._build_retrieved_context(retrieved_data)
             conversation_history = self.conversation_context.get(session_id, {}).get("history", [])
+            
+            # Add actions taken to context
+            actions_str = ""
+            if actions_taken:
+                actions_str = f"\nActions Taken:\n{json.dumps(actions_taken, indent=2, default=str)}"
             
             prompt = f"""
 You are a safety and compliance agent. Generate a comprehensive response based on the user query and retrieved data.
@@ -371,6 +619,7 @@ Entities: {safety_query.entities}
 
 Retrieved Data:
 {context_str}
+{actions_str}
 
 Conversation History: {conversation_history[-3:] if conversation_history else "None"}
 
@@ -411,20 +660,22 @@ Respond in JSON format:
                     data=parsed_response.get("data", {}),
                     natural_language=parsed_response.get("natural_language", "I processed your safety query."),
                     recommendations=parsed_response.get("recommendations", []),
-                    confidence=parsed_response.get("confidence", 0.8)
+                    confidence=parsed_response.get("confidence", 0.8),
+                    actions_taken=actions_taken or []
                 )
             except json.JSONDecodeError:
                 # Fallback response
-                return self._generate_fallback_response(safety_query, retrieved_data)
+                return self._generate_fallback_response(safety_query, retrieved_data, actions_taken)
                 
         except Exception as e:
             logger.error(f"Response generation failed: {e}")
-            return self._generate_fallback_response(safety_query, retrieved_data)
+            return self._generate_fallback_response(safety_query, retrieved_data, actions_taken)
     
     def _generate_fallback_response(
         self, 
         safety_query: SafetyQuery, 
-        retrieved_data: Dict[str, Any]
+        retrieved_data: Dict[str, Any],
+        actions_taken: Optional[List[Dict[str, Any]]] = None
     ) -> SafetyResponse:
         """Generate fallback response when LLM fails."""
         try:
@@ -452,7 +703,8 @@ Respond in JSON format:
                 data=data,
                 natural_language=natural_language,
                 recommendations=recommendations,
-                confidence=0.6
+                confidence=0.6,
+                actions_taken=actions_taken or []
             )
             
         except Exception as e:
@@ -462,7 +714,8 @@ Respond in JSON format:
                 data={"error": str(e)},
                 natural_language="I encountered an error processing your request.",
                 recommendations=[],
-                confidence=0.0
+                confidence=0.0,
+                actions_taken=actions_taken or []
             )
     
     def _build_context_string(
