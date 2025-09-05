@@ -123,16 +123,10 @@ async def inventory_agent(state: WarehouseState) -> WarehouseState:
             context=state.get("context", {})
         )
         
-        # Store both structured and natural language response
-        state["agent_responses"]["inventory"] = {
-            "natural_language": response.natural_language,
-            "structured_data": response.data,
-            "recommendations": response.recommendations,
-            "confidence": response.confidence,
-            "response_type": response.response_type
-        }
+        # Store the response dict directly
+        state["agent_responses"]["inventory"] = response
         
-        logger.info(f"Inventory agent processed request with confidence: {response.confidence}")
+        logger.info(f"Inventory agent processed request with confidence: {response.get('confidence', 0)}")
         
     except Exception as e:
         logger.error(f"Error in inventory agent: {e}")
@@ -170,16 +164,10 @@ async def operations_agent(state: WarehouseState) -> WarehouseState:
             context=state.get("context", {})
         )
         
-        # Store both structured and natural language response
-        state["agent_responses"]["operations"] = {
-            "natural_language": response.natural_language,
-            "structured_data": response.data,
-            "recommendations": response.recommendations,
-            "confidence": response.confidence,
-            "response_type": response.response_type
-        }
+        # Store the response dict directly
+        state["agent_responses"]["operations"] = response
         
-        logger.info(f"Operations agent processed request with confidence: {response.confidence}")
+        logger.info(f"Operations agent processed request with confidence: {response.get('confidence', 0)}")
         
     except Exception as e:
         logger.error(f"Error in operations agent: {e}")
@@ -437,7 +425,9 @@ async def _process_operations_query(query: str, session_id: str, context: Dict) 
             context=context
         )
         
-        return response
+        # Convert OperationsResponse to dict
+        from dataclasses import asdict
+        return asdict(response)
         
     except Exception as e:
         logger.error(f"Operations processing failed: {e}")
@@ -466,7 +456,9 @@ async def _process_inventory_query(query: str, session_id: str, context: Dict) -
             context=context
         )
         
-        return response
+        # Convert InventoryResponse to dict
+        from dataclasses import asdict
+        return asdict(response)
         
     except Exception as e:
         logger.error(f"Inventory processing failed: {e}")

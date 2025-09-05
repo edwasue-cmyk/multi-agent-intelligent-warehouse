@@ -16,13 +16,14 @@ from chain_server.services.llm.nim_client import get_nim_client, LLMResponse
 from inventory_retriever.hybrid_retriever import get_hybrid_retriever, SearchContext
 from inventory_retriever.structured.task_queries import TaskQueries, Task
 from inventory_retriever.structured.telemetry_queries import TelemetryQueries
+from .action_tools import get_operations_action_tools, OperationsActionTools
 
 logger = logging.getLogger(__name__)
 
 @dataclass
 class OperationsQuery:
     """Structured operations query."""
-    intent: str  # "workforce", "task_management", "equipment", "kpi", "scheduling"
+    intent: str  # "workforce", "task_management", "equipment", "kpi", "scheduling", "task_assignment", "workload_rebalance", "pick_wave", "optimize_paths", "shift_management", "dock_scheduling", "equipment_dispatch", "publish_kpis"
     entities: Dict[str, Any]  # Extracted entities like shift, employee, equipment, etc.
     context: Dict[str, Any]  # Additional context
     user_query: str  # Original user query
@@ -35,6 +36,7 @@ class OperationsResponse:
     natural_language: str  # Natural language response
     recommendations: List[str]  # Actionable recommendations
     confidence: float  # Confidence score (0.0 to 1.0)
+    actions_taken: List[Dict[str, Any]]  # Actions performed by the agent
 
 @dataclass
 class WorkforceInfo:
@@ -72,6 +74,7 @@ class OperationsCoordinationAgent:
         self.hybrid_retriever = None
         self.task_queries = None
         self.telemetry_queries = None
+        self.action_tools = None
         self.conversation_context = {}  # Maintain conversation context
     
     async def initialize(self) -> None:
@@ -85,6 +88,7 @@ class OperationsCoordinationAgent:
             sql_retriever = await get_sql_retriever()
             self.task_queries = TaskQueries(sql_retriever)
             self.telemetry_queries = TelemetryQueries(sql_retriever)
+            self.action_tools = await get_operations_action_tools()
             
             logger.info("Operations Coordination Agent initialized successfully")
         except Exception as e:
@@ -127,10 +131,13 @@ class OperationsCoordinationAgent:
             # Step 2: Retrieve relevant data using hybrid retriever and task queries
             retrieved_data = await self._retrieve_operations_data(operations_query)
             
-            # Step 3: Generate intelligent response using LLM
-            response = await self._generate_operations_response(operations_query, retrieved_data, session_id)
+            # Step 3: Execute action tools if needed
+            actions_taken = await self._execute_action_tools(operations_query, context)
             
-            # Step 4: Update conversation context
+            # Step 4: Generate intelligent response using LLM
+            response = await self._generate_operations_response(operations_query, retrieved_data, session_id, actions_taken)
+            
+            # Step 5: Update conversation context
             self._update_context(session_id, operations_query, response)
             
             return response
@@ -142,7 +149,8 @@ class OperationsCoordinationAgent:
                 data={"error": str(e)},
                 natural_language=f"I encountered an error processing your operations query: {str(e)}",
                 recommendations=[],
-                confidence=0.0
+                confidence=0.0,
+                actions_taken=[]
             )
     
     async def _understand_query(
@@ -165,7 +173,7 @@ User Query: "{query}"
 Previous Context: {context_str}
 
 Extract the following information:
-1. Intent: One of ["workforce", "task_management", "equipment", "kpi", "scheduling", "general"]
+1. Intent: One of ["workforce", "task_management", "equipment", "kpi", "scheduling", "task_assignment", "workload_rebalance", "pick_wave", "optimize_paths", "shift_management", "dock_scheduling", "equipment_dispatch", "publish_kpis", "general"]
 2. Entities: Extract shift times, employee names, task types, equipment IDs, time periods, etc.
 3. Context: Any additional relevant context
 
@@ -215,11 +223,27 @@ Respond in JSON format:
         
         if any(word in query_lower for word in ["shift", "workforce", "employee", "staff", "team"]):
             intent = "workforce"
-        elif any(word in query_lower for word in ["task", "assignment", "work", "job", "pick", "pack"]):
+        elif any(word in query_lower for word in ["assign", "task assignment", "assign task"]):
+            intent = "task_assignment"
+        elif any(word in query_lower for word in ["rebalance", "workload", "balance"]):
+            intent = "workload_rebalance"
+        elif any(word in query_lower for word in ["wave", "pick wave", "generate wave"]):
+            intent = "pick_wave"
+        elif any(word in query_lower for word in ["optimize", "path", "route", "efficiency"]):
+            intent = "optimize_paths"
+        elif any(word in query_lower for word in ["shift management", "manage shift", "schedule shift"]):
+            intent = "shift_management"
+        elif any(word in query_lower for word in ["dock", "appointment", "scheduling"]):
+            intent = "dock_scheduling"
+        elif any(word in query_lower for word in ["dispatch", "equipment dispatch", "send equipment"]):
+            intent = "equipment_dispatch"
+        elif any(word in query_lower for word in ["publish", "kpi", "metrics", "dashboard"]):
+            intent = "publish_kpis"
+        elif any(word in query_lower for word in ["task", "work", "job", "pick", "pack"]):
             intent = "task_management"
         elif any(word in query_lower for word in ["equipment", "forklift", "conveyor", "machine"]):
             intent = "equipment"
-        elif any(word in query_lower for word in ["kpi", "performance", "metrics", "productivity"]):
+        elif any(word in query_lower for word in ["performance", "productivity"]):
             intent = "kpi"
         elif any(word in query_lower for word in ["schedule", "planning", "roster"]):
             intent = "scheduling"
@@ -265,6 +289,180 @@ Respond in JSON format:
             logger.error(f"Operations data retrieval failed: {e}")
             return {"error": str(e)}
     
+    async def _execute_action_tools(
+        self, 
+        operations_query: OperationsQuery, 
+        context: Optional[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Execute action tools based on query intent and entities."""
+        actions_taken = []
+        
+        try:
+            if not self.action_tools:
+                return actions_taken
+            
+            # Extract entities for action execution
+            task_type = operations_query.entities.get("task_type")
+            quantity = operations_query.entities.get("quantity", 0)
+            constraints = operations_query.entities.get("constraints", {})
+            assignees = operations_query.entities.get("assignees")
+            order_ids = operations_query.entities.get("order_ids", [])
+            wave_strategy = operations_query.entities.get("wave_strategy", "zone_based")
+            shift_id = operations_query.entities.get("shift_id")
+            action = operations_query.entities.get("action")
+            workers = operations_query.entities.get("workers")
+            equipment_id = operations_query.entities.get("equipment_id")
+            task_id = operations_query.entities.get("task_id")
+            
+            # Execute actions based on intent
+            if operations_query.intent == "task_assignment":
+                # Extract task details from query if not in entities
+                if not task_type:
+                    import re
+                    if "pick" in operations_query.user_query.lower():
+                        task_type = "pick"
+                    elif "pack" in operations_query.user_query.lower():
+                        task_type = "pack"
+                    elif "receive" in operations_query.user_query.lower():
+                        task_type = "receive"
+                    else:
+                        task_type = "general"
+                
+                if not quantity:
+                    import re
+                    qty_matches = re.findall(r'\b(\d+)\b', operations_query.user_query)
+                    if qty_matches:
+                        quantity = int(qty_matches[0])
+                    else:
+                        quantity = 1
+                
+                if task_type and quantity:
+                    # Assign tasks
+                    assignment = await self.action_tools.assign_tasks(
+                        task_type=task_type,
+                        quantity=quantity,
+                        constraints=constraints,
+                        assignees=assignees
+                    )
+                    actions_taken.append({
+                        "action": "assign_tasks",
+                        "task_type": task_type,
+                        "quantity": quantity,
+                        "result": asdict(assignment),
+                        "timestamp": datetime.now().isoformat()
+                    })
+            
+            elif operations_query.intent == "workload_rebalance":
+                # Rebalance workload
+                rebalance = await self.action_tools.rebalance_workload(
+                    sla_rules=operations_query.entities.get("sla_rules")
+                )
+                actions_taken.append({
+                    "action": "rebalance_workload",
+                    "result": asdict(rebalance),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            elif operations_query.intent == "pick_wave":
+                # Extract order IDs from the query if not in entities
+                if not order_ids:
+                    # Try to extract from the user query
+                    import re
+                    order_matches = re.findall(r'ORD\d+', operations_query.user_query)
+                    if order_matches:
+                        order_ids = order_matches
+                
+                if order_ids:
+                    # Generate pick wave
+                    pick_wave = await self.action_tools.generate_pick_wave(
+                        order_ids=order_ids,
+                        wave_strategy=wave_strategy
+                    )
+                    actions_taken.append({
+                        "action": "generate_pick_wave",
+                        "order_ids": order_ids,
+                        "result": asdict(pick_wave),
+                        "timestamp": datetime.now().isoformat()
+                    })
+            
+            elif operations_query.intent == "optimize_paths" and operations_query.entities.get("picker_id"):
+                # Optimize pick paths
+                optimization = await self.action_tools.optimize_pick_paths(
+                    picker_id=operations_query.entities.get("picker_id"),
+                    wave_id=operations_query.entities.get("wave_id")
+                )
+                actions_taken.append({
+                    "action": "optimize_pick_paths",
+                    "picker_id": operations_query.entities.get("picker_id"),
+                    "result": asdict(optimization),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            elif operations_query.intent == "shift_management" and shift_id and action:
+                # Manage shift schedule
+                shift_schedule = await self.action_tools.manage_shift_schedule(
+                    shift_id=shift_id,
+                    action=action,
+                    workers=workers,
+                    swaps=operations_query.entities.get("swaps")
+                )
+                actions_taken.append({
+                    "action": "manage_shift_schedule",
+                    "shift_id": shift_id,
+                    "action": action,
+                    "result": asdict(shift_schedule),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            elif operations_query.intent == "dock_scheduling" and operations_query.entities.get("appointments"):
+                # Schedule dock appointments
+                appointments = await self.action_tools.dock_scheduling(
+                    appointments=operations_query.entities.get("appointments", []),
+                    capacity=operations_query.entities.get("capacity", {})
+                )
+                actions_taken.append({
+                    "action": "dock_scheduling",
+                    "appointments_count": len(appointments),
+                    "result": [asdict(apt) for apt in appointments],
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            elif operations_query.intent == "equipment_dispatch" and equipment_id and task_id:
+                # Dispatch equipment
+                dispatch = await self.action_tools.dispatch_equipment(
+                    equipment_id=equipment_id,
+                    task_id=task_id,
+                    operator=operations_query.entities.get("operator")
+                )
+                actions_taken.append({
+                    "action": "dispatch_equipment",
+                    "equipment_id": equipment_id,
+                    "task_id": task_id,
+                    "result": asdict(dispatch),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            elif operations_query.intent == "publish_kpis":
+                # Publish KPIs
+                kpi_result = await self.action_tools.publish_kpis(
+                    metrics=operations_query.entities.get("metrics")
+                )
+                actions_taken.append({
+                    "action": "publish_kpis",
+                    "result": kpi_result,
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            return actions_taken
+            
+        except Exception as e:
+            logger.error(f"Action tools execution failed: {e}")
+            return [{
+                "action": "error",
+                "error": str(e),
+                "timestamp": datetime.now().isoformat()
+            }]
+    
     def _simulate_workforce_data(self) -> Dict[str, Any]:
         """Simulate workforce data for demonstration."""
         return {
@@ -303,13 +501,19 @@ Respond in JSON format:
         self, 
         operations_query: OperationsQuery, 
         retrieved_data: Dict[str, Any],
-        session_id: str
+        session_id: str,
+        actions_taken: Optional[List[Dict[str, Any]]] = None
     ) -> OperationsResponse:
         """Generate intelligent response using LLM with retrieved context."""
         try:
             # Build context for LLM
             context_str = self._build_retrieved_context(retrieved_data)
             conversation_history = self.conversation_context.get(session_id, {}).get("history", [])
+            
+            # Add actions taken to context
+            actions_str = ""
+            if actions_taken:
+                actions_str = f"\nActions Taken:\n{json.dumps(actions_taken, indent=2, default=str)}"
             
             prompt = f"""
 You are an operations coordination agent. Generate a comprehensive response based on the user query and retrieved data.
@@ -320,6 +524,7 @@ Entities: {operations_query.entities}
 
 Retrieved Data:
 {context_str}
+{actions_str}
 
 Conversation History: {conversation_history[-3:] if conversation_history else "None"}
 
@@ -360,20 +565,22 @@ Respond in JSON format:
                     data=parsed_response.get("data", {}),
                     natural_language=parsed_response.get("natural_language", "I processed your operations query."),
                     recommendations=parsed_response.get("recommendations", []),
-                    confidence=parsed_response.get("confidence", 0.8)
+                    confidence=parsed_response.get("confidence", 0.8),
+                    actions_taken=actions_taken or []
                 )
             except json.JSONDecodeError:
                 # Fallback response
-                return self._generate_fallback_response(operations_query, retrieved_data)
+                return self._generate_fallback_response(operations_query, retrieved_data, actions_taken)
                 
         except Exception as e:
             logger.error(f"Response generation failed: {e}")
-            return self._generate_fallback_response(operations_query, retrieved_data)
+            return self._generate_fallback_response(operations_query, retrieved_data, actions_taken)
     
     def _generate_fallback_response(
         self, 
         operations_query: OperationsQuery, 
-        retrieved_data: Dict[str, Any]
+        retrieved_data: Dict[str, Any],
+        actions_taken: Optional[List[Dict[str, Any]]] = None
     ) -> OperationsResponse:
         """Generate fallback response when LLM fails."""
         try:
@@ -401,7 +608,8 @@ Respond in JSON format:
                 data=data,
                 natural_language=natural_language,
                 recommendations=recommendations,
-                confidence=0.6
+                confidence=0.6,
+                actions_taken=actions_taken or []
             )
             
         except Exception as e:
@@ -411,7 +619,8 @@ Respond in JSON format:
                 data={"error": str(e)},
                 natural_language="I encountered an error processing your request.",
                 recommendations=[],
-                confidence=0.0
+                confidence=0.0,
+                actions_taken=actions_taken or []
             )
     
     def _build_context_string(

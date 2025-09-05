@@ -22,6 +22,7 @@ class ChatResponse(BaseModel):
     structured_data: Optional[Dict[str, Any]] = None
     recommendations: Optional[List[str]] = None
     confidence: Optional[float] = None
+    actions_taken: Optional[List[Dict[str, Any]]] = None
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
@@ -90,7 +91,8 @@ async def chat(req: ChatRequest):
             context=result.get("context"),
             structured_data=structured_response.get("structured_data"),
             recommendations=structured_response.get("recommendations"),
-            confidence=structured_response.get("confidence")
+            confidence=structured_response.get("confidence"),
+            actions_taken=structured_response.get("actions_taken")
         )
         
     except Exception as e:

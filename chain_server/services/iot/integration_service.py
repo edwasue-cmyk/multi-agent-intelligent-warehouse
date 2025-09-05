@@ -473,3 +473,7 @@ class IoTIntegrationService:
 
 # Global IoT integration service instance
 iot_service = IoTIntegrationService()
+
+async def get_iot_service() -> IoTIntegrationService:
+    """Get the global IoT integration service instance."""
+    return iot_service

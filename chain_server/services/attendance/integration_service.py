@@ -256,3 +256,7 @@ class AttendanceIntegrationService:
 
 # Global instance
 attendance_service = AttendanceIntegrationService()
+
+async def get_attendance_service() -> AttendanceIntegrationService:
+    """Get the global attendance integration service instance."""
+    return attendance_service
