@@ -409,3 +409,7 @@ class WMSIntegrationService:
 
 # Global WMS integration service instance
 wms_service = WMSIntegrationService()
+
+async def get_wms_service() -> WMSIntegrationService:
+    """Get the global WMS integration service instance."""
+    return wms_service

@@ -53,6 +53,7 @@ class InventoryIntelligenceAgent:
     def __init__(self):
         self.nim_client = None
         self.hybrid_retriever = None
+        self.action_tools = None
         self.conversation_context = {}  # Maintain conversation context
     
     async def initialize(self) -> None:
@@ -60,6 +61,7 @@ class InventoryIntelligenceAgent:
         try:
             self.nim_client = await get_nim_client()
             self.hybrid_retriever = await get_hybrid_retriever()
+            self.action_tools = await get_inventory_action_tools()
             logger.info("Inventory Intelligence Agent initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize Inventory Intelligence Agent: {e}")
@@ -103,10 +105,13 @@ class InventoryIntelligenceAgent:
             # Step 2: Retrieve relevant data using hybrid retriever
             retrieved_data = await self._retrieve_data(inventory_query)
             
-            # Step 3: Generate intelligent response using LLM
-            response = await self._generate_response(inventory_query, retrieved_data, session_id, memory_context)
+            # Step 3: Execute action tools if needed
+            actions_taken = await self._execute_action_tools(inventory_query, context)
             
-            # Step 4: Store conversation in memory
+            # Step 4: Generate intelligent response using LLM
+            response = await self._generate_response(inventory_query, retrieved_data, session_id, memory_context, actions_taken)
+            
+            # Step 5: Store conversation in memory
             await memory_manager.store_conversation_turn(
                 session_id=session_id,
                 user_id=context.get("user_id", "default_user") if context else "default_user",
@@ -130,7 +135,8 @@ class InventoryIntelligenceAgent:
                 data={"error": str(e)},
                 natural_language=f"I encountered an error processing your inventory query: {str(e)}",
                 recommendations=[],
-                confidence=0.0
+                confidence=0.0,
+                actions_taken=[]
             )
     
     async def _understand_query(
@@ -153,8 +159,8 @@ User Query: "{query}"
 Previous Context: {context_str}
 
 Extract the following information:
-1. Intent: One of ["stock_lookup", "replenishment", "cycle_count", "location", "low_stock", "general"]
-2. Entities: Extract SKU codes, locations, quantities, time periods, etc.
+1. Intent: One of ["stock_lookup", "replenishment", "cycle_count", "location", "low_stock", "reserve_inventory", "adjust_reorder_point", "reslotting", "investigate_discrepancy", "general"]
+2. Entities: Extract SKU codes, locations, quantities, time periods, order_id, new_rp, expected_quantity, actual_quantity, etc.
 3. Context: Any additional relevant context
 
 Respond in JSON format:
@@ -200,7 +206,7 @@ Respond in JSON format:
         """Fallback intent detection using keyword matching."""
         query_lower = query.lower()
         
-        if any(word in query_lower for word in ["stock", "quantity", "level", "sku"]):
+        if any(word in query_lower for word in ["stock", "quantity", "level", "sku", "atp", "available"]):
             intent = "stock_lookup"
         elif any(word in query_lower for word in ["reorder", "replenish", "low stock"]):
             intent = "replenishment"
@@ -208,6 +214,14 @@ Respond in JSON format:
             intent = "cycle_count"
         elif any(word in query_lower for word in ["location", "where", "aisle"]):
             intent = "location"
+        elif any(word in query_lower for word in ["reserve", "hold", "book"]):
+            intent = "reserve_inventory"
+        elif any(word in query_lower for word in ["reorder point", "adjust", "change rp"]):
+            intent = "adjust_reorder_point"
+        elif any(word in query_lower for word in ["reslot", "slotting", "velocity", "optimize"]):
+            intent = "reslotting"
+        elif any(word in query_lower for word in ["discrepancy", "investigate", "mismatch", "wrong"]):
+            intent = "investigate_discrepancy"
         else:
             intent = "general"
         
@@ -245,18 +259,184 @@ Respond in JSON format:
             logger.error(f"Data retrieval failed: {e}")
             return {"error": str(e)}
     
+    async def _execute_action_tools(
+        self, 
+        inventory_query: InventoryQuery, 
+        context: Optional[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        """Execute action tools based on query intent and entities."""
+        actions_taken = []
+        
+        try:
+            if not self.action_tools:
+                return actions_taken
+            
+            # Extract entities for action execution
+            sku = inventory_query.entities.get("sku")
+            quantity = inventory_query.entities.get("quantity", 0)
+            location = inventory_query.entities.get("location")
+            order_id = inventory_query.entities.get("order_id")
+            
+            # Execute actions based on intent
+            if inventory_query.intent == "stock_lookup" and sku:
+                # Check stock levels
+                stock_info = await self.action_tools.check_stock(
+                    sku=sku,
+                    site=inventory_query.entities.get("site"),
+                    locations=inventory_query.entities.get("locations")
+                )
+                actions_taken.append({
+                    "action": "check_stock",
+                    "sku": sku,
+                    "result": asdict(stock_info),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            elif inventory_query.intent == "reserve_inventory" and sku and quantity and order_id:
+                # Reserve inventory
+                reservation = await self.action_tools.reserve_inventory(
+                    sku=sku,
+                    qty=quantity,
+                    order_id=order_id,
+                    hold_until=inventory_query.entities.get("hold_until")
+                )
+                actions_taken.append({
+                    "action": "reserve_inventory",
+                    "sku": sku,
+                    "quantity": quantity,
+                    "order_id": order_id,
+                    "result": asdict(reservation),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            elif inventory_query.intent == "replenishment" and sku and quantity:
+                # Create replenishment task
+                replenishment_task = await self.action_tools.create_replenishment_task(
+                    sku=sku,
+                    from_location=inventory_query.entities.get("from_location", "STAGING"),
+                    to_location=location or "PICKING",
+                    qty=quantity,
+                    priority=inventory_query.entities.get("priority", "medium")
+                )
+                actions_taken.append({
+                    "action": "create_replenishment_task",
+                    "sku": sku,
+                    "quantity": quantity,
+                    "result": asdict(replenishment_task),
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+                # Check if we need to generate a purchase requisition
+                if quantity > 0:  # Only if we're actually replenishing
+                    # Get current stock to determine if we need to order
+                    stock_info = await self.action_tools.check_stock(sku=sku)
+                    if stock_info.on_hand <= stock_info.reorder_point:
+                        pr = await self.action_tools.generate_purchase_requisition(
+                            sku=sku,
+                            qty=quantity * 2,  # Order double the replenishment amount
+                            supplier=inventory_query.entities.get("supplier"),
+                            contract_id=inventory_query.entities.get("contract_id"),
+                            need_by_date=inventory_query.entities.get("need_by_date"),
+                            tier=1,  # Propose for approval
+                            user_id=context.get("user_id", "system") if context else "system"
+                        )
+                        actions_taken.append({
+                            "action": "generate_purchase_requisition",
+                            "sku": sku,
+                            "quantity": quantity * 2,
+                            "result": asdict(pr),
+                            "timestamp": datetime.now().isoformat()
+                        })
+            
+            elif inventory_query.intent == "cycle_count" and (sku or location):
+                # Start cycle count
+                cycle_count_task = await self.action_tools.start_cycle_count(
+                    sku=sku,
+                    location=location,
+                    class_name=inventory_query.entities.get("class_name"),
+                    priority=inventory_query.entities.get("priority", "medium")
+                )
+                actions_taken.append({
+                    "action": "start_cycle_count",
+                    "sku": sku,
+                    "location": location,
+                    "result": asdict(cycle_count_task),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            elif inventory_query.intent == "adjust_reorder_point" and sku and "new_rp" in inventory_query.entities:
+                # Adjust reorder point (requires planner role)
+                adjustment = await self.action_tools.adjust_reorder_point(
+                    sku=sku,
+                    new_rp=inventory_query.entities["new_rp"],
+                    rationale=inventory_query.entities.get("rationale", "User requested adjustment"),
+                    user_id=context.get("user_id", "system") if context else "system"
+                )
+                actions_taken.append({
+                    "action": "adjust_reorder_point",
+                    "sku": sku,
+                    "new_rp": inventory_query.entities["new_rp"],
+                    "result": adjustment,
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            elif inventory_query.intent == "reslotting" and sku:
+                # Recommend reslotting
+                reslotting = await self.action_tools.recommend_reslotting(
+                    sku=sku,
+                    peak_velocity_window=inventory_query.entities.get("peak_velocity_window", 30)
+                )
+                actions_taken.append({
+                    "action": "recommend_reslotting",
+                    "sku": sku,
+                    "result": reslotting,
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            elif inventory_query.intent == "investigate_discrepancy" and sku and "expected_quantity" in inventory_query.entities:
+                # Investigate discrepancy
+                investigation = await self.action_tools.investigate_discrepancy(
+                    sku=sku,
+                    location=location or "UNKNOWN",
+                    expected_quantity=inventory_query.entities["expected_quantity"],
+                    actual_quantity=inventory_query.entities.get("actual_quantity", 0)
+                )
+                actions_taken.append({
+                    "action": "investigate_discrepancy",
+                    "sku": sku,
+                    "location": location,
+                    "result": asdict(investigation),
+                    "timestamp": datetime.now().isoformat()
+                })
+            
+            return actions_taken
+            
+        except Exception as e:
+            logger.error(f"Action tools execution failed: {e}")
+            return [{
+                "action": "error",
+                "error": str(e),
+                "timestamp": datetime.now().isoformat()
+            }]
+    
     async def _generate_response(
         self, 
         inventory_query: InventoryQuery, 
         retrieved_data: Dict[str, Any],
         session_id: str,
-        memory_context: Optional[Dict[str, Any]] = None
+        memory_context: Optional[Dict[str, Any]] = None,
+        actions_taken: Optional[List[Dict[str, Any]]] = None
     ) -> InventoryResponse:
         """Generate intelligent response using LLM with retrieved context."""
         try:
             # Build context for LLM
             context_str = self._build_retrieved_context(retrieved_data)
             conversation_history = self.conversation_context.get(session_id, {}).get("history", [])
+            
+            # Add actions taken to context
+            actions_str = ""
+            if actions_taken:
+                actions_str = f"\nActions Taken:\n{json.dumps(actions_taken, indent=2, default=str)}"
             
             prompt = f"""
 You are an inventory intelligence agent. Generate a comprehensive response based on the user query and retrieved data.
@@ -267,6 +447,7 @@ Entities: {inventory_query.entities}
 
 Retrieved Data:
 {context_str}
+{actions_str}
 
 Conversation History: {conversation_history[-3:] if conversation_history else "None"}
 
@@ -322,22 +503,24 @@ Respond in JSON format:
                     data=parsed_response.get("data", {}),
                     natural_language=parsed_response.get("natural_language", "I processed your inventory query."),
                     recommendations=parsed_response.get("recommendations", []),
-                    confidence=parsed_response.get("confidence", 0.8)
+                    confidence=parsed_response.get("confidence", 0.8),
+                    actions_taken=actions_taken or []
                 )
             except json.JSONDecodeError as e:
                 logger.warning(f"Failed to parse LLM JSON response: {e}")
                 logger.warning(f"Raw response: {response.content}")
                 # Fallback response
-                return self._generate_fallback_response(inventory_query, retrieved_data)
+                return self._generate_fallback_response(inventory_query, retrieved_data, actions_taken)
                 
         except Exception as e:
             logger.error(f"Response generation failed: {e}")
-            return self._generate_fallback_response(inventory_query, retrieved_data)
+            return self._generate_fallback_response(inventory_query, retrieved_data, actions_taken)
     
     def _generate_fallback_response(
         self, 
         inventory_query: InventoryQuery, 
-        retrieved_data: Dict[str, Any]
+        retrieved_data: Dict[str, Any],
+        actions_taken: Optional[List[Dict[str, Any]]] = None
     ) -> InventoryResponse:
         """Generate intelligent fallback response when LLM fails."""
         try:
@@ -373,7 +556,8 @@ Respond in JSON format:
                 data={"items": [asdict(item) for item in items] if items else []},
                 natural_language=natural_language,
                 recommendations=recommendations,
-                confidence=confidence
+                confidence=confidence,
+                actions_taken=actions_taken or []
             )
             
         except Exception as e:
@@ -383,7 +567,8 @@ Respond in JSON format:
                 data={"error": str(e)},
                 natural_language="I encountered an error processing your request.",
                 recommendations=[],
-                confidence=0.0
+                confidence=0.0,
+                actions_taken=actions_taken or []
             )
     
     def _build_context_string(

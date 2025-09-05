@@ -196,3 +196,7 @@ class ScanningIntegrationService:
 
 # Global instance
 scanning_service = ScanningIntegrationService()
+
+async def get_scanning_service() -> ScanningIntegrationService:
+    """Get the global scanning integration service instance."""
+    return scanning_service

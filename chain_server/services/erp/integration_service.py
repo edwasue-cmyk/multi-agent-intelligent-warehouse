@@ -301,3 +301,7 @@ class ERPIntegrationService:
 
 # Global instance
 erp_service = ERPIntegrationService()
+
+async def get_erp_service() -> ERPIntegrationService:
+    """Get the global ERP integration service instance."""
+    return erp_service
