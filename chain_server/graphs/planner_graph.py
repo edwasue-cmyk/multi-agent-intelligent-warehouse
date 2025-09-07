@@ -45,12 +45,16 @@ class IntentClassifier:
         "schedule", "assignment", "kpi", "performance", "equipment", "main",
         "today", "work", "job", "operation", "operations", "worker", "workers",
         "team", "team members", "staff", "employee", "employees", "active workers",
-        "how many", "roles", "team members"
+        "how many", "roles", "team members", "wave", "waves", "order", "orders",
+        "zone", "zones", "line", "lines", "create", "generating", "pick wave",
+        "pick waves", "order management", "zone a", "zone b", "zone c"
     ]
     
     SAFETY_KEYWORDS = [
         "safety", "incident", "compliance", "policy", "checklist", 
-        "hazard", "accident", "protocol", "training", "audit"
+        "hazard", "accident", "protocol", "training", "audit",
+        "over-temp", "overtemp", "temperature", "event", "detected",
+        "alert", "warning", "emergency", "malfunction", "failure"
     ]
     
     @classmethod

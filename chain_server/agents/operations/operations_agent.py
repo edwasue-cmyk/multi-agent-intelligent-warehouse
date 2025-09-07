@@ -174,11 +174,13 @@ Previous Context: {context_str}
 
 IMPORTANT: For queries about workers, employees, staff, workforce, shifts, or team members, use intent "workforce".
 IMPORTANT: For queries about tasks, work orders, assignments, job status, or "latest tasks", use intent "task_management".
+IMPORTANT: For queries about pick waves, orders, zones, wave creation, or "create a wave", use intent "pick_wave".
 
 Extract the following information:
 1. Intent: One of ["workforce", "task_management", "equipment", "kpi", "scheduling", "task_assignment", "workload_rebalance", "pick_wave", "optimize_paths", "shift_management", "dock_scheduling", "equipment_dispatch", "publish_kpis", "general"]
    - "workforce": For queries about workers, employees, staff, shifts, team members, headcount, active workers
    - "task_management": For queries about tasks, assignments, work orders, job status, latest tasks, pending tasks, in-progress tasks
+   - "pick_wave": For queries about pick waves, order processing, wave creation, zones, order management
    - "equipment": For queries about machinery, forklifts, conveyors, equipment status
    - "kpi": For queries about performance metrics, productivity, efficiency
 2. Entities: Extract shift times, employee names, task types, equipment IDs, time periods, etc.
@@ -188,6 +190,8 @@ Examples:
 - "How many active workers we have?" → intent: "workforce"
 - "What are the latest tasks?" → intent: "task_management"
 - "What are the main tasks today?" → intent: "task_management"
+- "We got a 120-line order; create a wave for Zone A" → intent: "pick_wave"
+- "Create a pick wave for orders ORD001, ORD002" → intent: "pick_wave"
 - "Show me equipment status" → intent: "equipment"
 
 Respond in JSON format:
@@ -384,6 +388,34 @@ Respond in JSON format:
                     order_matches = re.findall(r'ORD\d+', operations_query.user_query)
                     if order_matches:
                         order_ids = order_matches
+                    else:
+                        # If no specific order IDs, create a simulated order based on line count and zone
+                        line_count_match = re.search(r'(\d+)-line order', operations_query.user_query)
+                        zone_match = re.search(r'Zone ([A-Z])', operations_query.user_query)
+                        
+                        if line_count_match and zone_match:
+                            line_count = int(line_count_match.group(1))
+                            zone = zone_match.group(1)
+                            
+                            # Create a simulated order ID for the wave
+                            order_id = f"ORD_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                            order_ids = [order_id]
+                            
+                            # Store additional context for the wave
+                            wave_context = {
+                                "simulated_order": True,
+                                "line_count": line_count,
+                                "zone": zone,
+                                "original_query": operations_query.user_query
+                            }
+                        else:
+                            # Fallback: create a generic order
+                            order_id = f"ORD_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                            order_ids = [order_id]
+                            wave_context = {
+                                "simulated_order": True,
+                                "original_query": operations_query.user_query
+                            }
                 
                 if order_ids:
                     # Generate pick wave
@@ -712,6 +744,61 @@ Respond in JSON format:
                     "total_pending": len(pending_tasks),
                     "total_in_progress": len(in_progress_tasks)
                 }
+            elif intent == "pick_wave":
+                # Handle pick wave generation response
+                natural_language = "Pick wave generation completed successfully!\n\n"
+                
+                # Check if we have pick wave data from actions taken
+                pick_wave_data = None
+                for action in actions_taken or []:
+                    if action.get("action") == "generate_pick_wave":
+                        pick_wave_data = action.get("result")
+                        break
+                
+                if pick_wave_data:
+                    wave_id = pick_wave_data.get("wave_id", "Unknown")
+                    order_ids = action.get("order_ids", [])
+                    total_lines = pick_wave_data.get("total_lines", 0)
+                    zones = pick_wave_data.get("zones", [])
+                    assigned_pickers = pick_wave_data.get("assigned_pickers", [])
+                    estimated_duration = pick_wave_data.get("estimated_duration", "Unknown")
+                    
+                    natural_language += f"**Wave Details:**\n"
+                    natural_language += f"- Wave ID: {wave_id}\n"
+                    natural_language += f"- Orders: {', '.join(order_ids)}\n"
+                    natural_language += f"- Total Lines: {total_lines}\n"
+                    natural_language += f"- Zones: {', '.join(zones) if zones else 'All zones'}\n"
+                    natural_language += f"- Assigned Pickers: {len(assigned_pickers)} pickers\n"
+                    natural_language += f"- Estimated Duration: {estimated_duration}\n"
+                    
+                    if assigned_pickers:
+                        natural_language += f"\n**Assigned Pickers:**\n"
+                        for picker in assigned_pickers:
+                            natural_language += f"- {picker}\n"
+                    
+                    natural_language += f"\n**Status:** {pick_wave_data.get('status', 'Generated')}\n"
+                    
+                    # Add recommendations
+                    recommendations = [
+                        "Monitor pick wave progress",
+                        "Ensure all pickers have necessary equipment",
+                        "Track completion against estimated duration"
+                    ]
+                    
+                    response_data = {
+                        "wave_id": wave_id,
+                        "order_ids": order_ids,
+                        "total_lines": total_lines,
+                        "zones": zones,
+                        "assigned_pickers": assigned_pickers,
+                        "estimated_duration": estimated_duration,
+                        "status": pick_wave_data.get("status", "Generated")
+                    }
+                else:
+                    natural_language += "Pick wave generation is in progress. Please check back shortly for details."
+                    recommendations = ["Monitor wave generation progress", "Check for any errors or issues"]
+                    response_data = {"status": "in_progress"}
+            
             elif intent == "equipment":
                 natural_language = "Here's the current equipment status and health information."
                 recommendations = ["Schedule preventive maintenance", "Monitor equipment performance"]

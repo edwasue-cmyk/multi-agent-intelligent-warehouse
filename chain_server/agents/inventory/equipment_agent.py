@@ -357,6 +357,52 @@ Respond in JSON format:
                     "timestamp": datetime.now().isoformat()
                 })
             
+            elif equipment_query.intent == "charger_status":
+                # Extract equipment ID from query or entities
+                equipment_id = equipment_query.entities.get("equipment_id")
+                if not equipment_id and equipment_query.user_query:
+                    import re
+                    # Look for patterns like "Truck-07", "Forklift-01", etc.
+                    equipment_match = re.search(r'([A-Za-z]+-\d+)', equipment_query.user_query)
+                    if equipment_match:
+                        equipment_id = equipment_match.group()
+                        logger.info(f"Extracted equipment ID from query: {equipment_id}")
+                
+                if equipment_id:
+                    # Get charger status
+                    charger_status = await self.action_tools.get_charger_status(equipment_id)
+                    actions_taken.append({
+                        "action": "get_charger_status",
+                        "equipment_id": equipment_id,
+                        "result": charger_status,
+                        "timestamp": datetime.now().isoformat()
+                    })
+                else:
+                    logger.warning("No equipment ID found for charger status query")
+            
+            elif equipment_query.intent == "equipment_status":
+                # Extract equipment ID from query or entities
+                equipment_id = equipment_query.entities.get("equipment_id")
+                if not equipment_id and equipment_query.user_query:
+                    import re
+                    # Look for patterns like "Truck-07", "Forklift-01", etc.
+                    equipment_match = re.search(r'([A-Za-z]+-\d+)', equipment_query.user_query)
+                    if equipment_match:
+                        equipment_id = equipment_match.group()
+                        logger.info(f"Extracted equipment ID from query: {equipment_id}")
+                
+                if equipment_id:
+                    # Get equipment status
+                    equipment_status = await self.action_tools.get_equipment_status(equipment_id)
+                    actions_taken.append({
+                        "action": "get_equipment_status",
+                        "equipment_id": equipment_id,
+                        "result": equipment_status,
+                        "timestamp": datetime.now().isoformat()
+                    })
+                else:
+                    logger.warning("No equipment ID found for equipment status query")
+            
             elif equipment_query.intent == "reserve_inventory" and sku and quantity and order_id:
                 # Reserve inventory
                 reservation = await self.action_tools.reserve_inventory(
@@ -656,6 +702,71 @@ Respond in JSON format:
                         natural_language = f"Found {item.get('name', 'Unknown')} (SKU: {item.get('sku', 'Unknown')}) with {item.get('quantity', 0)} units available at {item.get('location', 'Unknown')}."
                 else:
                     natural_language = f"I found {len(items)} inventory items matching your ATP query."
+            
+            elif equipment_query.intent == "charger_status":
+                # Get charger status from actions taken
+                charger_data = None
+                for action in actions_taken or []:
+                    if action.get("action") == "get_charger_status":
+                        charger_data = action.get("result")
+                        break
+                
+                if charger_data and charger_data.get("success"):
+                    charger_status = charger_data.get("charger_status", {})
+                    equipment_id = charger_status.get("equipment_id", "Unknown")
+                    is_charging = charger_status.get("is_charging", False)
+                    battery_level = charger_status.get("battery_level", 0)
+                    temperature = charger_status.get("temperature", 0)
+                    status = charger_status.get("status", "unknown")
+                    estimated_time = charger_status.get("estimated_charge_time", "Unknown")
+                    recommendations = charger_status.get("recommendations", [])
+                    
+                    natural_language = f"🔋 **Charger Status for {equipment_id}**\n\n"
+                    natural_language += f"**Status:** {status.replace('_', ' ').title()}\n"
+                    natural_language += f"**Charging:** {'Yes' if is_charging else 'No'}\n"
+                    natural_language += f"**Battery Level:** {battery_level}%\n"
+                    natural_language += f"**Temperature:** {temperature}°C\n"
+                    
+                    if is_charging:
+                        natural_language += f"**Estimated Charge Time:** {estimated_time}\n"
+                    
+                    if recommendations:
+                        natural_language += f"\n**Recommendations:**\n"
+                        for rec in recommendations:
+                            natural_language += f"• {rec}\n"
+                else:
+                    natural_language = "I couldn't retrieve charger status information. Please check the equipment ID and try again."
+            
+            elif equipment_query.intent == "equipment_status":
+                # Get equipment status from actions taken
+                equipment_data = None
+                for action in actions_taken or []:
+                    if action.get("action") == "get_equipment_status":
+                        equipment_data = action.get("result")
+                        break
+                
+                if equipment_data and equipment_data.get("success"):
+                    equipment_status = equipment_data.get("equipment_status", {})
+                    equipment_id = equipment_status.get("equipment_id", "Unknown")
+                    status = equipment_status.get("status", "unknown")
+                    battery_level = equipment_status.get("battery_level", 0)
+                    temperature = equipment_status.get("temperature", 0)
+                    is_operational = equipment_status.get("is_operational", True)
+                    recommendations = equipment_status.get("recommendations", [])
+                    
+                    natural_language = f"🚛 **Equipment Status for {equipment_id}**\n\n"
+                    natural_language += f"**Status:** {status.replace('_', ' ').title()}\n"
+                    natural_language += f"**Operational:** {'Yes' if is_operational else 'No'}\n"
+                    natural_language += f"**Battery Level:** {battery_level}%\n"
+                    natural_language += f"**Temperature:** {temperature}°C\n"
+                    
+                    if recommendations:
+                        natural_language += f"\n**Recommendations:**\n"
+                        for rec in recommendations:
+                            natural_language += f"• {rec}\n"
+                else:
+                    natural_language = "I couldn't retrieve equipment status information. Please check the equipment ID and try again."
+            
             else:
                 natural_language = f"I found {len(items)} inventory items matching your query."
             

@@ -768,6 +768,188 @@ class EquipmentActionTools:
                 resolution=None
             )
 
+    async def get_equipment_status(
+        self, 
+        equipment_id: str
+    ) -> Dict[str, Any]:
+        """
+        Get equipment status including telemetry data and operational state.
+        
+        Args:
+            equipment_id: Equipment identifier (e.g., "Truck-07", "Forklift-01")
+            
+        Returns:
+            Equipment status with telemetry data and operational state
+        """
+        try:
+            if not self.sql_retriever:
+                await self.initialize()
+            
+            # Query equipment telemetry for the last 24 hours
+            query = """
+            SELECT 
+                metric,
+                value,
+                ts
+            FROM equipment_telemetry 
+            WHERE equipment_id = $1 
+            AND ts >= NOW() - INTERVAL '24 hours'
+            ORDER BY ts DESC
+            """
+            
+            telemetry_data = await self.sql_retriever.fetch_all(query, equipment_id)
+            
+            # Process telemetry data
+            current_metrics = {}
+            for row in telemetry_data:
+                metric = row['metric']
+                value = row['value']
+                current_metrics[metric] = value
+            
+            # Determine equipment status based on metrics
+            status = "unknown"
+            battery_level = current_metrics.get('battery_level', 0)
+            temperature = current_metrics.get('temperature', 0)
+            is_charging = current_metrics.get('is_charging', False)
+            is_operational = current_metrics.get('is_operational', True)
+            
+            # Status determination logic
+            if not is_operational:
+                status = "out_of_service"
+            elif is_charging:
+                status = "charging"
+            elif battery_level < 20:
+                status = "low_battery"
+            elif temperature > 80:
+                status = "overheating"
+            elif battery_level < 50:
+                status = "needs_charging"
+            else:
+                status = "operational"
+            
+            # Get last update time
+            last_update = telemetry_data[0]['ts'] if telemetry_data else None
+            
+            equipment_status = {
+                "equipment_id": equipment_id,
+                "status": status,
+                "battery_level": battery_level,
+                "temperature": temperature,
+                "is_charging": is_charging,
+                "is_operational": is_operational,
+                "last_update": last_update.isoformat() if last_update else None,
+                "telemetry_data": current_metrics,
+                "recommendations": []
+            }
+            
+            # Add recommendations based on status
+            if status == "low_battery":
+                equipment_status["recommendations"].append("Equipment needs immediate charging")
+            elif status == "overheating":
+                equipment_status["recommendations"].append("Equipment is overheating - check cooling system")
+            elif status == "needs_charging":
+                equipment_status["recommendations"].append("Consider charging equipment soon")
+            elif status == "out_of_service":
+                equipment_status["recommendations"].append("Equipment is out of service - contact maintenance")
+            
+            logger.info(f"Retrieved status for equipment {equipment_id}: {status}")
+            
+            return {
+                "success": True,
+                "equipment_status": equipment_status,
+                "message": f"Equipment {equipment_id} status: {status}"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting equipment status for {equipment_id}: {e}")
+            return {
+                "success": False,
+                "equipment_status": None,
+                "message": f"Failed to get equipment status: {str(e)}"
+            }
+    
+    async def get_charger_status(
+        self, 
+        equipment_id: str
+    ) -> Dict[str, Any]:
+        """
+        Get charger status for specific equipment.
+        
+        Args:
+            equipment_id: Equipment identifier (e.g., "Truck-07", "Forklift-01")
+            
+        Returns:
+            Charger status with charging information
+        """
+        try:
+            if not self.sql_retriever:
+                await self.initialize()
+            
+            # Get equipment status first
+            equipment_status_result = await self.get_equipment_status(equipment_id)
+            
+            if not equipment_status_result["success"]:
+                return equipment_status_result
+            
+            equipment_status = equipment_status_result["equipment_status"]
+            
+            # Extract charger-specific information
+            is_charging = equipment_status.get("is_charging", False)
+            battery_level = equipment_status.get("battery_level", 0)
+            temperature = equipment_status.get("temperature", 0)
+            status = equipment_status.get("status", "unknown")
+            
+            # Calculate charging progress and time estimates
+            charging_progress = 0
+            estimated_charge_time = "Unknown"
+            
+            if is_charging:
+                charging_progress = battery_level
+                if battery_level < 25:
+                    estimated_charge_time = "2-3 hours"
+                elif battery_level < 50:
+                    estimated_charge_time = "1-2 hours"
+                elif battery_level < 75:
+                    estimated_charge_time = "30-60 minutes"
+                else:
+                    estimated_charge_time = "15-30 minutes"
+            
+            charger_status = {
+                "equipment_id": equipment_id,
+                "is_charging": is_charging,
+                "battery_level": battery_level,
+                "charging_progress": charging_progress,
+                "estimated_charge_time": estimated_charge_time,
+                "temperature": temperature,
+                "status": status,
+                "last_update": equipment_status.get("last_update"),
+                "recommendations": equipment_status.get("recommendations", [])
+            }
+            
+            # Add charger-specific recommendations
+            if not is_charging and battery_level < 30:
+                charger_status["recommendations"].append("Equipment should be connected to charger")
+            elif is_charging and temperature > 75:
+                charger_status["recommendations"].append("Monitor temperature during charging")
+            elif is_charging and battery_level > 95:
+                charger_status["recommendations"].append("Charging nearly complete - consider disconnecting")
+            
+            logger.info(f"Retrieved charger status for equipment {equipment_id}: charging={is_charging}, battery={battery_level}%")
+            
+            return {
+                "success": True,
+                "charger_status": charger_status,
+                "message": f"Charger status for {equipment_id}: {'Charging' if is_charging else 'Not charging'} ({battery_level}% battery)"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting charger status for {equipment_id}: {e}")
+            return {
+                "success": False,
+                "charger_status": None,
+                "message": f"Failed to get charger status: {str(e)}"
+            }
+
 # Global action tools instance
 _action_tools: Optional[EquipmentActionTools] = None
 
