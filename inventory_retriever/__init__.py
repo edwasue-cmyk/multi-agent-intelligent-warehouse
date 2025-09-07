@@ -10,6 +10,9 @@ This package provides comprehensive retrieval capabilities including:
 - Redis caching with configurable TTL and eviction policies
 - Cache warming and monitoring
 - Performance analytics and health checks
+- Response quality control with validation and enhancement
+- User experience analytics and personalization
+- Confidence indicators and source attribution
 """
 
 from .structured.sql_retriever import SQLRetriever
@@ -28,6 +31,15 @@ from .caching import (
     CacheManager, CachePolicy, CacheWarmingRule, EvictionStrategy,
     CachedQueryProcessor, CacheIntegrationConfig,
     get_cache_service, get_cache_manager, get_cached_query_processor
+)
+
+# Response Quality imports
+from .response_quality import (
+    ResponseValidator, ResponseValidation, EnhancedResponse,
+    SourceAttribution, ConfidenceIndicator, ConfidenceLevel, ResponseQuality, UserRole,
+    ResponseEnhancementService, AgentResponse, EnhancedAgentResponse,
+    UXAnalyticsService, UXMetric, UXTrend, UserExperienceReport, MetricType,
+    get_response_validator, get_response_enhancer, get_ux_analytics
 )
 
 __all__ = [
@@ -71,9 +83,30 @@ __all__ = [
     'CacheIntegrationConfig',
     'get_cache_service',
     'get_cache_manager',
-    'get_cached_query_processor'
+    'get_cached_query_processor',
+    
+    # Response Quality
+    'ResponseValidator',
+    'ResponseValidation',
+    'EnhancedResponse',
+    'SourceAttribution',
+    'ConfidenceIndicator',
+    'ConfidenceLevel',
+    'ResponseQuality',
+    'UserRole',
+    'ResponseEnhancementService',
+    'AgentResponse',
+    'EnhancedAgentResponse',
+    'UXAnalyticsService',
+    'UXMetric',
+    'UXTrend',
+    'UserExperienceReport',
+    'MetricType',
+    'get_response_validator',
+    'get_response_enhancer',
+    'get_ux_analytics'
 ]
 
 __version__ = "1.0.0"
 __author__ = "Warehouse Operational Assistant Team"
-__description__ = "Advanced retrieval system with SQL path optimization, hybrid RAG, and intelligent Redis caching"
+__description__ = "Advanced retrieval system with SQL path optimization, hybrid RAG, intelligent Redis caching, and response quality control"
