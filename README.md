@@ -17,8 +17,9 @@
 [![SQL Path Optimization](https://img.shields.io/badge/SQL%20Path%20Optimization-Intelligent-FF9800.svg)](https://github.com/T-DevH/warehouse-operational-assistant)
 [![Redis Caching](https://img.shields.io/badge/Redis%20Caching-Advanced-4CAF50.svg)](https://github.com/T-DevH/warehouse-operational-assistant)
 [![Response Quality Control](https://img.shields.io/badge/Response%20Quality%20Control-Intelligent-2196F3.svg)](https://github.com/T-DevH/warehouse-operational-assistant)
+[![Equipment Status & Telemetry](https://img.shields.io/badge/Equipment%20Status%20%26%20Telemetry-Real--time-FF9800.svg)](https://github.com/T-DevH/warehouse-operational-assistant)
 
-This repository implements a production-grade assistant patterned on NVIDIA's AI Blueprints (planner/router + specialized agents), adapted for warehouse domains. It uses a **hybrid RAG** stack (Postgres/Timescale + Milvus), **NeMo Guardrails**, **enhanced vector search optimization with evidence scoring and intelligent clarifying questions**, **intelligent SQL path optimization**, **advanced Redis caching**, **comprehensive response quality control**, and a clean API surface for UI or system integrations.
+This repository implements a production-grade assistant patterned on NVIDIA's AI Blueprints (planner/router + specialized agents), adapted for warehouse domains. It uses a **hybrid RAG** stack (Postgres/Timescale + Milvus), **NeMo Guardrails**, **enhanced vector search optimization with evidence scoring and intelligent clarifying questions**, **intelligent SQL path optimization**, **advanced Redis caching**, **comprehensive response quality control**, **real-time equipment status and telemetry monitoring**, and a clean API surface for UI or system integrations.
 
 ## 🚀 Status & Features
 
@@ -33,6 +34,7 @@ This repository implements a production-grade assistant patterned on NVIDIA's AI
 - **🤖 Multi-Agent AI System** - Planner/Router + Specialized Agents (Equipment & Asset Operations, Operations, Safety)
 - **🧠 NVIDIA NIMs Integration** - Llama 3.1 70B (LLM) + NV-EmbedQA-E5-v5 (Embeddings)
 - **💬 Intelligent Chat Interface** - Real-time AI-powered warehouse assistance
+- **🔋 Equipment Status & Telemetry** - Real-time equipment monitoring with battery, temperature, and charging analytics
 - **🔐 Enterprise Security** - JWT/OAuth2 + RBAC with 5 user roles
 - **📊 Real-time Monitoring** - Prometheus metrics + Grafana dashboards
 - **🔗 System Integrations** - WMS, ERP, IoT, RFID/Barcode, Time Attendance
@@ -305,9 +307,47 @@ The Equipment & Asset Operations Agent (EAO) is the core AI agent responsible fo
 #### **Key Intents & Capabilities**
 - **Equipment Assignment**: "assign a forklift to lane B", "who has scanner S-112?"
 - **Equipment Status**: "charger status for Truck-07", "utilization last week"
+- **Real-time Telemetry**: Battery levels, temperature monitoring, charging status, operational state
 - **Maintenance**: "create PM for conveyor C3", "open LOTO on dock leveller 4"
 - **Asset Tracking**: Real-time equipment location and status monitoring
 - **Availability Management**: ATP (Available to Promise) calculations for equipment
+
+#### **🔋 Equipment Status & Telemetry** ⭐ **NEW**
+
+The Equipment & Asset Operations Agent now provides comprehensive real-time equipment monitoring and status management:
+
+##### **Real-time Equipment Status**
+- **Battery Monitoring**: Track battery levels, charging status, and estimated charge times
+- **Temperature Control**: Monitor equipment temperature with overheating alerts
+- **Operational State**: Real-time operational status (operational, charging, low battery, overheating, out of service)
+- **Performance Metrics**: Voltage, current, power consumption, speed, distance, and load tracking
+
+##### **Smart Status Detection**
+- **Automatic Classification**: Equipment status automatically determined based on telemetry data
+- **Intelligent Recommendations**: Context-aware suggestions based on equipment condition
+- **Charging Analytics**: Progress tracking, time estimates, and temperature monitoring during charging
+- **Maintenance Alerts**: Proactive notifications for equipment requiring attention
+
+##### **Example Equipment Status Queries**
+```bash
+# Charger status with detailed information
+"charger status for Truck-07"
+# Response: Equipment charging (74% battery), estimated 30-60 minutes, temperature 19°C
+
+# General equipment status
+"equipment status for Forklift-01" 
+# Response: Operational status, battery level, temperature, and recommendations
+
+# Safety event routing
+"Machine over-temp event detected"
+# Response: Routed to Safety Agent with appropriate safety protocols
+```
+
+##### **Telemetry Data Integration**
+- **2,880+ Data Points**: Real-time telemetry for 12 equipment items
+- **24-Hour History**: Complete equipment performance tracking
+- **Multi-Metric Monitoring**: 10 different telemetry metrics per equipment
+- **Database Integration**: TimescaleDB for efficient time-series data storage
 
 #### **Action Tools**
 
@@ -594,6 +634,9 @@ curl -s http://localhost:$PORT/api/v1/attendance/health | jq
 - **Time Attendance**: ✅ Ready for employee tracking systems (Biometric, Card Reader, Mobile)
 
 ### 🔧 **Recent Improvements (Latest)**
+- **✅ Equipment Status & Telemetry** - Real-time equipment monitoring with battery, temperature, and charging status
+- **✅ Charger Status Functionality** - Comprehensive charger status queries with detailed analytics
+- **✅ Safety Event Routing** - Enhanced safety agent routing for temperature events and alerts
 - **✅ Equipment & Asset Operations Agent** - Renamed from Inventory Intelligence Agent with updated role and mission
 - **✅ API Endpoints Updated** - All `/api/v1/inventory` endpoints renamed to `/api/v1/equipment`
 - **✅ Frontend UI Updated** - Navigation, labels, and terminology updated to reflect equipment focus
