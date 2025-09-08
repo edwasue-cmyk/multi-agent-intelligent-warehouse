@@ -279,8 +279,8 @@ Respond in JSON format:
         try:
             data = {}
             
-            # Get safety incidents
-            if safety_query.intent == "incident_report":
+            # Always get safety incidents for general safety queries and incident-related queries
+            if safety_query.intent in ["incident_report", "general"] or "issue" in safety_query.user_query.lower() or "problem" in safety_query.user_query.lower():
                 incidents = await self._get_safety_incidents()
                 data["incidents"] = incidents
             
@@ -843,31 +843,44 @@ Respond in JSON format:
             elif intent == "training":
                 natural_language = "Here are the training records and certification status."
                 recommendations = ["Schedule upcoming training", "Track certification expirations"]
-            else:
-                procedures = data.get("procedures", {})
-                if procedures and procedures.get("procedures"):
-                    procedure_list = procedures["procedures"]
-                    natural_language = f"Here are the comprehensive safety procedures and policies:\n\n"
-                    
-                    for i, proc in enumerate(procedure_list[:5], 1):  # Show top 5 procedures
-                        natural_language += f"{i}. **{proc.get('name', 'Unknown Procedure')}**\n"
-                        natural_language += f"   Category: {proc.get('category', 'General')}\n"
-                        natural_language += f"   Priority: {proc.get('priority', 'Medium')}\n"
-                        natural_language += f"   Description: {proc.get('description', 'No description available')}\n"
-                        
-                        # Add key steps
-                        steps = proc.get('steps', [])
-                        if steps:
-                            natural_language += f"   Key Steps:\n"
-                            for step in steps[:3]:  # Show first 3 steps
-                                natural_language += f"   - {step}\n"
-                        natural_language += "\n"
-                    
-                    if len(procedure_list) > 5:
-                        natural_language += f"... and {len(procedure_list) - 5} more procedures available.\n"
+            else:  # General safety queries
+                # Check if we have incidents data and the query is about issues/problems
+                incidents = data.get("incidents", [])
+                query_lower = safety_query.user_query.lower()
+                
+                if incidents and ("issue" in query_lower or "problem" in query_lower or "today" in query_lower):
+                    # Show recent incidents as main safety issues
+                    natural_language = f"Here are the main safety issues based on recent incidents:\n\n"
+                    natural_language += f"Found {len(incidents)} recent safety incidents:\n"
+                    for incident in incidents[:5]:  # Show top 5 incidents
+                        natural_language += f"• {incident.get('description', 'No description')} (Severity: {incident.get('severity', 'Unknown')}, Reported by: {incident.get('reported_by', 'Unknown')}, Date: {incident.get('occurred_at', 'Unknown')})\n"
+                    recommendations = ["Address high-priority incidents immediately", "Review incident patterns", "Implement preventive measures"]
                 else:
-                    natural_language = "I processed your safety query and retrieved relevant information."
-                recommendations = ["Review policy updates", "Ensure team compliance", "Follow all safety procedures"]
+                    # Fall back to procedures for general safety queries
+                    procedures = data.get("procedures", {})
+                    if procedures and procedures.get("procedures"):
+                        procedure_list = procedures["procedures"]
+                        natural_language = f"Here are the comprehensive safety procedures and policies:\n\n"
+                        
+                        for i, proc in enumerate(procedure_list[:5], 1):  # Show top 5 procedures
+                            natural_language += f"{i}. **{proc.get('name', 'Unknown Procedure')}**\n"
+                            natural_language += f"   Category: {proc.get('category', 'General')}\n"
+                            natural_language += f"   Priority: {proc.get('priority', 'Medium')}\n"
+                            natural_language += f"   Description: {proc.get('description', 'No description available')}\n"
+                            
+                            # Add key steps
+                            steps = proc.get('steps', [])
+                            if steps:
+                                natural_language += f"   Key Steps:\n"
+                                for step in steps[:3]:  # Show first 3 steps
+                                    natural_language += f"   - {step}\n"
+                            natural_language += "\n"
+                        
+                        if len(procedure_list) > 5:
+                            natural_language += f"... and {len(procedure_list) - 5} more procedures available.\n"
+                    else:
+                        natural_language = "I processed your safety query and retrieved relevant information."
+                    recommendations = ["Review policy updates", "Ensure team compliance", "Follow all safety procedures"]
             
             # Prepare reasoning steps for fallback response
             reasoning_steps = None

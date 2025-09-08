@@ -58,13 +58,18 @@ class IntentClassifier:
         "ppe", "protective", "equipment", "helmet", "gloves", "boots",
         "procedures", "guidelines", "standards", "regulations",
         "evacuation", "fire", "chemical", "lockout", "tagout", "loto",
-        "injury", "report", "investigation", "corrective", "action"
+        "injury", "report", "investigation", "corrective", "action",
+        "issues", "problem", "concern", "violation", "breach"
     ]
     
     @classmethod
     def classify_intent(cls, message: str) -> str:
         """Classify user intent based on message content."""
         message_lower = message.lower()
+        
+        # Check for safety-related keywords first (highest priority)
+        if any(keyword in message_lower for keyword in cls.SAFETY_KEYWORDS):
+            return "safety"
         
         # Check for equipment-related keywords
         if any(keyword in message_lower for keyword in cls.EQUIPMENT_KEYWORDS):
@@ -73,10 +78,6 @@ class IntentClassifier:
         # Check for operations-related keywords
         if any(keyword in message_lower for keyword in cls.OPERATIONS_KEYWORDS):
             return "operations"
-        
-        # Check for safety-related keywords
-        if any(keyword in message_lower for keyword in cls.SAFETY_KEYWORDS):
-            return "safety"
         
         # Default to general inquiry
         return "general"
