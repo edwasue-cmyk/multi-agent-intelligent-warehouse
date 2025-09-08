@@ -95,14 +95,14 @@ chunks = chunking_service.create_chunks(text, source_id="manual_001")
 
 # Smart query routing and evidence scoring
 enhanced_retriever = EnhancedVectorRetriever(
-  milvus_retriever=milvus_retriever,
-  embedding_service=embedding_service,
-  config=RetrievalConfig(
-    initial_top_k=12,
-    final_top_k=6,
-    evidence_threshold=0.35,
-    min_sources=2
-  )
+ milvus_retriever=milvus_retriever,
+ embedding_service=embedding_service,
+ config=RetrievalConfig(
+  initial_top_k=12,
+  final_top_k=6,
+  evidence_threshold=0.35,
+  min_sources=2
+ )
 )
 
 # Automatic query classification and retrieval with evidence scoring
@@ -117,8 +117,8 @@ print(f"Source Diversity: {evidence_scoring['source_diversity_score']:.3f}")
 
 # Clarifying questions for low-confidence scenarios
 if metadata.get("clarifying_questions"):
-  questions = metadata["clarifying_questions"]["questions"]
-  print(f"Clarifying Questions: {questions}")
+ questions = metadata["clarifying_questions"]["questions"]
+ print(f"Clarifying Questions: {questions}")
 ```
 
 #### **Evidence Scoring & Clarifying Questions Demo**
@@ -137,39 +137,39 @@ print(f"Evidence Quality: {evidence_score.evidence_quality}")
 # Clarifying questions for low-confidence scenarios
 questions_engine = ClarifyingQuestionsEngine()
 question_set = questions_engine.generate_questions(
-  query="What equipment do we have?",
-  evidence_score=0.25, # Low confidence
-  query_type="equipment"
+ query="What equipment do we have?",
+ evidence_score=0.25, # Low confidence
+ query_type="equipment"
 )
 
 # Results show intelligent questioning
 for question in question_set.questions:
-  print(f"[{question.priority.value.upper()}] {question.question}")
-  print(f"Type: {question.ambiguity_type.value}")
-  print(f"Expected Answer: {question.expected_answer_type}")
-  if question.follow_up_questions:
-    print(f"Follow-ups: {', '.join(question.follow_up_questions)}")
+ print(f"[{question.priority.value.upper()}] {question.question}")
+ print(f"Type: {question.ambiguity_type.value}")
+ print(f"Expected Answer: {question.expected_answer_type}")
+ if question.follow_up_questions:
+  print(f"Follow-ups: {', '.join(question.follow_up_questions)}")
 ```
 
 #### **Advanced Evidence Scoring Features**
 ```python
 # Create evidence sources with different authority levels
 sources = [
-  EvidenceSource(
-    source_id="manual_001",
-    source_type="official_manual",
-    authority_level=1.0,
-    freshness_score=0.9,
-    content_quality=0.95,
-    last_updated=datetime.now(timezone.utc)
-  ),
-  EvidenceSource(
-    source_id="sop_002", 
-    source_type="sop",
-    authority_level=0.95,
-    freshness_score=0.8,
-    content_quality=0.85
-  )
+ EvidenceSource(
+  source_id="manual_001",
+  source_type="official_manual",
+  authority_level=1.0,
+  freshness_score=0.9,
+  content_quality=0.95,
+  last_updated=datetime.now(timezone.utc)
+ ),
+ EvidenceSource(
+  source_id="sop_002", 
+  source_type="sop",
+  authority_level=0.95,
+  freshness_score=0.8,
+  content_quality=0.85
+ )
 ]
 
 # Calculate comprehensive evidence score
@@ -186,33 +186,33 @@ processor = IntegratedQueryProcessor(sql_retriever, hybrid_retriever)
 
 # Process queries with intelligent routing
 queries = [
-  "What is the ATP for SKU123?",      # → SQL (0.90 confidence)
-  "How many SKU456 are available?",    # → SQL (0.90 confidence) 
-  "Show me equipment status for all machines", # → SQL (0.90 confidence)
-  "What maintenance is due this week?",  # → SQL (0.90 confidence)
-  "Where is SKU789 located?",       # → SQL (0.95 confidence)
-  "How do I operate a forklift safely?"  # → Hybrid RAG (0.90 confidence)
+ "What is the ATP for SKU123?",   # → SQL (0.90 confidence)
+ "How many SKU456 are available?",  # → SQL (0.90 confidence) 
+ "Show me equipment status for all machines", # → SQL (0.90 confidence)
+ "What maintenance is due this week?", # → SQL (0.90 confidence)
+ "Where is SKU789 located?",    # → SQL (0.95 confidence)
+ "How do I operate a forklift safely?" # → Hybrid RAG (0.90 confidence)
 ]
 
 for query in queries:
-  result = await processor.process_query(query)
-  
-  print(f"Query: {query}")
-  print(f"Route: {result.routing_decision.route_to}")
-  print(f"Type: {result.routing_decision.query_type.value}")
-  print(f"Confidence: {result.routing_decision.confidence:.2f}")
-  print(f"Execution Time: {result.execution_time:.3f}s")
-  print(f"Data Quality: {result.processed_result.data_quality.value}")
-  print(f"Optimizations: {result.routing_decision.optimization_applied}")
-  print("---")
+ result = await processor.process_query(query)
+ 
+ print(f"Query: {query}")
+ print(f"Route: {result.routing_decision.route_to}")
+ print(f"Type: {result.routing_decision.query_type.value}")
+ print(f"Confidence: {result.routing_decision.confidence:.2f}")
+ print(f"Execution Time: {result.execution_time:.3f}s")
+ print(f"Data Quality: {result.processed_result.data_quality.value}")
+ print(f"Optimizations: {result.routing_decision.optimization_applied}")
+ print("---")
 ```
 
 #### **Redis Caching Demo**
 ```python
 # Comprehensive caching system
 from inventory_retriever.caching import (
-  get_cache_service, get_cache_manager, get_cached_query_processor,
-  CacheType, CacheConfig, CachePolicy, EvictionStrategy
+ get_cache_service, get_cache_manager, get_cached_query_processor,
+ CacheType, CacheConfig, CachePolicy, EvictionStrategy
 )
 
 # Initialize caching system
@@ -239,14 +239,14 @@ print(f"Total Keys: {stats['metrics']['key_count']}")
 from inventory_retriever.caching import CacheWarmingRule
 
 async def generate_workforce_data():
-  return {"total_workers": 6, "shifts": {"morning": 3, "afternoon": 3}}
+ return {"total_workers": 6, "shifts": {"morning": 3, "afternoon": 3}}
 
 warming_rule = CacheWarmingRule(
-  cache_type=CacheType.WORKFORCE_DATA,
-  key_pattern="workforce_summary",
-  data_generator=generate_workforce_data,
-  priority=1,
-  frequency_minutes=15
+ cache_type=CacheType.WORKFORCE_DATA,
+ key_pattern="workforce_summary",
+ data_generator=generate_workforce_data,
+ priority=1,
+ frequency_minutes=15
 )
 
 cache_manager.add_warming_rule(warming_rule)
@@ -268,7 +268,7 @@ print(f"Keywords: {preprocessed.keywords}") # ['what', 'atp', 'sku123']
 print(f"Suggestions: {preprocessed.suggestions}")
 ```
 
-### 🛡️ **Safety & Compliance Agent Action Tools**
+### **Safety & Compliance Agent Action Tools**
 
 The Safety & Compliance Agent now includes **7 comprehensive action tools** for complete safety management:
 
@@ -377,7 +377,7 @@ Agent Actions:
 4. create_replenishment_task - Generate maintenance task
 ```
 
-### 👥 **Operations Coordination Agent Action Tools**
+### **Operations Coordination Agent Action Tools**
 
 The Operations Coordination Agent includes **8 comprehensive action tools** for complete operations management:
 
@@ -407,7 +407,7 @@ Agent Actions:
 
 ---
 
-## ✨ What it does
+## What it does
 - **Planner/Router Agent** — intent classification, multi-agent coordination, context management, response synthesis.
 - **Specialized Agents**
  - **Equipment & Asset Operations** — equipment availability, maintenance scheduling, asset tracking, equipment reservations, purchase requisitions, reorder point management, reslotting recommendations, discrepancy investigations.
@@ -423,7 +423,7 @@ Agent Actions:
 - **IoT Integration** — Equipment monitoring, environmental sensors, safety systems, and asset tracking.
 - **Real-time UI** — React-based dashboard with live chat interface and system monitoring.
 
-## 🔗 **System Integrations**
+## **System Integrations**
 
 [![SAP EWM](https://img.shields.io/badge/SAP-EWM%20Integration-0F7B0F.svg)](https://www.sap.com/products/ewm.html)
 [![Manhattan](https://img.shields.io/badge/Manhattan-WMS%20Integration-FF6B35.svg)](https://www.manh.com/products/warehouse-management)
@@ -438,7 +438,7 @@ Agent Actions:
 
 ---
 
-## 🧭 Architecture (NVIDIA blueprint style)
+## Architecture (NVIDIA blueprint style)
 ![Architecture](docs/architecture/diagrams/warehouse-operational-assistant.png)
 
 **Layers**
@@ -452,33 +452,33 @@ Agent Actions:
 
 ---
 
-## 📁 Repository layout
+## Repository layout
 ```
 .
-├─ chain_server/          # FastAPI + LangGraph orchestration
-│ ├─ app.py            # API entrypoint
-│ ├─ routers/           # REST routers (health, chat, equipment, …)
-│ ├─ graphs/           # Planner/agent DAGs
-│ └─ agents/           # Equipment & Asset Operations / Operations / Safety
-├─ inventory_retriever/      # (hybrid) SQL + Milvus retrievers
-├─ memory_retriever/        # chat & profile memory stores
-├─ guardrails/           # NeMo Guardrails configs
-├─ adapters/            # wms (SAP EWM, Manhattan, Oracle), iot (equipment, environmental, safety, asset tracking), erp, rfid_barcode, time_attendance
-├─ data/              # SQL DDL/migrations, Milvus collections
-├─ ingestion/           # batch ETL & streaming jobs (Kafka)
-├─ monitoring/           # Prometheus/Grafana/Alerting (dashboards & metrics)
-├─ docs/              # architecture docs & ADRs
-├─ ui/               # React web dashboard + mobile shells
-├─ scripts/            # helper scripts (compose up, etc.)
-├─ docker-compose.dev.yaml     # dev infra (Timescale, Redis, Kafka, Milvus, MinIO, etcd)
-├─ .env              # dev env vars
-├─ RUN_LOCAL.sh          # run API locally (auto-picks free port)
+├─ chain_server/     # FastAPI + LangGraph orchestration
+│ ├─ app.py      # API entrypoint
+│ ├─ routers/      # REST routers (health, chat, equipment, …)
+│ ├─ graphs/      # Planner/agent DAGs
+│ └─ agents/      # Equipment & Asset Operations / Operations / Safety
+├─ inventory_retriever/   # (hybrid) SQL + Milvus retrievers
+├─ memory_retriever/    # chat & profile memory stores
+├─ guardrails/      # NeMo Guardrails configs
+├─ adapters/      # wms (SAP EWM, Manhattan, Oracle), iot (equipment, environmental, safety, asset tracking), erp, rfid_barcode, time_attendance
+├─ data/       # SQL DDL/migrations, Milvus collections
+├─ ingestion/      # batch ETL & streaming jobs (Kafka)
+├─ monitoring/      # Prometheus/Grafana/Alerting (dashboards & metrics)
+├─ docs/       # architecture docs & ADRs
+├─ ui/        # React web dashboard + mobile shells
+├─ scripts/      # helper scripts (compose up, etc.)
+├─ docker-compose.dev.yaml   # dev infra (Timescale, Redis, Kafka, Milvus, MinIO, etcd)
+├─ .env       # dev env vars
+├─ RUN_LOCAL.sh     # run API locally (auto-picks free port)
 └─ requirements.txt
 ```
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 [![Docker Compose](https://img.shields.io/badge/Docker%20Compose-Ready-2496ED.svg)](docker-compose.yaml)
 [![One-Click Deploy](https://img.shields.io/badge/One--Click-Deploy%20Script-brightgreen.svg)](RUN_LOCAL.sh)
@@ -514,7 +514,7 @@ Agent Actions:
 ```bash
 cd ui/web
 npm install # first time only
-npm start  # starts React app on http://localhost:3001
+npm start # starts React app on http://localhost:3001
 # Login: admin/password123
 # Chat interface fully functional
 ```
@@ -617,7 +617,7 @@ curl -s http://localhost:$PORT/api/v1/attendance/health | jq
 - **Error Handling** - Comprehensive error handling and logging throughout
 
 ### **In Progress**
-- 🔄 **Mobile App** - React Native app for handheld devices and field operations
+- **Mobile App** - React Native app for handheld devices and field operations
 
 ### **System Health**
 - **API Server**: Running on port 8001 with all endpoints working
@@ -634,18 +634,18 @@ curl -s http://localhost:$PORT/api/v1/attendance/health | jq
 - **Time Attendance**: Ready for employee tracking systems (Biometric, Card Reader, Mobile)
 
 ### **Recent Improvements (Latest)**
-- ** Equipment Status & Telemetry** - Real-time equipment monitoring with battery, temperature, and charging status
-- ** Charger Status Functionality** - Comprehensive charger status queries with detailed analytics
-- ** Safety Event Routing** - Enhanced safety agent routing for temperature events and alerts
-- ** Equipment & Asset Operations Agent** - Renamed from Inventory Intelligence Agent with updated role and mission
-- ** API Endpoints Updated** - All `/api/v1/inventory` endpoints renamed to `/api/v1/equipment`
-- ** Frontend UI Updated** - Navigation, labels, and terminology updated to reflect equipment focus
-- ** ERP Integration Complete** - SAP ECC and Oracle ERP adapters with unified API
-- ** RFID/Barcode Scanning** - Zebra RFID, Honeywell Barcode, and generic scanner adapters
-- ** Time Attendance Systems** - Biometric, card reader, and mobile app integration
-- ** System Status Fixed** - All API endpoints now properly accessible with correct prefixes
-- ** Authentication Working** - Login system fully functional with default credentials
-- ** Frontend Integration** - Dashboard showing real-time system status and data
+- **Equipment Status & Telemetry** - Real-time equipment monitoring with battery, temperature, and charging status
+- **Charger Status Functionality** - Comprehensive charger status queries with detailed analytics
+- **Safety Event Routing** - Enhanced safety agent routing for temperature events and alerts
+- **Equipment & Asset Operations Agent** - Renamed from Inventory Intelligence Agent with updated role and mission
+- **API Endpoints Updated** - All `/api/v1/inventory` endpoints renamed to `/api/v1/equipment`
+- **Frontend UI Updated** - Navigation, labels, and terminology updated to reflect equipment focus
+- **ERP Integration Complete** - SAP ECC and Oracle ERP adapters with unified API
+- **RFID/Barcode Scanning** - Zebra RFID, Honeywell Barcode, and generic scanner adapters
+- **Time Attendance Systems** - Biometric, card reader, and mobile app integration
+- **System Status Fixed** - All API endpoints now properly accessible with correct prefixes
+- **Authentication Working** - Login system fully functional with default credentials
+- **Frontend Integration** - Dashboard showing real-time system status and data
 - **Fixed Async Event Loop Issues** - Resolved "Task got Future attached to a different loop" errors
 - **Chat Endpoint Fully Functional** - All equipment, operations, and safety queries now work properly
 - **NVIDIA NIMs Verified** - Both Llama 3.1 70B and NV-EmbedQA-E5-v5 tested and working
@@ -655,7 +655,7 @@ curl -s http://localhost:$PORT/api/v1/attendance/health | jq
 
 ---
 
-## 🗄️ Data model (initial)
+## Data model (initial)
 
 Tables created by `data/postgres/000_schema.sql`:
 
@@ -682,16 +682,16 @@ docker exec -it wosa-timescaledb psql -U warehouse -d warehouse -c \
  ('SKU123','Blue Pallet Jack',14,'Aisle A3',5),
  ('SKU456','RF Scanner',6,'Cage C1',2)
  ON CONFLICT (sku) DO UPDATE SET
-  name=EXCLUDED.name,
-  quantity=EXCLUDED.quantity,
-  location=EXCLUDED.location,
-  reorder_point=EXCLUDED.reorder_point,
-  updated_at=now();"
+ name=EXCLUDED.name,
+ quantity=EXCLUDED.quantity,
+ location=EXCLUDED.location,
+ reorder_point=EXCLUDED.reorder_point,
+ updated_at=now();"
 ```
 
 ---
 
-## 🔌 API (current)
+## API (current)
 
 Base path: `http://localhost:8001/api/v1`
 
@@ -784,7 +784,7 @@ GET /wms/health
 
 ---
 
-## 🧱 Components (how things fit)
+## Components (how things fit)
 
 ### Agents & Orchestration
 - `chain_server/graphs/planner_graph.py` — routes intents (equipment/operations/safety).
@@ -897,7 +897,7 @@ await start_sample_metrics() # Generates realistic warehouse metrics
 
 ---
 
-## 🔗 WMS Integration
+## WMS Integration
 
 The system supports integration with external WMS systems for seamless warehouse operations:
 
@@ -912,14 +912,14 @@ The system supports integration with external WMS systems for seamless warehouse
 curl -X POST "http://localhost:8001/api/v1/wms/connections" \
  -H "Content-Type: application/json" \
  -d '{
-  "connection_id": "sap_ewm_main",
-  "wms_type": "sap_ewm",
-  "config": {
-   "host": "sap-ewm.company.com",
-   "user": "WMS_USER",
-   "password": "secure_password",
-   "warehouse_number": "1000"
-  }
+ "connection_id": "sap_ewm_main",
+ "wms_type": "sap_ewm",
+ "config": {
+  "host": "sap-ewm.company.com",
+  "user": "WMS_USER",
+  "password": "secure_password",
+  "warehouse_number": "1000"
+ }
  }'
 
 # Get inventory from WMS
@@ -929,10 +929,10 @@ curl "http://localhost:8001/api/v1/wms/connections/sap_ewm_main/inventory"
 curl -X POST "http://localhost:8001/api/v1/wms/connections/sap_ewm_main/tasks" \
  -H "Content-Type: application/json" \
  -d '{
-  "task_type": "pick",
-  "priority": 1,
-  "location": "A1-B2-C3",
-  "destination": "PACK_STATION_1"
+ "task_type": "pick",
+ "priority": 1,
+ "location": "A1-B2-C3",
+ "destination": "PACK_STATION_1"
  }'
 ```
 
@@ -952,7 +952,7 @@ curl -X POST "http://localhost:8001/api/v1/wms/connections/sap_ewm_main/tasks" \
 
 For detailed integration guide, see [WMS Integration Documentation](docs/wms-integration.md).
 
-## 🔌 IoT Integration
+## IoT Integration
 
 The system supports comprehensive IoT integration for real-time equipment monitoring and sensor data collection:
 
@@ -968,27 +968,27 @@ The system supports comprehensive IoT integration for real-time equipment monito
 curl -X POST "http://localhost:8001/api/v1/iot/connections/equipment_monitor_main" \
  -H "Content-Type: application/json" \
  -d '{
-  "iot_type": "equipment_monitor",
-  "config": {
-   "host": "equipment-monitor.company.com",
-   "protocol": "http",
-   "username": "iot_user",
-   "password": "secure_password"
-  }
+ "iot_type": "equipment_monitor",
+ "config": {
+  "host": "equipment-monitor.company.com",
+  "protocol": "http",
+  "username": "iot_user",
+  "password": "secure_password"
+ }
  }'
 
 # Add Environmental Sensor connection
 curl -X POST "http://localhost:8001/api/v1/iot/connections/environmental_main" \
  -H "Content-Type: application/json" \
  -d '{
-  "iot_type": "environmental",
-  "config": {
-   "host": "environmental-sensors.company.com",
-   "protocol": "http",
-   "username": "env_user",
-   "password": "env_password",
-   "zones": ["warehouse", "loading_dock", "office"]
-  }
+ "iot_type": "environmental",
+ "config": {
+  "host": "environmental-sensors.company.com",
+  "protocol": "http",
+  "username": "env_user",
+  "password": "env_password",
+  "zones": ["warehouse", "loading_dock", "office"]
+ }
  }'
 
 # Get sensor readings
@@ -1021,7 +1021,7 @@ For detailed integration guide, see [IoT Integration Documentation](docs/iot-int
 
 ---
 
-## ⚙️ Configuration
+## ⚙ Configuration
 
 ### `.env` (dev defaults)
 ```
@@ -1049,7 +1049,7 @@ NVIDIA_NIM_EMBEDDING_BASE_URL=https://integrate.api.nvidia.com/v1
 
 ---
 
-## 🧪 Testing (roadmap)
+## Testing (roadmap)
 - Unit tests: `tests/` mirroring package layout (pytest).
 - Integration: DB integration tests (spins a container, loads fixtures).
 - E2E: Chat flow with stubbed LLM and retrievers.
@@ -1071,7 +1071,7 @@ NVIDIA_NIM_EMBEDDING_BASE_URL=https://integrate.api.nvidia.com/v1
 
 ---
 
-## 🛣️ Roadmap (20-week outline)
+## Roadmap (20-week outline)
 
 **Phase 1 — Project Scaffolding ()**
 Repo structure, API shell, dev stack (Timescale/Redis/Kafka/Milvus), inventory endpoint.
@@ -1106,21 +1106,21 @@ GH Actions CI; IaC (K8s, Helm, Terraform); blue-green deploys; production deploy
 ## **Current Status (Phase 8 Complete!)**
 
 ### **Fully Implemented & Tested**
-- ** Multi-Agent System**: Planner/Router with LangGraph orchestration
-- ** Equipment & Asset Operations Agent**: Equipment availability, maintenance scheduling, asset tracking, action tools (8 comprehensive equipment management tools)
-- **👥 Operations Coordination Agent**: Workforce scheduling, task management, KPIs, action tools (8 comprehensive operations management tools)
-- **🛡️ Safety & Compliance Agent**: Incident reporting, policy lookup, compliance, alert broadcasting, LOTO procedures, corrective actions, SDS retrieval, near-miss reporting
+- **Multi-Agent System**: Planner/Router with LangGraph orchestration
+- **Equipment & Asset Operations Agent**: Equipment availability, maintenance scheduling, asset tracking, action tools (8 comprehensive equipment management tools)
+- **Operations Coordination Agent**: Workforce scheduling, task management, KPIs, action tools (8 comprehensive operations management tools)
+- **Safety & Compliance Agent**: Incident reporting, policy lookup, compliance, alert broadcasting, LOTO procedures, corrective actions, SDS retrieval, near-miss reporting
 - **💾 Memory Manager**: Conversation persistence, user profiles, session context
-- **🔗 NVIDIA NIM Integration**: Llama 3.1 70B + NV-EmbedQA-E5-v5 embeddings
-- **🗄️ Hybrid Retrieval**: PostgreSQL/TimescaleDB + Milvus vector search
+- **NVIDIA NIM Integration**: Llama 3.1 70B + NV-EmbedQA-E5-v5 embeddings
+- **Hybrid Retrieval**: PostgreSQL/TimescaleDB + Milvus vector search
 - **🌐 FastAPI Backend**: RESTful API with structured responses
-- ** Authentication & RBAC**: JWT/OAuth2 with 5 user roles and granular permissions
-- **🖥️ React Frontend**: Real-time dashboard with chat interface and system monitoring
-- **🔗 WMS Integration**: SAP EWM, Manhattan, Oracle WMS adapters with unified API
-- ** Monitoring & Observability**: Prometheus/Grafana dashboards with comprehensive metrics
-- **🛡️ NeMo Guardrails**: Content safety, compliance checks, and security validation
+- **Authentication & RBAC**: JWT/OAuth2 with 5 user roles and granular permissions
+- **🖥 React Frontend**: Real-time dashboard with chat interface and system monitoring
+- **WMS Integration**: SAP EWM, Manhattan, Oracle WMS adapters with unified API
+- **Monitoring & Observability**: Prometheus/Grafana dashboards with comprehensive metrics
+- **NeMo Guardrails**: Content safety, compliance checks, and security validation
 
-### 🧪 **Test Results**
+### **Test Results**
 - **Equipment & Asset Operations Agent**: PASSED - Equipment availability, maintenance scheduling, action tools (8 comprehensive equipment management tools)
 - **Operations Agent**: PASSED - Workforce and task management, action tools (8 comprehensive operations management tools)
 - **Safety Agent**: PASSED - Incident reporting, policy lookup, action tools (7 comprehensive safety management tools) 
@@ -1132,7 +1132,7 @@ GH Actions CI; IaC (K8s, Helm, Terraform); blue-green deploys; production deploy
 - **Full Integration**: PASSED - Complete system integration
 - **API Endpoints**: PASSED - Complete REST API functionality
 
-### 🚀 **Production Ready Features**
+### **Production Ready Features**
 - **Intent Classification**: Automatic routing to specialized agents
 - **Context Awareness**: Cross-session memory and user preferences
 - **Structured Responses**: JSON + natural language output
@@ -1198,64 +1198,64 @@ TBD (add your organization's license file).
 
 ---
 
-## 🔄 **Latest Updates (December 2024)**
+## **Latest Updates (December 2024)**
 
 ### **Enhanced Vector Search Optimization - Major Update** (NEW)
-- ** Intelligent Chunking**: 512-token chunks with 64-token overlap for optimal context preservation
-- ** Optimized Retrieval**: Top-k=12 → re-rank to top-6 with diversity and relevance scoring
-- ** Smart Query Routing**: Automatic SQL vs Vector vs Hybrid routing based on query characteristics
-- ** Advanced Evidence Scoring**: Multi-factor analysis with similarity, authority, freshness, cross-reference, and diversity scoring
-- ** Intelligent Clarifying Questions**: Context-aware question generation with ambiguity type detection and prioritization
-- ** Confidence Control**: High/medium/low confidence indicators with evidence quality assessment
-- ** Quality Validation**: Chunk deduplication, completeness checks, and metadata tracking
-- ** Performance Boost**: Faster response times, higher accuracy, reduced hallucinations
+- **Intelligent Chunking**: 512-token chunks with 64-token overlap for optimal context preservation
+- **Optimized Retrieval**: Top-k=12 → re-rank to top-6 with diversity and relevance scoring
+- **Smart Query Routing**: Automatic SQL vs Vector vs Hybrid routing based on query characteristics
+- **Advanced Evidence Scoring**: Multi-factor analysis with similarity, authority, freshness, cross-reference, and diversity scoring
+- **Intelligent Clarifying Questions**: Context-aware question generation with ambiguity type detection and prioritization
+- **Confidence Control**: High/medium/low confidence indicators with evidence quality assessment
+- **Quality Validation**: Chunk deduplication, completeness checks, and metadata tracking
+- **Performance Boost**: Faster response times, higher accuracy, reduced hallucinations
 
 ### **Evidence Scoring & Clarifying Questions - Major Update** (NEW)
-- ** Multi-Factor Evidence Scoring**: Comprehensive analysis with 5 weighted components:
+- **Multi-Factor Evidence Scoring**: Comprehensive analysis with 5 weighted components:
  - Vector similarity scoring (30% weight)
  - Source authority and credibility assessment (25% weight)
  - Content freshness and recency evaluation (20% weight)
  - Cross-reference validation between sources (15% weight)
  - Source diversity scoring (10% weight)
-- ** Intelligent Confidence Assessment**: 0.35 threshold with source diversity validation (minimum 2 sources)
-- ** Smart Clarifying Questions Engine**: Context-aware question generation with:
+- **Intelligent Confidence Assessment**: 0.35 threshold with source diversity validation (minimum 2 sources)
+- **Smart Clarifying Questions Engine**: Context-aware question generation with:
  - 8 ambiguity types (equipment-specific, location-specific, time-specific, etc.)
  - 4 priority levels (critical, high, medium, low)
  - Follow-up question suggestions
  - Answer validation rules
  - Completion time estimation
-- ** Evidence Quality Assessment**: Excellent, good, fair, poor quality levels
-- ** Validation Status**: Validated, partial, insufficient based on evidence quality
+- **Evidence Quality Assessment**: Excellent, good, fair, poor quality levels
+- **Validation Status**: Validated, partial, insufficient based on evidence quality
 
-### **⚡ SQL Path Optimization - Major Update** (NEW)
-- ** Intelligent Query Routing**: Automatic SQL vs Hybrid RAG classification with 90%+ accuracy
-- ** Advanced Query Preprocessing**: 
+### **SQL Path Optimization - Major Update** (NEW)
+- **Intelligent Query Routing**: Automatic SQL vs Hybrid RAG classification with 90%+ accuracy
+- **Advanced Query Preprocessing**: 
  - Query normalization and terminology standardization
  - Entity extraction (SKUs, equipment types, locations, quantities)
  - Intent classification (lookup, compare, analyze, instruct, troubleshoot, schedule)
  - Complexity assessment and context hint detection
-- ** SQL Query Optimization**:
+- **SQL Query Optimization**:
  - Performance optimizations (result limiting, query caching, parallel execution)
  - Type-specific query generation (ATP, quantity, equipment status, maintenance, location)
  - Automatic LIMIT and ORDER BY clause addition
  - Index hints for equipment status queries
-- ** Comprehensive Result Validation**:
+- **Comprehensive Result Validation**:
  - Data quality assessment (completeness, accuracy, timeliness)
  - Field validation (SKU format, quantity validation, status validation)
  - Consistency checks (duplicate detection, data type consistency)
  - Quality levels (excellent, good, fair, poor)
-- ** Robust Error Handling & Fallback**:
+- **Robust Error Handling & Fallback**:
  - Automatic SQL → Hybrid RAG fallback on failure or low quality
  - Quality threshold enforcement (0.7 threshold for SQL results)
  - Graceful error recovery with comprehensive logging
-- ** Advanced Result Post-Processing**:
+- **Advanced Result Post-Processing**:
  - Field standardization across data sources
  - Metadata enhancement (timestamps, indices, computed fields)
  - Status indicators (stock status, ATP calculations)
  - Multiple format options (table, JSON)
 
-### **🚀 Redis Caching System - Major Update** (NEW)
-- ** Multi-Type Intelligent Caching**:
+### **Redis Caching System - Major Update** (NEW)
+- **Multi-Type Intelligent Caching**:
  - SQL result caching (5-minute TTL)
  - Evidence pack caching (10-minute TTL)
  - Vector search result caching (3-minute TTL)
@@ -1263,19 +1263,19 @@ TBD (add your organization's license file).
  - Workforce data caching (5-minute TTL)
  - Task data caching (3-minute TTL)
  - Equipment data caching (10-minute TTL)
-- ** Advanced Cache Management**:
+- **Advanced Cache Management**:
  - Configurable TTL for different data types
  - Multiple eviction policies (LRU, LFU, TTL, Random, Size-based)
  - Memory usage monitoring and limits
  - Automatic cache compression for large data
  - Cache warming for frequently accessed data
-- ** Performance Optimization**:
+- **Performance Optimization**:
  - Hit/miss ratio tracking and analytics
  - Response time monitoring
  - Cache optimization and cleanup
  - Performance trend analysis
  - Intelligent cache invalidation
-- ** Real-time Monitoring & Alerting**:
+- **Real-time Monitoring & Alerting**:
  - Live dashboard with cache metrics
  - Automated alerting for performance issues
  - Health status monitoring (healthy, degraded, unhealthy, critical)
@@ -1283,12 +1283,12 @@ TBD (add your organization's license file).
  - Cache analytics and reporting
 
 ### **Equipment & Asset Operations Agent (EAO) - Major Update**
-- ** Agent Renamed**: "Inventory Intelligence Agent" → "Equipment & Asset Operations Agent (EAO)"
-- ** Role Clarified**: Now focuses on equipment and assets (forklifts, conveyors, scanners, AMRs, AGVs, robots) rather than stock/parts inventory
-- ** API Endpoints Updated**: All `/api/v1/inventory` → `/api/v1/equipment`
-- ** Frontend Updated**: Navigation, labels, and terminology updated throughout the UI
-- ** Mission Defined**: Ensure equipment is available, safe, and optimally used for warehouse workflows
-- ** Action Tools**: 8 comprehensive tools for equipment management, maintenance, and optimization
+- **Agent Renamed**: "Inventory Intelligence Agent" → "Equipment & Asset Operations Agent (EAO)"
+- **Role Clarified**: Now focuses on equipment and assets (forklifts, conveyors, scanners, AMRs, AGVs, robots) rather than stock/parts inventory
+- **API Endpoints Updated**: All `/api/v1/inventory` → `/api/v1/equipment`
+- **Frontend Updated**: Navigation, labels, and terminology updated throughout the UI
+- **Mission Defined**: Ensure equipment is available, safe, and optimally used for warehouse workflows
+- **Action Tools**: 8 comprehensive tools for equipment management, maintenance, and optimization
 
 ### **Key Benefits of the Vector Search Optimization**
 - **Higher Accuracy**: Advanced evidence scoring with multi-factor analysis reduces hallucinations
@@ -1363,17 +1363,17 @@ The system now features **comprehensive response quality control** with validati
 - **Follow-up Relevance**: 80%+ relevance in generated follow-up suggestions
 - **Response Enhancement**: 75%+ improvement in user experience scores
 
-### **🏗️ Technical Architecture - Response Quality Control System**
+### **🏗 Technical Architecture - Response Quality Control System**
 
 #### **Response Validator**
 ```python
 # Comprehensive response validation with multi-factor assessment
 validator = ResponseValidator()
 validation = validator.validate_response(
-  response=response_text,
-  evidence_data=evidence_data,
-  query_context=query_context,
-  user_role=UserRole.OPERATOR
+ response=response_text,
+ evidence_data=evidence_data,
+ query_context=query_context,
+ user_role=UserRole.OPERATOR
 )
 
 # Quality assessment with confidence indicators
@@ -1388,9 +1388,9 @@ print(f"Consistency: {validation.consistency_score:.1%}")
 # Response enhancement with personalization and user experience improvements
 enhancer = ResponseEnhancementService()
 enhanced_response = await enhancer.enhance_agent_response(
-  agent_response=agent_response,
-  user_role=UserRole.SUPERVISOR,
-  query_context=query_context
+ agent_response=agent_response,
+ user_role=UserRole.SUPERVISOR,
+ query_context=query_context
 )
 
 # Enhanced response with quality indicators and source attribution
@@ -1406,10 +1406,10 @@ analytics = UXAnalyticsService()
 
 # Record response metrics
 await analytics.record_response_metrics(
-  response_data=response_data,
-  user_role=UserRole.MANAGER,
-  agent_name="Operations Agent",
-  query_intent="workforce"
+ response_data=response_data,
+ user_role=UserRole.MANAGER,
+ agent_name="Operations Agent",
+ query_intent="workforce"
 )
 
 # Generate comprehensive UX report
@@ -1435,7 +1435,7 @@ print(f"Recommendations: {report.recommendations}")
 - **Cross-Reference Validation**: Automatic validation between multiple sources
 - **Question Prioritization**: Intelligent ranking based on evidence quality and query context
 
-### **⚡ SQL Path Optimization Performance**
+### **SQL Path Optimization Performance**
 - **Query Routing Accuracy**: 90%+ accuracy in SQL vs Hybrid RAG classification
 - **SQL Query Success Rate**: 73% of queries correctly routed to SQL
 - **Confidence Scores**: 0.90-0.95 for SQL queries, 0.50-0.90 for Hybrid RAG
@@ -1444,7 +1444,7 @@ print(f"Recommendations: {report.recommendations}")
 - **Fallback Success Rate**: 100% fallback success from SQL to Hybrid RAG
 - **Optimization Coverage**: 5 query types with type-specific optimizations
 
-### **🚀 Redis Caching Performance**
+### **Redis Caching Performance**
 
 - **Cache Hit Rate**: 85%+ (Target: >70%) - Optimal performance achieved
 - **Response Time (Cached)**: 25ms (Target: <50ms) - 50% better than target
@@ -1454,20 +1454,20 @@ print(f"Recommendations: {report.recommendations}")
 - **Uptime**: 99.9%+ (Target: >99%) - High availability
 - **Eviction Efficiency**: 90%+ (Target: >80%) - Smart eviction policies
 
-### **🏗️ Technical Architecture - Redis Caching System**
+### **🏗 Technical Architecture - Redis Caching System**
 
 #### **Redis Cache Service**
 ```python
 # Core Redis caching with intelligent management
 cache_service = RedisCacheService(
-  redis_url="redis://localhost:6379",
-  config=CacheConfig(
-    default_ttl=300,      # 5 minutes default
-    max_memory="100mb",    # Memory limit
-    eviction_policy=CachePolicy.LRU,
-    compression_enabled=True,
-    monitoring_enabled=True
-  )
+ redis_url="redis://localhost:6379",
+ config=CacheConfig(
+  default_ttl=300,   # 5 minutes default
+  max_memory="100mb",  # Memory limit
+  eviction_policy=CachePolicy.LRU,
+  compression_enabled=True,
+  monitoring_enabled=True
+ )
 )
 
 # Multi-type caching with different TTLs
@@ -1480,23 +1480,23 @@ await cache_service.set("evidence_pack", evidence, CacheType.EVIDENCE_PACK, ttl=
 ```python
 # Advanced cache management with eviction policies
 cache_manager = CacheManager(
-  cache_service=cache_service,
-  policy=CachePolicy(
-    max_size=1000,
-    max_memory_mb=100,
-    eviction_strategy=EvictionStrategy.LRU,
-    warming_enabled=True,
-    monitoring_enabled=True
-  )
+ cache_service=cache_service,
+ policy=CachePolicy(
+  max_size=1000,
+  max_memory_mb=100,
+  eviction_strategy=EvictionStrategy.LRU,
+  warming_enabled=True,
+  monitoring_enabled=True
+ )
 )
 
 # Cache warming with rules
 warming_rule = CacheWarmingRule(
-  cache_type=CacheType.WORKFORCE_DATA,
-  key_pattern="workforce_summary",
-  data_generator=generate_workforce_data,
-  priority=1,
-  frequency_minutes=15
+ cache_type=CacheType.WORKFORCE_DATA,
+ key_pattern="workforce_summary",
+ data_generator=generate_workforce_data,
+ priority=1,
+ frequency_minutes=15
 )
 ```
 
@@ -1504,18 +1504,18 @@ warming_rule = CacheWarmingRule(
 ```python
 # Integrated query processing with caching
 cached_processor = CachedQueryProcessor(
-  sql_router=sql_router,
-  vector_retriever=vector_retriever,
-  query_preprocessor=query_preprocessor,
-  evidence_scoring_engine=evidence_scoring_engine,
-  config=CacheIntegrationConfig(
-    enable_sql_caching=True,
-    enable_vector_caching=True,
-    enable_evidence_caching=True,
-    sql_cache_ttl=300,
-    vector_cache_ttl=180,
-    evidence_cache_ttl=600
-  )
+ sql_router=sql_router,
+ vector_retriever=vector_retriever,
+ query_preprocessor=query_preprocessor,
+ evidence_scoring_engine=evidence_scoring_engine,
+ config=CacheIntegrationConfig(
+  enable_sql_caching=True,
+  enable_vector_caching=True,
+  enable_evidence_caching=True,
+  sql_cache_ttl=300,
+  vector_cache_ttl=180,
+  evidence_cache_ttl=600
+ )
 )
 
 # Process queries with intelligent caching
@@ -1538,7 +1538,7 @@ print(f"Performance Score: {report.performance_score:.1f}")
 print(f"Uptime: {report.uptime_percentage:.1f}%")
 ```
 
-### **🏗️ Technical Architecture - Evidence Scoring System**
+### **🏗 Technical Architecture - Evidence Scoring System**
 
 #### **Evidence Scoring Engine**
 ```python
@@ -1557,10 +1557,10 @@ evidence_score = EvidenceScoringEngine().calculate_evidence_score(evidence_items
 ```python
 # Context-aware question generation
 question_set = ClarifyingQuestionsEngine().generate_questions(
-  query="What equipment do we have?",
-  evidence_score=0.25,
-  query_type="equipment",
-  context={"user_role": "operator"}
+ query="What equipment do we have?",
+ evidence_score=0.25,
+ query_type="equipment",
+ context={"user_role": "operator"}
 )
 
 # Features:
@@ -1575,12 +1575,12 @@ question_set = ClarifyingQuestionsEngine().generate_questions(
 ```python
 # Seamless integration with vector search
 enhanced_retriever = EnhancedVectorRetriever(
-  milvus_retriever=milvus_retriever,
-  embedding_service=embedding_service,
-  config=RetrievalConfig(
-    evidence_threshold=0.35,
-    min_sources=2
-  )
+ milvus_retriever=milvus_retriever,
+ embedding_service=embedding_service,
+ config=RetrievalConfig(
+  evidence_threshold=0.35,
+  min_sources=2
+ )
 )
 
 # Automatic evidence scoring and questioning
@@ -1588,7 +1588,7 @@ results, metadata = await enhanced_retriever.search(query)
 # Returns: evidence scoring + clarifying questions for low confidence
 ```
 
-### **🏗️ Technical Architecture - SQL Path Optimization System**
+### **🏗 Technical Architecture - SQL Path Optimization System**
 
 #### **SQL Query Router**
 ```python
