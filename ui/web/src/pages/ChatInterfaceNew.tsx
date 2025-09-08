@@ -272,7 +272,7 @@ const ChatInterfaceNew: React.FC = () => {
       safety_check: 'What are the safety procedures for forklift operations?',
       // Demo flow scenarios
       work_order_flow: 'Create a wave for orders 1001-1010 in Zone A and dispatch a forklift.',
-      atp_check_flow: 'How many SKU456 can we ship today?',
+      equipment_status_flow: 'Show me the status of all forklifts and their availability',
       safety_incident_flow: 'Machine over-temp event at Dock D2.',
     };
 
