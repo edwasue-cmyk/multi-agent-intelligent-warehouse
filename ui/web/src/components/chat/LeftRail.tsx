@@ -39,7 +39,7 @@ const LeftRail: React.FC<LeftRailProps> = ({ onScenarioSelect, recentTasks }) =>
     { id: 'create_pick_wave', label: 'Create Pick Wave', icon: <InventoryIcon /> },
     { id: 'dispatch_forklift', label: 'Dispatch Forklift', icon: <AssignmentIcon /> },
     { id: 'log_incident', label: 'Log Incident', icon: <SecurityIcon /> },
-    { id: 'check_inventory', label: 'Check Inventory', icon: <TrendingUpIcon /> },
+    { id: 'check_assets', label: 'Check Equipment Assets', icon: <TrendingUpIcon /> },
     { id: 'safety_check', label: 'Safety Check', icon: <WarningIcon /> },
   ];
 

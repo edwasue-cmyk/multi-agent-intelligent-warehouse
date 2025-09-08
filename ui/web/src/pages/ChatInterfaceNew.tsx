@@ -268,7 +268,7 @@ const ChatInterfaceNew: React.FC = () => {
       create_pick_wave: 'Create a wave for orders 1001-1010 in Zone A and dispatch a forklift.',
       dispatch_forklift: 'Dispatch forklift FL-07 to Zone A for pick operations.',
       log_incident: 'Machine over-temp event at Dock D2.',
-      check_inventory: 'How many SKU456 can we ship today?',
+      check_assets: 'Show me the status of all forklifts and their availability',
       safety_check: 'What are the safety procedures for forklift operations?',
       // Demo flow scenarios
       work_order_flow: 'Create a wave for orders 1001-1010 in Zone A and dispatch a forklift.',
