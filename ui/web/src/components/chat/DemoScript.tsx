@@ -32,6 +32,7 @@ interface DemoScriptProps {
 const DemoScript: React.FC<DemoScriptProps> = ({ onScenarioSelect }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [currentFlow, setCurrentFlow] = useState<string | null>(null);
 
   const demoFlows = [
     {
@@ -140,14 +141,26 @@ const DemoScript: React.FC<DemoScriptProps> = ({ onScenarioSelect }) => {
     },
   ];
 
-  const handleStepComplete = (stepIndex: number) => {
-    if (!completedSteps.includes(stepIndex)) {
+  const handleStepComplete = (stepIndex: number, flowId: string) => {
+    if (currentFlow === flowId && !completedSteps.includes(stepIndex)) {
       setCompletedSteps([...completedSteps, stepIndex]);
+      // Auto-advance to next step if not the last step
+      const flow = demoFlows.find(f => f.id === flowId);
+      if (flow && stepIndex < flow.steps.length - 1) {
+        setActiveStep(stepIndex + 1);
+      }
+    }
+  };
+
+  const handleStepClick = (stepIndex: number, flowId: string) => {
+    if (currentFlow === flowId) {
+      setActiveStep(stepIndex);
     }
   };
 
   const handleFlowStart = (flowId: string) => {
     onScenarioSelect(flowId);
+    setCurrentFlow(flowId);
     setActiveStep(0);
     setCompletedSteps([]);
   };
@@ -179,65 +192,131 @@ const DemoScript: React.FC<DemoScriptProps> = ({ onScenarioSelect }) => {
                 <Typography variant="body2" sx={{ color: '#666666' }}>
                   {flow.description}
                 </Typography>
+                {currentFlow === flow.id && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="caption" sx={{ color: '#76B900' }}>
+                      Progress: {completedSteps.length} / {flow.steps.length} steps completed
+                    </Typography>
+                    <Box sx={{ width: '100%', height: 4, backgroundColor: '#333333', borderRadius: 2, mt: 0.5 }}>
+                      <Box 
+                        sx={{ 
+                          width: `${(completedSteps.length / flow.steps.length) * 100}%`, 
+                          height: '100%', 
+                          backgroundColor: '#76B900', 
+                          borderRadius: 2,
+                          transition: 'width 0.3s ease'
+                        }} 
+                      />
+                    </Box>
+                  </Box>
+                )}
               </Box>
-              <Button
-                variant="contained"
-                startIcon={<PlayIcon />}
-                onClick={() => handleFlowStart(flow.id)}
-                sx={{
-                  backgroundColor: '#76B900',
-                  '&:hover': { backgroundColor: '#5a8f00' },
-                }}
-              >
-                Start
-              </Button>
-            </Box>
-
-            <Stepper activeStep={activeStep} orientation="vertical">
-              {flow.steps.map((step, stepIndex) => (
-                <Step key={stepIndex}>
-                  <StepLabel
-                    StepIconComponent={() => getStepIcon(stepIndex)}
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                {currentFlow === flow.id && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                      setCurrentFlow(null);
+                      setActiveStep(0);
+                      setCompletedSteps([]);
+                    }}
                     sx={{
-                      '& .MuiStepLabel-label': {
-                        color: '#ffffff',
-                        fontSize: '14px',
+                      color: '#666666',
+                      borderColor: '#666666',
+                      '&:hover': { 
+                        backgroundColor: '#333333',
+                        borderColor: '#666666'
                       },
                     }}
                   >
-                    {step.label}
-                  </StepLabel>
-                  <StepContent>
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="body2" sx={{ color: '#cccccc', mb: 1 }}>
-                        {step.description}
-                      </Typography>
-                      <Chip
-                        label={step.expected}
-                        size="small"
-                        sx={{
-                          backgroundColor: '#333333',
-                          color: '#76B900',
-                          fontSize: '10px',
-                        }}
-                      />
-                    </Box>
-                    <Button
-                      size="small"
-                      onClick={() => handleStepComplete(stepIndex)}
-                      disabled={completedSteps.includes(stepIndex)}
+                    Reset
+                  </Button>
+                )}
+                <Button
+                  variant="contained"
+                  startIcon={<PlayIcon />}
+                  onClick={() => handleFlowStart(flow.id)}
+                  sx={{
+                    backgroundColor: '#76B900',
+                    '&:hover': { backgroundColor: '#5a8f00' },
+                  }}
+                >
+                  {currentFlow === flow.id ? 'Restart' : 'Start'}
+                </Button>
+              </Box>
+            </Box>
+
+            <Stepper activeStep={activeStep} orientation="vertical">
+              {flow.steps.map((step, stepIndex) => {
+                const isCompleted = completedSteps.includes(stepIndex);
+                const isActive = currentFlow === flow.id && activeStep === stepIndex;
+                const isClickable = currentFlow === flow.id;
+                
+                return (
+                  <Step key={stepIndex}>
+                    <StepLabel
+                      StepIconComponent={() => getStepIcon(stepIndex)}
+                      onClick={() => isClickable && handleStepClick(stepIndex, flow.id)}
                       sx={{
-                        color: '#76B900',
-                        '&:disabled': {
-                          color: '#666666',
+                        cursor: isClickable ? 'pointer' : 'default',
+                        '& .MuiStepLabel-label': {
+                          color: isActive ? '#76B900' : isCompleted ? '#76B900' : '#ffffff',
+                          fontSize: '14px',
+                          fontWeight: isActive ? 'bold' : 'normal',
                         },
+                        '&:hover': isClickable ? {
+                          '& .MuiStepLabel-label': {
+                            color: '#76B900',
+                          },
+                        } : {},
                       }}
                     >
-                      {completedSteps.includes(stepIndex) ? 'Completed' : 'Mark Complete'}
-                    </Button>
-                  </StepContent>
-                </Step>
-              ))}
+                      {step.label}
+                    </StepLabel>
+                    <StepContent>
+                      <Box sx={{ mb: 2 }}>
+                        <Typography variant="body2" sx={{ color: '#cccccc', mb: 1 }}>
+                          {step.description}
+                        </Typography>
+                        <Chip
+                          label={step.expected}
+                          size="small"
+                          sx={{
+                            backgroundColor: isCompleted ? '#76B900' : '#333333',
+                            color: isCompleted ? '#000000' : '#76B900',
+                            fontSize: '10px',
+                          }}
+                        />
+                      </Box>
+                      {currentFlow === flow.id && (
+                        <Button
+                          size="small"
+                          onClick={() => handleStepComplete(stepIndex, flow.id)}
+                          disabled={isCompleted}
+                          variant={isCompleted ? "outlined" : "contained"}
+                          sx={{
+                            backgroundColor: isCompleted ? 'transparent' : '#76B900',
+                            color: isCompleted ? '#76B900' : '#000000',
+                            borderColor: '#76B900',
+                            '&:hover': {
+                              backgroundColor: isCompleted ? '#76B900' : '#5a8f00',
+                              color: isCompleted ? '#000000' : '#ffffff',
+                            },
+                            '&:disabled': {
+                              backgroundColor: 'transparent',
+                              color: '#76B900',
+                              borderColor: '#76B900',
+                            },
+                          }}
+                        >
+                          {isCompleted ? '✓ Completed' : 'Mark Complete'}
+                        </Button>
+                      )}
+                    </StepContent>
+                  </Step>
+                );
+              })}
             </Stepper>
           </CardContent>
         </Card>
