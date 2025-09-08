@@ -5,19 +5,16 @@ import {
   TextField,
   IconButton,
   Typography,
-  List,
-  ListItem,
   Avatar,
   Chip,
   CircularProgress,
-  Alert,
 } from '@mui/material';
 import {
   Send as SendIcon,
   SmartToy as BotIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useMutation } from 'react-query';
 import { chatAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -46,7 +43,6 @@ const ChatInterface: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -72,17 +68,17 @@ const ChatInterface: React.FC = () => {
       setMessages(prev => [...prev, assistantMessage]);
       setIsLoading(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error sending message:', error);
       let errorContent = 'Sorry, I encountered an error. Please try again.';
       
-      if (error.response?.status === 401) {
+      if (error?.response?.status === 401) {
         errorContent = 'Authentication failed. Please log in again.';
-      } else if (error.response?.status === 403) {
+      } else if (error?.response?.status === 403) {
         errorContent = 'Access denied. Please check your permissions.';
-      } else if (error.code === 'ECONNABORTED') {
+      } else if (error?.code === 'ECONNABORTED') {
         errorContent = 'Request timeout. Please try again.';
-      } else if (error.response?.data?.detail) {
+      } else if (error?.response?.data?.detail) {
         errorContent = `Error: ${error.response.data.detail}`;
       }
       
