@@ -120,9 +120,9 @@ class SafetyComplianceAgent:
                     "last_entities": {}
                 }
             
-            # Step 1: Advanced Reasoning Analysis (if enabled)
+            # Step 1: Advanced Reasoning Analysis (if enabled and query is complex)
             reasoning_chain = None
-            if enable_reasoning and self.reasoning_engine:
+            if enable_reasoning and self.reasoning_engine and self._is_complex_query(query):
                 try:
                     # Determine reasoning types based on query complexity
                     if reasoning_types is None:
@@ -137,6 +137,8 @@ class SafetyComplianceAgent:
                     logger.info(f"Advanced reasoning completed: {len(reasoning_chain.steps)} steps")
                 except Exception as e:
                     logger.warning(f"Advanced reasoning failed, continuing with standard processing: {e}")
+            else:
+                logger.info("Skipping advanced reasoning for simple query")
             
             # Step 2: Understand intent and extract entities using LLM
             safety_query = await self._understand_query(query, session_id, context)
@@ -1021,6 +1023,40 @@ Respond in JSON format:
         if session_id in self.conversation_context:
             del self.conversation_context[session_id]
     
+    def _is_complex_query(self, query: str) -> bool:
+        """Determine if a query is complex enough to require advanced reasoning."""
+        query_lower = query.lower()
+        
+        # Simple queries that don't need reasoning
+        simple_patterns = [
+            "what are the safety procedures",
+            "show me safety procedures", 
+            "list safety procedures",
+            "safety procedures",
+            "what is the safety procedure",
+            "safety procedure",
+            "ppe requirements",
+            "what is ppe",
+            "lockout tagout procedure",
+            "emergency evacuation procedure"
+        ]
+        
+        # Check if it's a simple query
+        for pattern in simple_patterns:
+            if pattern in query_lower:
+                return False
+        
+        # Complex queries that need reasoning
+        complex_keywords = [
+            "analyze", "compare", "relationship", "connection", "across", "multiple",
+            "what if", "scenario", "alternative", "option", "if", "when", "suppose",
+            "why", "cause", "effect", "because", "result", "consequence", "due to", "leads to",
+            "pattern", "trend", "learn", "insight", "recommendation", "optimize", "improve",
+            "how does", "explain", "understand", "investigate", "determine", "evaluate"
+        ]
+        
+        return any(keyword in query_lower for keyword in complex_keywords)
+
     def _determine_reasoning_types(self, query: str, context: Optional[Dict[str, Any]]) -> List[ReasoningType]:
         """Determine appropriate reasoning types based on query complexity and context."""
         reasoning_types = [ReasoningType.CHAIN_OF_THOUGHT]  # Always include chain-of-thought
