@@ -254,9 +254,9 @@ The Equipment & Asset Operations Agent (EAO) is the core AI agent responsible fo
 #### **Key Intents & Capabilities**
 - **Equipment Assignment**: "assign a forklift to lane B", "who has scanner S-112?"
 - **Equipment Status**: "charger status for Truck-07", "utilization last week"
-- **Maintenance**: "create PM for conveyor C3", "open LOTO on dock leveller 4"
+- **Maintenance**: "create PM for conveyor C3", "schedule maintenance for FL-03"
 - **Asset Tracking**: Real-time equipment location and status monitoring
-- **Availability Management**: ATP (Available to Promise) calculations for equipment
+- **Equipment Dispatch**: "Dispatch forklift FL-03 to Zone A", "assign equipment to task"
 
 #### **Action Tools**
 
@@ -274,12 +274,12 @@ The Equipment & Asset Operations Agent includes **6 core action tools** for equi
 
 #### **Example Equipment Workflow**
 ```
-User Query: "ATPs for SKU123?" or "charger status for Truck-07"
+User Query: "charger status for Truck-07" or "Dispatch forklift FL-03 to Zone A"
 Agent Actions:
-1. ✅ check_stock - Check current equipment availability
-2. ✅ reserve_inventory - Reserve equipment for specific task (Tier 1 propose)
-3. ✅ generate_purchase_requisition - Create PR if below reorder point
-4. ✅ create_replenishment_task - Generate maintenance task
+1. ✅ get_equipment_status - Check current equipment availability and status
+2. ✅ assign_equipment - Assign equipment to specific task or user
+3. ✅ get_equipment_telemetry - Retrieve real-time sensor data
+4. ✅ schedule_maintenance - Generate maintenance task if needed
 ```
 
 ### 👥 **Operations Coordination Agent Action Tools**
@@ -684,9 +684,10 @@ graph LR
 ### **Example Queries Now Supported**
 - "charger status for Truck-07" → Equipment status and location
 - "assign a forklift to lane B" → Equipment assignment
-- "create PM for conveyor C3" → Maintenance scheduling
+- "schedule maintenance for FL-03" → Maintenance scheduling
 - "Dispatch forklift FL-03 to Zone A" → Equipment dispatch with intelligent routing
 - "utilization last week" → Equipment utilization analytics
+- "who has scanner S-112?" → Equipment assignment lookup
 
 ---
 
