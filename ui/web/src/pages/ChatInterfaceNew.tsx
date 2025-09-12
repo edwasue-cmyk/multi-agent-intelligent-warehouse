@@ -149,11 +149,11 @@ const ChatInterfaceNew: React.FC = () => {
       // Simulate streaming response
       simulateStreamingResponse(response);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Chat error:', error);
       setSnackbar({
         open: true,
-        message: 'Failed to send message. Please try again.',
+        message: `Failed to send message: ${error.message || 'Unknown error'}`,
         severity: 'error',
       });
     },
@@ -216,10 +216,47 @@ const ChatInterfaceNew: React.FC = () => {
         };
 
         setMessages(prev => [...prev, assistantMessage]);
-        setCurrentEvidence(response.evidence || []);
+        
+        // Process evidence data properly
+        const evidenceData = [];
+        
+        // Add SQL evidence if available
+        if (response.evidence && Array.isArray(response.evidence)) {
+          evidenceData.push(...response.evidence);
+        }
+        
+        // Add structured data as evidence if available
+        // Check both response.structured_data and context.structured_response
+        const structuredData = response.structured_data || response.context?.structured_response;
+        
+        if (structuredData) {
+          evidenceData.push({
+            type: 'structured',
+            id: 'structured_data',
+            content: structuredData.natural_language || 'Structured response data',
+            score: structuredData.confidence || 0,
+            data: structuredData
+          });
+          
+          // Also add individual procedures as separate evidence items
+          if (structuredData.data && structuredData.data.procedures && structuredData.data.procedures.procedures) {
+            structuredData.data.procedures.procedures.forEach((procedure: any, index: number) => {
+              evidenceData.push({
+                type: 'procedure',
+                id: `procedure_${procedure.id}`,
+                content: procedure.description || procedure.name,
+                score: 0.9, // High confidence for procedures
+                data: procedure
+              });
+            });
+          }
+        }
+        
+        
+        setCurrentEvidence(evidenceData);
         setCurrentSqlQuery(response.sql_query);
         setCurrentPlannerDecision(response.planner_decision);
-        setCurrentActiveContext(response.context);
+        setCurrentActiveContext(response.context || {});
         setCurrentToolTimeline(response.tool_timeline || []);
         setStreamingEvents([]);
       }
@@ -251,13 +288,13 @@ const ChatInterfaceNew: React.FC = () => {
           environment,
         },
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
     }
   };
 
-  const handleKeyPress = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event && event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       handleSendMessage();
     }
@@ -340,6 +377,7 @@ const ChatInterfaceNew: React.FC = () => {
     setInputValue(option);
     inputRef.current?.focus();
   };
+
 
   if (!isAuthenticated) {
     return (
@@ -449,8 +487,8 @@ const ChatInterfaceNew: React.FC = () => {
                 multiline
                 maxRows={4}
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="Ask me anything about warehouse operations..."
                 disabled={isLoading}
                 sx={{
@@ -538,17 +576,24 @@ const ChatInterfaceNew: React.FC = () => {
         >
           {showInternals ? <VisibilityOffIcon /> : <VisibilityIcon />}
         </Fab>
+        
       </Box>
 
       {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={4000}
-        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        onClose={(event?: React.SyntheticEvent | Event, reason?: string) => {
+          if (reason !== 'clickaway') {
+            setSnackbar(prev => ({ ...prev, open: false }));
+          }
+        }}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
         <Alert
-          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          onClose={(event?: React.SyntheticEvent) => {
+            setSnackbar(prev => ({ ...prev, open: false }));
+          }}
           severity={snackbar.severity}
           sx={{ width: '100%' }}
         >

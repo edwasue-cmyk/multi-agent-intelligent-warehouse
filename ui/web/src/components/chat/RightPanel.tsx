@@ -28,13 +28,14 @@ interface RightPanelProps {
   isOpen: boolean;
   onClose: () => void;
   evidence: Array<{
-    type: 'sql' | 'doc';
+    type: 'sql' | 'doc' | 'structured' | 'procedure';
     table?: string;
     rows?: number;
     lat_ms?: number;
     id?: string;
     score?: number;
     content?: string;
+    data?: any;
   }>;
   sqlQuery?: {
     query: string;
@@ -156,67 +157,146 @@ const RightPanel: React.FC<RightPanelProps> = ({
           </AccordionSummary>
           <AccordionDetails>
             <List dense>
-              {evidence.map((item, index) => (
-                <ListItem key={index} sx={{ px: 0 }}>
-                  <Card sx={{ width: '100%', backgroundColor: '#0a0a0a', border: '1px solid #333333' }}>
-                    <CardContent sx={{ p: 1.5 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                        <Chip
-                          label={item.type.toUpperCase()}
-                          size="small"
-                          sx={{
-                            backgroundColor: item.type === 'sql' ? '#2196F3' : '#9C27B0',
-                            color: '#ffffff',
-                            fontSize: '10px',
-                          }}
-                        />
-                        {item.score && (
-                          <Typography variant="caption" sx={{ color: '#76B900' }}>
-                            {(item.score * 100).toFixed(1)}%
-                          </Typography>
-                        )}
-                      </Box>
-                      
-                      <Typography variant="body2" sx={{ color: '#ffffff', mb: 1 }}>
-                        {item.table || item.id}
-                      </Typography>
-                      
-                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                        {item.rows && (
+              {evidence.map((item, index) => {
+                // Safely extract all properties with fallbacks
+                const itemType = typeof item?.type === 'string' ? item.type : 'unknown';
+                const itemScore = typeof item?.score === 'number' ? item.score : 0;
+                const itemContent = typeof item?.content === 'string' ? item.content : 'No content';
+                const itemTable = typeof item?.table === 'string' ? item.table : '';
+                const itemId = typeof item?.id === 'string' ? item.id : '';
+                const itemRows = typeof item?.rows === 'number' ? item.rows : null;
+                const itemLatMs = typeof item?.lat_ms === 'number' ? item.lat_ms : null;
+                
+                // Safely extract data properties
+                const itemData = item?.data || {};
+                const recommendations = Array.isArray(itemData?.recommendations) ? itemData.recommendations : [];
+                const actionsTaken = Array.isArray(itemData?.actions_taken) ? itemData.actions_taken : [];
+                
+                return (
+                  <ListItem key={index} sx={{ px: 0 }}>
+                    <Card sx={{ width: '100%', backgroundColor: '#0a0a0a', border: '1px solid #333333' }}>
+                      <CardContent sx={{ p: 1.5 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                           <Chip
-                            label={`${item.rows} rows`}
+                            label={itemType.toUpperCase()}
                             size="small"
-                            sx={{ backgroundColor: '#333333', color: '#ffffff', fontSize: '10px' }}
+                            sx={{
+                              backgroundColor: itemType === 'sql' ? '#2196F3' : 
+                                             itemType === 'doc' ? '#9C27B0' : 
+                                             itemType === 'procedure' ? '#4CAF50' : '#FF9800',
+                              color: '#ffffff',
+                              fontSize: '10px',
+                            }}
                           />
+                          {itemScore > 0 && (
+                            <Typography variant="caption" sx={{ color: '#76B900' }}>
+                              {(itemScore * 100).toFixed(1)}%
+                            </Typography>
+                          )}
+                        </Box>
+                        
+                        <Typography variant="body2" sx={{ color: '#ffffff', mb: 1 }}>
+                          {itemTable || itemId || 'Structured Data'}
+                        </Typography>
+                        
+                        <Typography variant="caption" sx={{ color: '#cccccc', display: 'block', mb: 1 }}>
+                          {itemContent}
+                        </Typography>
+                        
+                        {/* Special rendering for procedure items */}
+                        {itemType === 'procedure' && itemData && (
+                          <Box sx={{ mb: 1 }}>
+                            <Typography variant="caption" sx={{ color: '#4CAF50', display: 'block', mb: 0.5, fontWeight: 'bold' }}>
+                              {itemData.name || 'Safety Procedure'}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#ffffff', display: 'block', mb: 0.5 }}>
+                              Category: {itemData.category || 'N/A'} | Priority: {itemData.priority || 'N/A'}
+                            </Typography>
+                            {itemData.steps && Array.isArray(itemData.steps) && (
+                              <Box sx={{ mb: 1 }}>
+                                <Typography variant="caption" sx={{ color: '#76B900', display: 'block', mb: 0.5 }}>
+                                  Key Steps:
+                                </Typography>
+                                {itemData.steps.slice(0, 3).map((step: any, stepIndex: number) => (
+                                  <Typography key={stepIndex} variant="caption" sx={{ color: '#ffffff', display: 'block', fontSize: '10px' }}>
+                                    • {typeof step === 'string' ? step : JSON.stringify(step)}
+                                  </Typography>
+                                ))}
+                                {itemData.steps.length > 3 && (
+                                  <Typography variant="caption" sx={{ color: '#cccccc', display: 'block', fontSize: '10px', fontStyle: 'italic' }}>
+                                    ... and {itemData.steps.length - 3} more steps
+                                  </Typography>
+                                )}
+                              </Box>
+                            )}
+                          </Box>
                         )}
-                        {item.lat_ms && (
-                          <Chip
-                            label={`${item.lat_ms}ms`}
-                            size="small"
-                            sx={{ backgroundColor: '#333333', color: '#ffffff', fontSize: '10px' }}
-                          />
+                        
+                        {/* Recommendations */}
+                        {recommendations.length > 0 && (
+                          <Box sx={{ mb: 1 }}>
+                            <Typography variant="caption" sx={{ color: '#76B900', display: 'block', mb: 0.5 }}>
+                              Recommendations:
+                            </Typography>
+                            {recommendations.map((rec: any, recIndex: number) => (
+                              <Typography key={recIndex} variant="caption" sx={{ color: '#ffffff', display: 'block', fontSize: '10px' }}>
+                                • {typeof rec === 'string' ? rec : JSON.stringify(rec)}
+                              </Typography>
+                            ))}
+                          </Box>
                         )}
-                      </Box>
+                        
+                        {/* Actions Taken */}
+                        {actionsTaken.length > 0 && (
+                          <Box sx={{ mb: 1 }}>
+                            <Typography variant="caption" sx={{ color: '#FF9800', display: 'block', mb: 0.5 }}>
+                              Actions Taken:
+                            </Typography>
+                            {actionsTaken.map((action: any, actionIndex: number) => (
+                              <Typography key={actionIndex} variant="caption" sx={{ color: '#ffffff', display: 'block', fontSize: '10px' }}>
+                                • {typeof action === 'string' ? action : JSON.stringify(action)}
+                              </Typography>
+                            ))}
+                          </Box>
+                        )}
+                        
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                          {itemRows && (
+                            <Chip
+                              label={`${itemRows} rows`}
+                              size="small"
+                              sx={{ backgroundColor: '#333333', color: '#ffffff', fontSize: '10px' }}
+                            />
+                          )}
+                          {itemLatMs && (
+                            <Chip
+                              label={`${itemLatMs}ms`}
+                              size="small"
+                              sx={{ backgroundColor: '#333333', color: '#ffffff', fontSize: '10px' }}
+                            />
+                          )}
+                        </Box>
 
-                      {item.score && (
-                        <LinearProgress
-                          variant="determinate"
-                          value={item.score * 100}
-                          sx={{
-                            height: 3,
-                            borderRadius: 1.5,
-                            backgroundColor: '#333333',
-                            mt: 1,
-                            '& .MuiLinearProgress-bar': {
-                              backgroundColor: item.score >= 0.8 ? '#76B900' : item.score >= 0.6 ? '#FF9800' : '#f44336',
-                            },
-                          }}
-                        />
-                      )}
-                    </CardContent>
-                  </Card>
-                </ListItem>
-              ))}
+                        {itemScore > 0 && (
+                          <LinearProgress
+                            variant="determinate"
+                            value={itemScore * 100}
+                            sx={{
+                              height: 3,
+                              borderRadius: 1.5,
+                              backgroundColor: '#333333',
+                              mt: 1,
+                              '& .MuiLinearProgress-bar': {
+                                backgroundColor: itemScore >= 0.8 ? '#76B900' : itemScore >= 0.6 ? '#FF9800' : '#f44336',
+                              },
+                            }}
+                          />
+                        )}
+                      </CardContent>
+                    </Card>
+                  </ListItem>
+                );
+              })}
             </List>
           </AccordionDetails>
         </Accordion>
@@ -317,7 +397,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
                   </Box>
                   
                   <Typography variant="body2" sx={{ color: '#cccccc' }}>
-                    {plannerDecision.reasoning}
+                    {typeof plannerDecision.reasoning === 'string' ? plannerDecision.reasoning : JSON.stringify(plannerDecision.reasoning)}
                   </Typography>
                 </CardContent>
               </Card>
@@ -352,7 +432,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
                         {key.replace('_', ' ').toUpperCase()}:
                       </Typography>
                       <Typography variant="body2" sx={{ color: '#ffffff' }}>
-                        {value}
+                        {typeof value === 'string' ? value : JSON.stringify(value)}
                       </Typography>
                     </Box>
                   ))}

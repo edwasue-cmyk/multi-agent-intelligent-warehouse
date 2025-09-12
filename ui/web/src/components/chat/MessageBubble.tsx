@@ -98,6 +98,71 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   const renderStructuredData = () => {
     if (!message.structured_data) return null;
 
+    // Handle the actual API response structure
+    if (message.structured_data.response_type === 'equipment_info') {
+      return (
+        <Card sx={{ mt: 1, backgroundColor: '#1a1a1a', border: '1px solid #333333' }}>
+          <CardContent>
+            <Typography variant="h6" sx={{ color: '#ffffff', mb: 1 }}>
+              Equipment Information
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#cccccc', mb: 2 }}>
+              {typeof message.structured_data.natural_language === 'string' 
+                ? message.structured_data.natural_language 
+                : 'No description available'}
+            </Typography>
+            
+            {message.structured_data.data && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ color: '#ffffff', mb: 1 }}>
+                  Data Summary:
+                </Typography>
+                <Box sx={{ backgroundColor: '#000000', p: 1, borderRadius: 1, fontFamily: 'monospace', fontSize: '10px' }}>
+                  <pre style={{ color: '#ffffff', margin: 0, whiteSpace: 'pre-wrap' }}>
+                    {JSON.stringify(message.structured_data.data, null, 2)}
+                  </pre>
+                </Box>
+              </Box>
+            )}
+
+            {message.structured_data.recommendations && message.structured_data.recommendations.length > 0 && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ color: '#ffffff', mb: 1 }}>
+                  Recommendations:
+                </Typography>
+                {message.structured_data.recommendations.map((rec: string, index: number) => (
+                  <Typography key={index} variant="caption" sx={{ color: '#76B900', display: 'block' }}>
+                    • {rec}
+                  </Typography>
+                ))}
+              </Box>
+            )}
+
+            {message.structured_data.confidence && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ color: '#ffffff', mb: 1 }}>
+                  Confidence: {(message.structured_data.confidence * 100).toFixed(1)}%
+                </Typography>
+                <LinearProgress
+                  variant="determinate"
+                  value={message.structured_data.confidence * 100}
+                  sx={{
+                    height: 4,
+                    borderRadius: 2,
+                    backgroundColor: '#333333',
+                    '& .MuiLinearProgress-bar': {
+                      backgroundColor: message.structured_data.confidence >= 0.8 ? '#76B900' : '#FF9800',
+                    },
+                  }}
+                />
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Handle table structure (legacy)
     if (message.structured_data.type === 'table') {
       return (
         <Card sx={{ mt: 1, backgroundColor: '#1a1a1a', border: '1px solid #333333' }}>
@@ -128,6 +193,24 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                   ))}
                 </tbody>
               </table>
+            </Box>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Fallback: render as JSON if it's an object
+    if (typeof message.structured_data === 'object') {
+      return (
+        <Card sx={{ mt: 1, backgroundColor: '#1a1a1a', border: '1px solid #333333' }}>
+          <CardContent>
+            <Typography variant="h6" sx={{ color: '#ffffff', mb: 1 }}>
+              Structured Data
+            </Typography>
+            <Box sx={{ backgroundColor: '#000000', p: 1, borderRadius: 1, fontFamily: 'monospace', fontSize: '10px' }}>
+              <pre style={{ color: '#ffffff', margin: 0, whiteSpace: 'pre-wrap' }}>
+                {JSON.stringify(message.structured_data, null, 2)}
+              </pre>
             </Box>
           </CardContent>
         </Card>

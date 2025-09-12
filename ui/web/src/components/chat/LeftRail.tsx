@@ -150,7 +150,7 @@ const LeftRail: React.FC<LeftRailProps> = ({ onScenarioSelect, recentTasks }) =>
                       <ListItemText
                         primary={task.title}
                         secondary={
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                          <Typography variant="caption" sx={{ color: '#666666', display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
                             <Chip
                               label={task.status}
                               size="small"
@@ -161,10 +161,8 @@ const LeftRail: React.FC<LeftRailProps> = ({ onScenarioSelect, recentTasks }) =>
                                 height: '16px',
                               }}
                             />
-                            <Typography variant="caption" sx={{ color: '#666666' }}>
-                              {task.timestamp.toLocaleTimeString()}
-                            </Typography>
-                          </Box>
+                            {task.timestamp.toLocaleTimeString()}
+                          </Typography>
                         }
                         primaryTypographyProps={{
                           fontSize: '12px',
