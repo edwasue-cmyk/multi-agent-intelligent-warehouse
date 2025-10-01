@@ -591,7 +591,7 @@ const ChatInterfaceNew: React.FC = () => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
         <Alert
-          onClose={(event?: React.SyntheticEvent) => {
+          onClose={() => {
             setSnackbar(prev => ({ ...prev, open: false }));
           }}
           severity={snackbar.severity}
