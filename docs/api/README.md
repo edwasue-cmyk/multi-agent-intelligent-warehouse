@@ -4,7 +4,23 @@
 
 The Warehouse Operational Assistant provides a comprehensive REST API for warehouse operations management. The API is built with FastAPI and provides OpenAPI/Swagger documentation.
 
-**Current Status**: All core endpoints are working and tested. Recent fixes have resolved critical issues with equipment assignments and chat interface.
+**Current Status**: All core endpoints are working and tested. Recent fixes have resolved critical issues with equipment assignments and chat interface. MCP framework is now fully integrated with dynamic tool discovery and execution.
+
+## MCP Integration Status
+
+### ✅ MCP Framework Fully Integrated
+- **MCP Planner Graph**: Complete workflow orchestration with MCP-enhanced intent classification
+- **MCP Agents**: Equipment, Operations, and Safety agents with dynamic tool discovery
+- **Tool Discovery**: Real-time tool registration and discovery across all agent types
+- **Tool Execution**: Intelligent planning and execution of MCP tools
+- **Cross-Agent Integration**: Seamless communication and tool sharing between agents
+- **End-to-End Workflow**: Complete query processing pipeline with MCP tool results
+
+### MCP Components
+- `chain_server/graphs/mcp_integrated_planner_graph.py` - MCP-enabled planner graph
+- `chain_server/agents/*/mcp_*_agent.py` - MCP-enabled specialized agents
+- `chain_server/services/mcp/` - Complete MCP framework implementation
+- Dynamic tool discovery, binding, routing, and validation services
 
 ## Base URL
 

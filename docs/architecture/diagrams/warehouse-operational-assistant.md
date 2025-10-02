@@ -19,7 +19,7 @@ graph TB
     end
 
     %% MCP Integration Layer
-    subgraph "MCP Integration Layer (Phase 1 Complete, Phase 2 Pending)"
+    subgraph "MCP Integration Layer (Phase 2 Complete - Fully Integrated)"
         MCP_SERVER[MCP Server<br/>Tool Registration & Discovery<br/>✅ Complete]
         MCP_CLIENT[MCP Client<br/>Multi-Server Communication<br/>✅ Complete]
         TOOL_DISCOVERY[Tool Discovery Service<br/>Dynamic Tool Registration<br/>✅ Complete]
@@ -32,12 +32,12 @@ graph TB
     end
 
     %% Agent Orchestration Layer
-    subgraph "Agent Orchestration (LangGraph + MCP Phase 1)"
-        Planner[Planner/Router Agent<br/>Intent Classification<br/>✅ Working]
-        Equipment[Equipment & Asset Operations Agent<br/>Equipment Management<br/>✅ Working - Assignments Fixed]
-        Operations[Operations Coordination Agent<br/>Operations Management<br/>✅ Working]
-        Safety[Safety & Compliance Agent<br/>Safety Management<br/>✅ Working]
-        Chat[Chat Agent<br/>General Queries<br/>✅ Working - Runtime Errors Fixed]
+    subgraph "Agent Orchestration (LangGraph + MCP Fully Integrated)"
+        Planner[MCP Planner Graph<br/>MCP-Enhanced Intent Classification<br/>✅ Fully Integrated]
+        Equipment[MCP Equipment Agent<br/>Dynamic Tool Discovery<br/>✅ Fully Integrated]
+        Operations[MCP Operations Agent<br/>Dynamic Tool Discovery<br/>✅ Fully Integrated]
+        Safety[MCP Safety Agent<br/>Dynamic Tool Discovery<br/>✅ Fully Integrated]
+        Chat[MCP General Agent<br/>Tool Discovery & Execution<br/>✅ Fully Integrated]
     end
 
     %% Memory & Context Management

@@ -26,7 +26,11 @@ All notable changes to this project will be documented in this file. See [Conven
 - Production-grade vector search with NV-EmbedQA-E5-v5 embeddings
 - GPU-accelerated vector search with NVIDIA cuVS
 - Advanced evidence scoring and intelligent clarifying questions
-- MCP (Model Context Protocol) framework implementation
+- MCP (Model Context Protocol) framework fully integrated
+- MCP-enabled agents with dynamic tool discovery and execution
+- MCP-integrated planner graph with intelligent routing
+- End-to-end MCP workflow processing
+- Cross-agent tool sharing and communication
 - Comprehensive monitoring with Prometheus/Grafana
 - Enterprise security with JWT/OAuth2 and RBAC
 

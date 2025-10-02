@@ -20,9 +20,9 @@
 [![Equipment Status & Telemetry](https://img.shields.io/badge/Equipment%20Status%20%26%20Telemetry-Real--time-FF9800.svg)](https://github.com/T-DevH/warehouse-operational-assistant)
 [![Advanced Reasoning](https://img.shields.io/badge/Advanced%20Reasoning-5%20Types-9C27B0.svg)](https://github.com/T-DevH/warehouse-operational-assistant)
 [![NV-EmbedQA Integration](https://img.shields.io/badge/NV--EmbedQA-1024%20Dim%20Embeddings-76B900.svg)](https://github.com/T-DevH/warehouse-operational-assistant)
-[![MCP Integration](https://img.shields.io/badge/MCP-Implemented%20Not%20Integrated-yellow.svg)](https://github.com/T-DevH/warehouse-operational-assistant)
+[![MCP Integration](https://img.shields.io/badge/MCP-Fully%20Integrated-green.svg)](https://github.com/T-DevH/warehouse-operational-assistant)
 
-This repository implements a production-grade assistant patterned on NVIDIA's AI Blueprints (planner/router + specialized agents), adapted for warehouse domains. It uses a **hybrid RAG** stack (Postgres/Timescale + Milvus), **NeMo Guardrails**, **production-grade vector search with NV-EmbedQA-E5-v5 embeddings**, **enhanced vector search optimization with evidence scoring and intelligent clarifying questions**, **intelligent SQL path optimization**, **advanced Redis caching**, **comprehensive response quality control**, **real-time equipment status and telemetry monitoring**, **advanced reasoning capabilities with 5 reasoning types**, **MCP (Model Context Protocol) framework implemented but not yet integrated into main workflow**, and a clean API surface for UI or system integrations.
+This repository implements a production-grade assistant patterned on NVIDIA's AI Blueprints (planner/router + specialized agents), adapted for warehouse domains. It uses a **hybrid RAG** stack (Postgres/Timescale + Milvus), **NeMo Guardrails**, **production-grade vector search with NV-EmbedQA-E5-v5 embeddings**, **enhanced vector search optimization with evidence scoring and intelligent clarifying questions**, **intelligent SQL path optimization**, **advanced Redis caching**, **comprehensive response quality control**, **real-time equipment status and telemetry monitoring**, **advanced reasoning capabilities with 5 reasoning types**, **MCP (Model Context Protocol) framework fully integrated with dynamic tool discovery and execution**, and a clean API surface for UI or system integrations.
 
 ## System Architecture
 
@@ -74,7 +74,7 @@ The system emphasizes modular design, clear separation of concerns, and enterpri
 - **Intelligent Chat Interface** - Real-time AI-powered warehouse assistance
 - **Advanced Reasoning Capabilities** - 5 reasoning types with transparent, explainable AI responses
 - **Equipment Status & Telemetry** - Real-time equipment monitoring with battery, temperature, and charging analytics
-- **MCP Framework** - Model Context Protocol framework implemented but not yet integrated into main workflow
+- **MCP Framework** - Model Context Protocol fully integrated with dynamic tool discovery and execution
 - **Enterprise Security** - JWT/OAuth2 + RBAC with 5 user roles
 - **Real-time Monitoring** - Prometheus metrics + Grafana dashboards
 - **System Integrations** - WMS, ERP, IoT, RFID/Barcode, Time Attendance
@@ -97,14 +97,31 @@ The system emphasizes modular design, clear separation of concerns, and enterpri
 - ESLint warnings cleaned up (0 warnings)
 
 **⚠️ Known Issues:**
-- MCP framework implemented but not integrated into main workflow (Phase 2 pending)
+- MCP framework fully integrated - ready for adapter migration (Phase 3 pending)
 - Telemetry data requires extended time windows (168+ hours) due to test data age
 - Simulated workforce data (needs real workforce management system)
 
 **🔧 Next Priority:**
-- MCP integration into main agent workflow (Phase 2 implementation)
+- Migrate adapters to MCP framework (Phase 3 implementation)
 - Replace simulated workforce data with real system
 - Implement React Native mobile app
+
+### **MCP (Model Context Protocol) Integration** - (NEW)
+
+The system now features **complete MCP integration** with dynamic tool discovery and execution capabilities:
+
+- **MCP-Enabled Agents**: Equipment, Operations, and Safety agents with dynamic tool discovery
+- **MCP Planner Graph**: Intelligent routing with MCP-enhanced intent classification
+- **Dynamic Tool Discovery**: Real-time tool registration and discovery across all agent types
+- **Tool Execution Planning**: Intelligent planning for tool execution based on context
+- **Cross-Agent Integration**: Seamless communication and tool sharing between agents
+- **End-to-End Workflow**: Complete query processing pipeline with MCP tool results
+
+**Key MCP Components:**
+- `chain_server/graphs/mcp_integrated_planner_graph.py` - MCP-enabled planner graph
+- `chain_server/agents/*/mcp_*_agent.py` - MCP-enabled specialized agents
+- `chain_server/services/mcp/` - Complete MCP framework implementation
+- Dynamic tool discovery, binding, routing, and validation services
 
 ### **Production-Grade Vector Search with NV-EmbedQA** - (NEW)
 
@@ -748,7 +765,7 @@ curl -s http://localhost:$PORT/api/v1/attendance/health | jq
 - **NVIDIA NIMs Integration** - Llama 3.1 70B (LLM) + NV-EmbedQA-E5-v5 (embeddings) - In Progress
 - **Chat Interface** - Chat endpoint with async processing and error handling - In Progress
 - **Advanced Reasoning Capabilities** - 5 reasoning types (Chain-of-Thought, Multi-Hop, Scenario Analysis, Causal, Pattern Recognition) - In Progress
-- **MCP Framework** - Model Context Protocol framework implemented but not yet integrated into main workflow
+- **MCP Framework** - Model Context Protocol fully integrated with dynamic tool discovery and execution
 - **Authentication & RBAC** - JWT/OAuth2 with 5 user roles and granular permissions
 - **React Frontend** - Dashboard with chat interface and system monitoring - In Progress
 - **Database Integration** - PostgreSQL/TimescaleDB with connection pooling and migrations
@@ -782,7 +799,7 @@ curl -s http://localhost:$PORT/api/v1/attendance/health | jq
 
 ### **Recent Improvements (Latest)**
 - **GPU-Accelerated Vector Search** - NVIDIA cuVS integration with 19x performance improvement for warehouse document search
-- **MCP Framework** - Model Context Protocol framework implemented but not yet integrated into main workflow
+- **MCP Framework** - Model Context Protocol fully integrated with dynamic tool discovery and execution
 - **Advanced Reasoning Capabilities** - 5 reasoning types with transparent, explainable AI responses
 - **Equipment Status & Telemetry** - Real-time equipment monitoring with battery, temperature, and charging status
 - **Charger Status Functionality** - Comprehensive charger status queries with detailed analytics
