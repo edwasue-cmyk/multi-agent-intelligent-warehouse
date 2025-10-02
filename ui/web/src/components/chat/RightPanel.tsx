@@ -7,13 +7,11 @@ import {
   AccordionDetails,
   List,
   ListItem,
-  ListItemText,
   Chip,
   Card,
   CardContent,
   LinearProgress,
   IconButton,
-  Collapse,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,

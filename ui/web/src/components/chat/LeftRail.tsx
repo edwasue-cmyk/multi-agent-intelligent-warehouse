@@ -19,7 +19,6 @@ import {
   History as HistoryIcon,
   TrendingUp as TrendingUpIcon,
   Warning as WarningIcon,
-  PlayArrow as PlayIcon,
 } from '@mui/icons-material';
 import DemoScript from './DemoScript';
 

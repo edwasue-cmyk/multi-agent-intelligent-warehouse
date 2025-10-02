@@ -14,7 +14,6 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  Divider,
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,

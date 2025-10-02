@@ -12,7 +12,6 @@ import {
 } from '@mui/material';
 import {
   Settings as SettingsIcon,
-  Refresh as RefreshIcon,
   Wifi as WifiIcon,
   WifiOff as WifiOffIcon,
 } from '@mui/icons-material';
@@ -41,10 +40,6 @@ const TopBar: React.FC<TopBarProps> = ({
   onRoleChange,
   onEnvironmentChange,
 }) => {
-  const getConnectionColor = (connected: boolean) => {
-    return connected ? '#76B900' : '#f44336';
-  };
-
   const getConnectionIcon = (connected: boolean) => {
     return connected ? <WifiIcon /> : <WifiOffIcon />;
   };

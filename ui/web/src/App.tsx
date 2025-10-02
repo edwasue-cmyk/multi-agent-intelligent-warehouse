@@ -6,7 +6,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import ChatInterface from './pages/ChatInterface';
 import ChatInterfaceNew from './pages/ChatInterfaceNew';
 import Equipment from './pages/EquipmentNew';
 import Operations from './pages/Operations';

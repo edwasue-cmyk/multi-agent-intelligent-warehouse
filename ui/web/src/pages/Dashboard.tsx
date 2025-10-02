@@ -6,16 +6,12 @@ import {
   Typography,
   Card,
   CardContent,
-  CardActions,
-  Button,
   Chip,
-  LinearProgress,
 } from '@mui/material';
 import {
   Build as EquipmentIcon,
   Work as OperationsIcon,
   Security as SafetyIcon,
-  TrendingUp as TrendingUpIcon,
 } from '@mui/icons-material';
 import { useQuery } from 'react-query';
 import { healthAPI, equipmentAPI, operationsAPI, safetyAPI } from '../services/api';

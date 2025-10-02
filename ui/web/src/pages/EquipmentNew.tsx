@@ -14,14 +14,11 @@ import {
   Alert,
   Card,
   CardContent,
-  CardActions,
   Tabs,
   Tab,
   List,
   ListItem,
   ListItemText,
-  ListItemIcon,
-  Divider,
   IconButton,
   Tooltip,
 } from '@mui/material';
@@ -33,7 +30,6 @@ import {
   Build as BuildIcon,
   Security as SecurityIcon,
   TrendingUp as TrendingUpIcon,
-  Refresh as RefreshIcon,
   Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from 'react-query';

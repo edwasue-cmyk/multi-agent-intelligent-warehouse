@@ -31,8 +31,7 @@ import {
 import { 
   versionAPI, 
   VersionInfo, 
-  DetailedVersionInfo, 
-  formatVersion 
+  DetailedVersionInfo
 } from '../services/version';
 
 interface VersionFooterProps {

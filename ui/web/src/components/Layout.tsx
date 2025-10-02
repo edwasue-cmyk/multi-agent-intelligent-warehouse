@@ -14,7 +14,6 @@ import {
   Typography,
   useTheme,
   useMediaQuery,
-  Button,
   Menu,
   MenuItem,
   Avatar,
@@ -27,7 +26,6 @@ import {
   Work as OperationsIcon,
   Security as SafetyIcon,
   Analytics as AnalyticsIcon,
-  AccountCircle,
   Logout,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';

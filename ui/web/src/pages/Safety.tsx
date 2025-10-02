@@ -18,7 +18,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
-import { Add as AddIcon, Report as ReportIcon } from '@mui/icons-material';
+import { Report as ReportIcon } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { safetyAPI, SafetyIncident } from '../services/api';
 

@@ -21,7 +21,7 @@ import {
   Cell,
 } from 'recharts';
 import { useQuery } from 'react-query';
-import { equipmentAPI, operationsAPI, safetyAPI } from '../services/api';
+import { equipmentAPI, safetyAPI } from '../services/api';
 
 const Analytics: React.FC = () => {
   const { data: equipmentAssets } = useQuery('equipment', equipmentAPI.getAllAssets);
