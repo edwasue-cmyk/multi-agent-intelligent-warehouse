@@ -11,6 +11,7 @@ import Equipment from './pages/EquipmentNew';
 import Operations from './pages/Operations';
 import Safety from './pages/Safety';
 import Analytics from './pages/Analytics';
+import MCPTest from './pages/MCPTest';
 import VersionFooter from './components/VersionFooter';
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
                     <Route path="/operations" element={<Operations />} />
                     <Route path="/safety" element={<Safety />} />
                     <Route path="/analytics" element={<Analytics />} />
+                    <Route path="/mcp-test" element={<MCPTest />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Layout>

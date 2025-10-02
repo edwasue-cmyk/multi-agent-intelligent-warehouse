@@ -12,6 +12,7 @@ import {
   CardContent,
   LinearProgress,
   IconButton,
+  Button,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -20,6 +21,7 @@ import {
   Timeline as TimelineIcon,
   Security as SecurityIcon,
   Close as CloseIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 
 interface RightPanelProps {
@@ -507,6 +509,44 @@ const RightPanel: React.FC<RightPanelProps> = ({
             </AccordionDetails>
           </Accordion>
         )}
+
+        {/* MCP Testing Section */}
+        <Accordion
+          expanded={expandedSections.includes('mcp')}
+          onChange={() => handleSectionToggle('mcp')}
+          sx={{
+            backgroundColor: '#1a1a1a',
+            border: '1px solid #333333',
+            mb: 2,
+            '&:before': { display: 'none' },
+          }}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: '#76B900' }} />}>
+            <Typography sx={{ color: '#ffffff', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <SettingsIcon sx={{ color: '#76B900' }} />
+              MCP Testing
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Typography variant="body2" sx={{ color: '#cccccc', mb: 2 }}>
+              Test MCP tool discovery and execution
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => window.open('/mcp-test', '_blank')}
+                sx={{ 
+                  color: '#76B900', 
+                  borderColor: '#76B900',
+                  '&:hover': { borderColor: '#76B900', backgroundColor: 'rgba(118, 185, 0, 0.1)' }
+                }}
+              >
+                Open MCP Panel
+              </Button>
+            </Box>
+          </AccordionDetails>
+        </Accordion>
       </Box>
     </Box>
   );

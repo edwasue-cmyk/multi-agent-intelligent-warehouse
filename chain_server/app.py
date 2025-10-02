@@ -19,6 +19,7 @@ from chain_server.routers.scanning import router as scanning_router
 from chain_server.routers.attendance import router as attendance_router
 from chain_server.routers.reasoning import router as reasoning_router
 from chain_server.routers.migration import router as migration_router
+from chain_server.routers.mcp import router as mcp_router
 from chain_server.services.monitoring.metrics import record_request_metrics, get_metrics_response
 
 app = FastAPI(title="Warehouse Operational Assistant", version="0.1.0")
@@ -51,6 +52,7 @@ app.include_router(scanning_router)
 app.include_router(attendance_router)
 app.include_router(reasoning_router)
 app.include_router(migration_router)
+app.include_router(mcp_router)
 
 # Add metrics endpoint
 @app.get("/api/v1/metrics")

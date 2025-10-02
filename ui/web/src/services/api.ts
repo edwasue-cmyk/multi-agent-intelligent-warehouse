@@ -97,11 +97,47 @@ export interface SafetyIncident {
   occurred_at: string;
 }
 
-export const chatAPI = {
-  sendMessage: async (request: ChatRequest): Promise<ChatResponse> => {
-    const response = await api.post('/api/v1/chat', request);
+export const mcpAPI = {
+  getStatus: async (): Promise<any> => {
+    const response = await api.get('/api/v1/mcp/status');
     return response.data;
   },
+  
+  getTools: async (): Promise<any> => {
+    const response = await api.get('/api/v1/mcp/tools');
+    return response.data;
+  },
+  
+  searchTools: async (query: string): Promise<any> => {
+    const response = await api.post('/api/v1/mcp/tools/search', { query });
+    return response.data;
+  },
+  
+  executeTool: async (tool_id: string, parameters: any = {}): Promise<any> => {
+    const response = await api.post('/api/v1/mcp/tools/execute', {
+      tool_id,
+      parameters
+    });
+    return response.data;
+  },
+  
+  testWorkflow: async (message: string, session_id: string = 'test'): Promise<any> => {
+    const response = await api.post('/api/v1/mcp/test-workflow', {
+      message,
+      session_id
+    });
+    return response.data;
+  },
+  
+  getAgents: async (): Promise<any> => {
+    const response = await api.get('/api/v1/mcp/agents');
+    return response.data;
+  },
+  
+  refreshDiscovery: async (): Promise<any> => {
+    const response = await api.post('/api/v1/mcp/discovery/refresh');
+    return response.data;
+  }
 };
 
 export const equipmentAPI = {
