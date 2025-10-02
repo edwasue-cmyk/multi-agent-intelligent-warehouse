@@ -4,6 +4,8 @@
 
 This guide covers deploying the Warehouse Operational Assistant in various environments, from local development to production Kubernetes clusters.
 
+**Current Status**: The system is fully functional with all critical issues resolved. Recent fixes have addressed MessageBubble syntax errors, ChatInterface runtime errors, and equipment assignments endpoint 404 issues.
+
 ## Prerequisites
 
 - Docker 20.10+
@@ -22,18 +24,33 @@ git clone https://github.com/T-DevH/warehouse-operational-assistant.git
 cd warehouse-operational-assistant
 ```
 
-2. **Set up environment variables:**
+2. **Set up Python virtual environment:**
 ```bash
-cp .env.example .env
-# Edit .env with your configuration
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-3. **Start with Docker Compose:**
+3. **Start infrastructure services:**
 ```bash
-docker-compose up -d
+# Start database, Redis, Kafka, etc.
+./scripts/dev_up.sh
 ```
 
-4. **Access the application:**
+4. **Start the API server:**
+```bash
+# Uses RUN_LOCAL.sh script
+./RUN_LOCAL.sh
+```
+
+5. **Start the frontend (optional):**
+```bash
+cd ui/web
+npm install
+npm start
+```
+
+6. **Access the application:**
 - Web UI: http://localhost:3001
 - API: http://localhost:8001
 - API Docs: http://localhost:8001/docs
@@ -42,25 +59,26 @@ docker-compose up -d
 
 ### Environment Variables
 
-Create a `.env` file with the following variables:
+**Note**: The project uses environment variables but doesn't require a `.env` file for basic operation. The system works with default values for development.
+
+For production deployment, set these environment variables:
 
 ```bash
 # Application Configuration
 APP_NAME=Warehouse Operational Assistant
-APP_VERSION=0.1.0
+APP_VERSION=3058f7f  # Current version from build-info.json
 ENVIRONMENT=development
 DEBUG=true
 LOG_LEVEL=INFO
 
-# Database Configuration
+# Database Configuration (TimescaleDB)
+POSTGRES_USER=warehouse_user
+POSTGRES_PASSWORD=warehouse_pass
+POSTGRES_DB=warehouse_assistant
 DB_HOST=localhost
 DB_PORT=5435
-DB_NAME=warehouse_assistant
-DB_USER=warehouse_user
-DB_PASSWORD=warehouse_pass
-DB_SSL_MODE=prefer
 
-# Vector Database Configuration
+# Vector Database Configuration (Milvus)
 MILVUS_HOST=localhost
 MILVUS_PORT=19530
 MILVUS_USER=root
@@ -69,13 +87,9 @@ MILVUS_PASSWORD=Milvus
 # Redis Configuration
 REDIS_HOST=localhost
 REDIS_PORT=6379
-REDIS_PASSWORD=redis_pass
-REDIS_DB=0
 
-# JWT Configuration
-JWT_SECRET_KEY=your-super-secret-jwt-key
-JWT_ALGORITHM=HS256
-JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+# Kafka Configuration
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 
 # NVIDIA NIMs Configuration
 NIM_LLM_BASE_URL=http://localhost:8000/v1
@@ -149,34 +163,35 @@ docker run -d \
 
 ### Multi-Container Deployment
 
-Use the provided `docker-compose.yml`:
+Use the provided `docker-compose.dev.yaml` for development:
 
 ```bash
 # Start all services
-docker-compose up -d
+docker-compose -f docker-compose.dev.yaml up -d
 
 # View logs
-docker-compose logs -f
+docker-compose -f docker-compose.dev.yaml logs -f
 
 # Stop services
-docker-compose down
+docker-compose -f docker-compose.dev.yaml down
 
 # Rebuild and restart
-docker-compose up -d --build
+docker-compose -f docker-compose.dev.yaml up -d --build
 ```
 
 ### Docker Compose Services
 
-The `docker-compose.yml` includes:
+The `docker-compose.dev.yaml` includes:
 
-- **warehouse-assistant**: Main application
-- **postgres**: PostgreSQL database
-- **timescaledb**: TimescaleDB extension
-- **milvus**: Vector database
-- **redis**: Caching layer
-- **prometheus**: Metrics collection
-- **grafana**: Monitoring dashboards
-- **nginx**: Reverse proxy (optional)
+- **timescaledb**: TimescaleDB database (port 5435)
+- **redis**: Caching layer (port 6379)
+- **kafka**: Message broker (port 9092)
+- **etcd**: Service discovery (port 2379)
+- **milvus**: Vector database (port 19530)
+- **prometheus**: Metrics collection (port 9090)
+- **grafana**: Monitoring dashboards (port 3000)
+
+**Note**: The main application runs locally using `RUN_LOCAL.sh` script, not in Docker.
 
 ## Kubernetes Deployment
 
@@ -209,26 +224,25 @@ kubectl create configmap warehouse-config \
 
 ### Deploy with Helm
 
-1. **Add the Helm repository:**
+1. **Use the provided Helm chart:**
 ```bash
-helm repo add warehouse-assistant https://charts.warehouse-assistant.com
-helm repo update
-```
+# Navigate to helm directory
+cd helm/warehouse-assistant
 
-2. **Install the chart:**
-```bash
-helm install warehouse-assistant warehouse-assistant/warehouse-assistant \
+# Install the chart
+helm install warehouse-assistant . \
   --namespace warehouse-assistant \
-  --set image.tag=0.1.0 \
+  --create-namespace \
+  --set image.tag=3058f7f \
   --set environment=production \
-  --set replicas=3
+  --set replicaCount=3
 ```
 
-3. **Upgrade the deployment:**
+2. **Upgrade the deployment:**
 ```bash
-helm upgrade warehouse-assistant warehouse-assistant/warehouse-assistant \
+helm upgrade warehouse-assistant . \
   --namespace warehouse-assistant \
-  --set image.tag=0.1.1
+  --set image.tag=latest
 ```
 
 ### Manual Kubernetes Deployment
@@ -368,16 +382,11 @@ GRANT ALL PRIVILEGES ON DATABASE warehouse_assistant TO warehouse_user;
 
 2. **Run migrations:**
 ```bash
-# Using the migration CLI
+# Using the migration CLI (from project root)
 python chain_server/cli/migrate.py up
 
-# Or using Docker
-docker run --rm \
-  --network warehouse-assistant_default \
-  -e DB_HOST=postgres \
-  -e DB_PASSWORD=warehouse_pass \
-  warehouse-assistant:latest \
-  python chain_server/cli/migrate.py up
+# Or using the simple migration script
+python scripts/simple_migrate.py
 ```
 
 ### TimescaleDB Setup
@@ -408,8 +417,8 @@ docker run -d \
 2. **Create collections:**
 ```python
 # This is handled by the application startup
-from chain_server.services.vector import vector_service
-await vector_service.initialize_collections()
+# Collections are automatically created when the application starts
+# No manual setup required
 ```
 
 ## Monitoring Setup
@@ -684,6 +693,6 @@ docker-compose up -d --build
 
 For deployment support:
 
-- **Documentation**: [https://docs.warehouse-assistant.com/deployment](https://docs.warehouse-assistant.com/deployment)
+- **Documentation**: [https://github.com/T-DevH/warehouse-operational-assistant/tree/main/docs](https://github.com/T-DevH/warehouse-operational-assistant/tree/main/docs)
 - **Issues**: [https://github.com/T-DevH/warehouse-operational-assistant/issues](https://github.com/T-DevH/warehouse-operational-assistant/issues)
-- **Email**: support@warehouse-assistant.com
+- **API Documentation**: Available at `http://localhost:8001/docs` when running locally
