@@ -443,6 +443,33 @@ class ToolDiscoveryService:
         
         return results
     
+    async def get_available_tools(self) -> List[Dict[str, Any]]:
+        """
+        Get all available tools as dictionaries.
+        
+        Returns:
+            List of tool dictionaries
+        """
+        try:
+            tools = []
+            for tool in self.discovered_tools.values():
+                tools.append({
+                    "tool_id": tool.tool_id,
+                    "name": tool.name,
+                    "description": tool.description,
+                    "category": tool.category.value,
+                    "source": tool.source,
+                    "capabilities": tool.capabilities,
+                    "metadata": tool.metadata
+                })
+            
+            logger.info(f"Retrieved {len(tools)} available tools")
+            return tools
+            
+        except Exception as e:
+            logger.error(f"Error getting available tools: {e}")
+            return []
+    
     async def execute_tool(self, tool_key: str, arguments: Dict[str, Any]) -> Any:
         """Execute a discovered tool."""
         if tool_key not in self.discovered_tools:

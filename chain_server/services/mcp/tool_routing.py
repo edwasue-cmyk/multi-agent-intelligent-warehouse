@@ -95,16 +95,12 @@ class ToolRoutingService:
         self.tool_binding = tool_binding
         self.routing_history: List[Dict[str, Any]] = []
         self.performance_tracking: Dict[str, Dict[str, Any]] = {}
-        self.routing_strategies: Dict[RoutingStrategy, Callable] = {
-            RoutingStrategy.PERFORMANCE_OPTIMIZED: self._performance_optimized_routing,
-            RoutingStrategy.ACCURACY_OPTIMIZED: self._accuracy_optimized_routing,
-            RoutingStrategy.BALANCED: self._balanced_routing,
-            RoutingStrategy.COST_OPTIMIZED: self._cost_optimized_routing,
-            RoutingStrategy.LATENCY_OPTIMIZED: self._latency_optimized_routing
-        }
         self.complexity_analyzer = QueryComplexityAnalyzer()
         self.capability_matcher = CapabilityMatcher()
         self.context_analyzer = ContextAnalyzer()
+        
+        # Initialize routing strategies after methods are defined
+        self._setup_routing_strategies()
     
     async def route_tools(
         self,
@@ -216,53 +212,13 @@ class ToolRoutingService:
     ) -> List[ToolScore]:
         """Score tools based on strategy and context."""
         try:
-            scores = []
-            
-            for tool in tools:
-                # Calculate individual scores
-                performance_score = self._calculate_performance_score(tool)
-                accuracy_score = self._calculate_accuracy_score(tool)
-                cost_score = self._calculate_cost_score(tool)
-                latency_score = self._calculate_latency_score(tool)
-                capability_score = await self.capability_matcher.match_capabilities(tool, context)
-                context_score = await self.context_analyzer.analyze_context_relevance(tool, context)
+            # Use the appropriate routing strategy
+            if strategy in self.routing_strategies:
+                return await self.routing_strategies[strategy](tools, context)
+            else:
+                # Fallback to balanced strategy
+                return await self._balanced_routing(tools, context)
                 
-                # Calculate overall score based on strategy
-                overall_score = self._calculate_overall_score(
-                    performance_score, accuracy_score, cost_score, latency_score,
-                    capability_score, context_score, strategy
-                )
-                
-                # Calculate confidence
-                confidence = self._calculate_tool_confidence(tool, context)
-                
-                # Generate reasoning
-                reasoning = self._generate_tool_reasoning(
-                    tool, performance_score, accuracy_score, cost_score, latency_score,
-                    capability_score, context_score, overall_score
-                )
-                
-                score = ToolScore(
-                    tool_id=tool.tool_id,
-                    tool_name=tool.name,
-                    overall_score=overall_score,
-                    performance_score=performance_score,
-                    accuracy_score=accuracy_score,
-                    cost_score=cost_score,
-                    latency_score=latency_score,
-                    capability_match_score=capability_score,
-                    context_relevance_score=context_score,
-                    confidence=confidence,
-                    reasoning=reasoning
-                )
-                
-                scores.append(score)
-            
-            # Sort by overall score
-            scores.sort(key=lambda s: s.overall_score, reverse=True)
-            
-            return scores
-            
         except Exception as e:
             logger.error(f"Error scoring tools: {e}")
             return []
@@ -593,3 +549,158 @@ class ContextAnalyzer:
             relevance_score += 0.2
         
         return min(1.0, relevance_score)
+    
+    async def _performance_optimized_routing(self, tools: List[DiscoveredTool], context: RoutingContext) -> List[ToolScore]:
+        """Performance-optimized routing strategy."""
+        scores = []
+        for tool in tools:
+            performance_score = self._calculate_performance_score(tool)
+            accuracy_score = self._calculate_accuracy_score(tool) * 0.3  # Lower weight
+            cost_score = self._calculate_cost_score(tool) * 0.2  # Lower weight
+            latency_score = self._calculate_latency_score(tool) * 0.1  # Lower weight
+            
+            overall_score = performance_score * 0.7 + accuracy_score + cost_score + latency_score
+            confidence = self._calculate_tool_confidence(tool, context)
+            reasoning = f"Performance-optimized: {tool.name} (perf: {performance_score:.2f})"
+            
+            scores.append(ToolScore(
+                tool_id=tool.tool_id,
+                tool_name=tool.name,
+                overall_score=overall_score,
+                performance_score=performance_score,
+                accuracy_score=accuracy_score,
+                cost_score=cost_score,
+                latency_score=latency_score,
+                capability_match_score=0.0,  # Not used in strategy-based routing
+                context_relevance_score=0.0,  # Not used in strategy-based routing
+                confidence=confidence,
+                reasoning=reasoning
+            ))
+        
+        return sorted(scores, key=lambda x: x.overall_score, reverse=True)
+    
+    async def _accuracy_optimized_routing(self, tools: List[DiscoveredTool], context: RoutingContext) -> List[ToolScore]:
+        """Accuracy-optimized routing strategy."""
+        scores = []
+        for tool in tools:
+            performance_score = self._calculate_performance_score(tool) * 0.2  # Lower weight
+            accuracy_score = self._calculate_accuracy_score(tool)
+            cost_score = self._calculate_cost_score(tool) * 0.1  # Lower weight
+            latency_score = self._calculate_latency_score(tool) * 0.1  # Lower weight
+            
+            overall_score = performance_score + accuracy_score * 0.7 + cost_score + latency_score
+            confidence = self._calculate_tool_confidence(tool, context)
+            reasoning = f"Accuracy-optimized: {tool.name} (acc: {accuracy_score:.2f})"
+            
+            scores.append(ToolScore(
+                tool_id=tool.tool_id,
+                tool_name=tool.name,
+                overall_score=overall_score,
+                performance_score=performance_score,
+                accuracy_score=accuracy_score,
+                cost_score=cost_score,
+                latency_score=latency_score,
+                capability_match_score=0.0,  # Not used in strategy-based routing
+                context_relevance_score=0.0,  # Not used in strategy-based routing
+                confidence=confidence,
+                reasoning=reasoning
+            ))
+        
+        return sorted(scores, key=lambda x: x.overall_score, reverse=True)
+    
+    async def _balanced_routing(self, tools: List[DiscoveredTool], context: RoutingContext) -> List[ToolScore]:
+        """Balanced routing strategy."""
+        scores = []
+        for tool in tools:
+            performance_score = self._calculate_performance_score(tool)
+            accuracy_score = self._calculate_accuracy_score(tool)
+            cost_score = self._calculate_cost_score(tool)
+            latency_score = self._calculate_latency_score(tool)
+            
+            overall_score = (performance_score + accuracy_score + cost_score + latency_score) / 4
+            confidence = self._calculate_tool_confidence(tool, context)
+            reasoning = f"Balanced: {tool.name} (overall: {overall_score:.2f})"
+            
+            scores.append(ToolScore(
+                tool_id=tool.tool_id,
+                tool_name=tool.name,
+                overall_score=overall_score,
+                performance_score=performance_score,
+                accuracy_score=accuracy_score,
+                cost_score=cost_score,
+                latency_score=latency_score,
+                capability_match_score=0.0,  # Not used in strategy-based routing
+                context_relevance_score=0.0,  # Not used in strategy-based routing
+                confidence=confidence,
+                reasoning=reasoning
+            ))
+        
+        return sorted(scores, key=lambda x: x.overall_score, reverse=True)
+    
+    async def _cost_optimized_routing(self, tools: List[DiscoveredTool], context: RoutingContext) -> List[ToolScore]:
+        """Cost-optimized routing strategy."""
+        scores = []
+        for tool in tools:
+            performance_score = self._calculate_performance_score(tool) * 0.1  # Lower weight
+            accuracy_score = self._calculate_accuracy_score(tool) * 0.2  # Lower weight
+            cost_score = self._calculate_cost_score(tool)
+            latency_score = self._calculate_latency_score(tool) * 0.1  # Lower weight
+            
+            overall_score = performance_score + accuracy_score + cost_score * 0.7 + latency_score
+            confidence = self._calculate_tool_confidence(tool, context)
+            reasoning = f"Cost-optimized: {tool.name} (cost: {cost_score:.2f})"
+            
+            scores.append(ToolScore(
+                tool_id=tool.tool_id,
+                tool_name=tool.name,
+                overall_score=overall_score,
+                performance_score=performance_score,
+                accuracy_score=accuracy_score,
+                cost_score=cost_score,
+                latency_score=latency_score,
+                capability_match_score=0.0,  # Not used in strategy-based routing
+                context_relevance_score=0.0,  # Not used in strategy-based routing
+                confidence=confidence,
+                reasoning=reasoning
+            ))
+        
+        return sorted(scores, key=lambda x: x.overall_score, reverse=True)
+    
+    async def _latency_optimized_routing(self, tools: List[DiscoveredTool], context: RoutingContext) -> List[ToolScore]:
+        """Latency-optimized routing strategy."""
+        scores = []
+        for tool in tools:
+            performance_score = self._calculate_performance_score(tool) * 0.1  # Lower weight
+            accuracy_score = self._calculate_accuracy_score(tool) * 0.2  # Lower weight
+            cost_score = self._calculate_cost_score(tool) * 0.1  # Lower weight
+            latency_score = self._calculate_latency_score(tool)
+            
+            overall_score = performance_score + accuracy_score + cost_score + latency_score * 0.7
+            confidence = self._calculate_tool_confidence(tool, context)
+            reasoning = f"Latency-optimized: {tool.name} (latency: {latency_score:.2f})"
+            
+            scores.append(ToolScore(
+                tool_id=tool.tool_id,
+                tool_name=tool.name,
+                overall_score=overall_score,
+                performance_score=performance_score,
+                accuracy_score=accuracy_score,
+                cost_score=cost_score,
+                latency_score=latency_score,
+                capability_match_score=0.0,  # Not used in strategy-based routing
+                context_relevance_score=0.0,  # Not used in strategy-based routing
+                confidence=confidence,
+                reasoning=reasoning
+            ))
+        
+        return sorted(scores, key=lambda x: x.overall_score, reverse=True)
+    
+    def _setup_routing_strategies(self):
+        """Setup routing strategies after methods are defined."""
+        self.routing_strategies: Dict[RoutingStrategy, Callable] = {
+            RoutingStrategy.PERFORMANCE_OPTIMIZED: self._performance_optimized_routing,
+            RoutingStrategy.ACCURACY_OPTIMIZED: self._accuracy_optimized_routing,
+            RoutingStrategy.BALANCED: self._balanced_routing,
+            RoutingStrategy.COST_OPTIMIZED: self._cost_optimized_routing,
+            RoutingStrategy.LATENCY_OPTIMIZED: self._latency_optimized_routing
+        }
