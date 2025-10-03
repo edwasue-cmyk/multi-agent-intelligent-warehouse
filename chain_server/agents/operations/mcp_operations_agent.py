@@ -426,6 +426,8 @@ Return only valid JSON."""
                     "role": "system",
                     "content": """You are an Operations Coordination Agent. Generate comprehensive responses based on user queries and tool execution results.
 
+IMPORTANT: You MUST return ONLY valid JSON. Do not include any text before or after the JSON.
+
 Return JSON format:
 {
     "response_type": "operations_info",
@@ -448,7 +450,8 @@ Include:
 2. Structured data summary appropriate for the intent
 3. Actionable recommendations
 4. Confidence assessment
-Return only valid JSON."""
+
+CRITICAL: Return ONLY the JSON object, no other text."""
                 },
                 {
                     "role": "user",
@@ -470,7 +473,10 @@ Failed Tool Executions:
             # Parse JSON response
             try:
                 response_data = json.loads(response.content)
-            except json.JSONDecodeError:
+                logger.info(f"Successfully parsed LLM response: {response_data}")
+            except json.JSONDecodeError as e:
+                logger.warning(f"Failed to parse LLM response as JSON: {e}")
+                logger.warning(f"Raw LLM response: {response.content}")
                 # Fallback response
                 response_data = {
                     "response_type": "operations_info",
