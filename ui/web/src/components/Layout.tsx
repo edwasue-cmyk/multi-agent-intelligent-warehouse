@@ -26,6 +26,7 @@ import {
   Work as OperationsIcon,
   Security as SafetyIcon,
   Analytics as AnalyticsIcon,
+  Settings as SettingsIcon,
   Logout,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -44,6 +45,7 @@ const menuItems = [
   { text: 'Operations', icon: <OperationsIcon />, path: '/operations' },
   { text: 'Safety', icon: <SafetyIcon />, path: '/safety' },
   { text: 'Analytics', icon: <AnalyticsIcon />, path: '/analytics' },
+  { text: 'MCP Testing', icon: <SettingsIcon />, path: '/mcp-test' },
 ];
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
