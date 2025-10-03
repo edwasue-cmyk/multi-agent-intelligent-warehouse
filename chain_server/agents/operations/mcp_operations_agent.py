@@ -180,22 +180,26 @@ class MCPOperationsCoordinationAgent:
         """Parse operations query and extract intent and entities."""
         try:
             # Use LLM to parse the query
-            parse_prompt = f"""
-            Parse this operations coordination query and extract:
-            1. Intent (workforce_management, task_assignment, shift_planning, kpi_analysis, performance_monitoring, resource_allocation)
-            2. Entities (worker_id, shift_id, zone, task_type, kpi_type, etc.)
-            3. Context (priority, urgency, specific requirements)
-            
-            Query: "{query}"
-            Context: {context or {}}
-            
-            Return JSON format:
-            {{
-                "intent": "workforce_management",
-                "entities": {{"worker_id": "W001", "zone": "A"}},
-                "context": {{"priority": "high", "shift": "morning"}}
-            }}
-            """
+            parse_prompt = [
+                {
+                    "role": "system",
+                    "content": """You are an operations coordination expert. Parse warehouse operations queries and extract intent, entities, and context.
+
+Return JSON format:
+{
+    "intent": "workforce_management",
+    "entities": {"worker_id": "W001", "zone": "A"},
+    "context": {"priority": "high", "shift": "morning"}
+}
+
+Intent options: workforce_management, task_assignment, shift_planning, kpi_analysis, performance_monitoring, resource_allocation
+Return only valid JSON."""
+                },
+                {
+                    "role": "user",
+                    "content": f"Query: \"{query}\"\nContext: {context or {}}"
+                }
+            ]
             
             response = await self.nim_client.generate_response(parse_prompt)
             
@@ -411,36 +415,42 @@ class MCPOperationsCoordinationAgent:
             failed_results = {k: v for k, v in tool_results.items() if not v.get("success", False)}
             
             # Create response prompt
-            response_prompt = f"""
-            You are an Operations Coordination Agent. Generate a comprehensive response based on the user query and tool execution results.
-            
-            User Query: "{query.user_query}"
-            Intent: {query.intent}
-            Entities: {query.entities}
-            Context: {query.context}
-            
-            Tool Execution Results:
-            {json.dumps(successful_results, indent=2)}
-            
-            Failed Tool Executions:
-            {json.dumps(failed_results, indent=2)}
-            
-            Generate a response that includes:
-            1. Natural language explanation of the results
-            2. Structured data summary
-            3. Actionable recommendations
-            4. Confidence assessment
-            
-            Return JSON format:
-            {{
-                "response_type": "operations_info",
-                "data": {{"workforce": [], "tasks": [], "kpis": {{}}}},
-                "natural_language": "Based on the tool results...",
-                "recommendations": ["Recommendation 1", "Recommendation 2"],
-                "confidence": 0.85,
-                "actions_taken": [{{"action": "tool_execution", "tool": "get_workforce_status"}}]
-            }}
-            """
+            response_prompt = [
+                {
+                    "role": "system",
+                    "content": """You are an Operations Coordination Agent. Generate comprehensive responses based on user queries and tool execution results.
+
+Return JSON format:
+{
+    "response_type": "operations_info",
+    "data": {"workforce": [], "tasks": [], "kpis": {}},
+    "natural_language": "Based on the tool results...",
+    "recommendations": ["Recommendation 1", "Recommendation 2"],
+    "confidence": 0.85,
+    "actions_taken": [{"action": "tool_execution", "tool": "get_workforce_status"}]
+}
+
+Include:
+1. Natural language explanation of results
+2. Structured data summary
+3. Actionable recommendations
+4. Confidence assessment
+Return only valid JSON."""
+                },
+                {
+                    "role": "user",
+                    "content": f"""User Query: "{query.user_query}"
+Intent: {query.intent}
+Entities: {query.entities}
+Context: {query.context}
+
+Tool Execution Results:
+{json.dumps(successful_results, indent=2)}
+
+Failed Tool Executions:
+{json.dumps(failed_results, indent=2)}"""
+                }
+            ]
             
             response = await self.nim_client.generate_response(response_prompt)
             
