@@ -119,13 +119,18 @@ class MCPIntentClassifier:
         operations_score = sum(1 for keyword in cls.OPERATIONS_KEYWORDS if keyword in message_lower)
         equipment_score = sum(1 for keyword in cls.EQUIPMENT_KEYWORDS if keyword in message_lower)
         
-        # Prioritize operations if it contains primary workflow terms (wave, order, create, pick, pack)
-        if operations_score > 0 and any(term in message_lower for term in ["wave", "order", "create", "pick", "pack", "workflow", "batch"]):
+        # Prioritize operations if it contains primary workflow terms (wave, order, create, pack, workflow, batch)
+        # These are clear operations commands that should take precedence
+        if operations_score > 0 and any(term in message_lower for term in ["wave", "order", "create", "pack", "workflow", "batch"]):
             return "operations"
         
         # Check for equipment dispatch/assignment keywords (but only if not primarily operations)
         if any(term in message_lower for term in ["dispatch", "assign", "deploy"]) and any(term in message_lower for term in ["forklift", "equipment", "conveyor", "truck", "amr", "agv"]):
             return "equipment"
+        
+        # Check for operations with "pick" only if it's clearly a workflow operation (not equipment dispatch)
+        if operations_score > 0 and "pick" in message_lower and not any(term in message_lower for term in ["dispatch", "assign", "deploy"]):
+            return "operations"
         
         # Check for equipment-related keywords
         if equipment_score > 0:
