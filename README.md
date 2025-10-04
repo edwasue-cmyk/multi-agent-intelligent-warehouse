@@ -2143,9 +2143,8 @@ result = await processor.process_query(query)
 
 #### **System Integration**
 - **NVIDIA NIMs integration** (Llama 3.1 70B + NV-EmbedQA-E5-v5)
-- **Multi-agent orchestration** with LangGraph
+- **MCP (Model Context Protocol) framework** with dynamic tool discovery and execution
+- **Multi-agent orchestration** with LangGraph + MCP integration
 - **Real-time monitoring** with Prometheus/Grafana
 - **Enterprise security** with JWT/OAuth2 + RBAC
 
-### Maintainers
-- Warehouse Ops Assistant Team — *Backend, Data, Agents, DevOps, UI*
