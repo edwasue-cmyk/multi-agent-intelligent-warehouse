@@ -628,7 +628,13 @@ const DeploymentGuide: React.FC = () => {
           Deployment Guide - Warehouse Operational Assistant
         </Typography>
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 2 }}>
-          <Button variant="outlined" startIcon={<GitHubIcon />}>
+          <Button 
+            variant="outlined" 
+            startIcon={<GitHubIcon />}
+            href="https://github.com/T-DevH/warehouse-operational-assistant"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             View Source
           </Button>
           <Button variant="outlined" startIcon={<DashboardIcon />}>
