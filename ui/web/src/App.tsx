@@ -12,6 +12,10 @@ import Operations from './pages/Operations';
 import Safety from './pages/Safety';
 import Analytics from './pages/Analytics';
 import Documentation from './pages/Documentation';
+import MCPIntegrationGuide from './pages/MCPIntegrationGuide';
+import APIReference from './pages/APIReference';
+import DeploymentGuide from './pages/DeploymentGuide';
+import ArchitectureDiagrams from './pages/ArchitectureDiagrams';
 import MCPTest from './pages/MCPTest';
 import VersionFooter from './components/VersionFooter';
 
@@ -34,6 +38,10 @@ function App() {
                     <Route path="/safety" element={<Safety />} />
                     <Route path="/analytics" element={<Analytics />} />
                     <Route path="/documentation" element={<Documentation />} />
+                    <Route path="/documentation/mcp-integration" element={<MCPIntegrationGuide />} />
+                    <Route path="/documentation/api-reference" element={<APIReference />} />
+                    <Route path="/documentation/deployment" element={<DeploymentGuide />} />
+                    <Route path="/documentation/architecture" element={<ArchitectureDiagrams />} />
                     <Route path="/mcp-test" element={<MCPTest />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>

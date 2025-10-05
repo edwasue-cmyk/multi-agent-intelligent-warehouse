@@ -21,6 +21,7 @@ import {
   Alert,
   AlertTitle,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import {
   ExpandMore as ExpandMoreIcon,
   Code as CodeIcon,
@@ -40,6 +41,7 @@ import {
 } from '@mui/icons-material';
 
 const Documentation: React.FC = () => {
+  const navigate = useNavigate();
   const [expandedSection, setExpandedSection] = useState<string | false>('overview');
 
   const handleChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
@@ -688,28 +690,60 @@ const Documentation: React.FC = () => {
                   </Typography>
                   <List>
                     <ListItem>
-                      <ListItemText 
-                        primary="MCP Integration Guide" 
-                        secondary="Complete MCP framework documentation"
-                      />
+                      <Button 
+                        variant="outlined" 
+                        fullWidth 
+                        startIcon={<BuildIcon />}
+                        onClick={() => navigate('/documentation/mcp-integration')}
+                        sx={{ mb: 1 }}
+                      >
+                        MCP Integration Guide
+                      </Button>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Complete MCP framework documentation with implementation phases, API reference, and best practices
+                      </Typography>
                     </ListItem>
                     <ListItem>
-                      <ListItemText 
-                        primary="API Reference" 
-                        secondary="Comprehensive API documentation"
-                      />
+                      <Button 
+                        variant="outlined" 
+                        fullWidth 
+                        startIcon={<ApiIcon />}
+                        onClick={() => navigate('/documentation/api-reference')}
+                        sx={{ mb: 1 }}
+                      >
+                        API Reference
+                      </Button>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Comprehensive API documentation with endpoints, request examples, and error handling
+                      </Typography>
                     </ListItem>
                     <ListItem>
-                      <ListItemText 
-                        primary="Deployment Guide" 
-                        secondary="Production deployment instructions"
-                      />
+                      <Button 
+                        variant="outlined" 
+                        fullWidth 
+                        startIcon={<RocketIcon />}
+                        onClick={() => navigate('/documentation/deployment')}
+                        sx={{ mb: 1 }}
+                      >
+                        Deployment Guide
+                      </Button>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Production deployment instructions for Docker, Kubernetes, and Helm
+                      </Typography>
                     </ListItem>
                     <ListItem>
-                      <ListItemText 
-                        primary="Architecture Diagrams" 
-                        secondary="System architecture and flow diagrams"
-                      />
+                      <Button 
+                        variant="outlined" 
+                        fullWidth 
+                        startIcon={<ArchitectureIcon />}
+                        onClick={() => navigate('/documentation/architecture')}
+                        sx={{ mb: 1 }}
+                      >
+                        Architecture Diagrams
+                      </Button>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        System architecture and flow diagrams with component descriptions
+                      </Typography>
                     </ListItem>
                   </List>
                 </CardContent>
