@@ -722,7 +722,7 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 [![Linting](https://img.shields.io/badge/Linting-Black%20%2B%20Flake8%20%2B%20MyPy-success.svg)](requirements.txt)
 
 ```bash
-PORT=8001 # API runs on port 8001
+PORT=8002 # API runs on port 8002
 curl -s http://localhost:$PORT/api/v1/health
 
 # Chat endpoint working with NVIDIA NIMs
@@ -787,7 +787,7 @@ curl -s http://localhost:$PORT/api/v1/attendance/health | jq
 - **Mobile App** - React Native app for handheld devices and field operations
 
 ### **System Health**
-- **API Server**: Running on port 8001 with all endpoints working
+- **API Server**: Running on port 8002 with all endpoints working
 - **Frontend**: Running on port 3001 with working chat interface and system status
 - **Database**: PostgreSQL/TimescaleDB on port 5435 with connection pooling
 - **NVIDIA NIMs**: Llama 3.1 70B + NV-EmbedQA-E5-v5 fully operational

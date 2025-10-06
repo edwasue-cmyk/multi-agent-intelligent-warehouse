@@ -15,8 +15,8 @@ fi
 # Activate virtual environment
 source .venv/bin/activate
 
-# Use port 8001 for consistency
-PORT=${PORT:-8001}
+# Use port 8002 for consistency
+PORT=${PORT:-8002}
 
 echo "📡 Starting API on port $PORT"
 echo "🌐 API will be available at: http://localhost:$PORT"
