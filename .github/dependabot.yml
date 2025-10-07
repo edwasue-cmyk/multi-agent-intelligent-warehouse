@@ -1,13 +1,13 @@
 version: 2
 updates:
-  # Python dependencies
+  # Python dependencies - Core backend
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 15
     reviewers:
       - "T-DevH"
     assignees:
@@ -15,15 +15,37 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+      - "backend"
+    # Auto-merge for security updates and patch versions
+    auto-merge:
+      enabled: true
+      labels:
+        - "dependencies"
+        - "security"
+      # Only auto-merge patch updates and security fixes
+      match:
+        dependency-type: "all"
+        update-type: "security:patch"
+    # Ignore major version updates for critical packages
+    ignore:
+      - dependency-name: "fastapi"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "uvicorn"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "langchain"
+        update-types: ["version-update:semver-major"]
 
-  # Node.js dependencies
+  # Node.js dependencies - Frontend UI
   - package-ecosystem: "npm"
     directory: "/ui/web"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 15
     reviewers:
       - "T-DevH"
     assignees:
@@ -31,15 +53,40 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    labels:
+      - "dependencies"
+      - "javascript"
+      - "frontend"
+    # Auto-merge for security updates and patch versions
+    auto-merge:
+      enabled: true
+      labels:
+        - "dependencies"
+        - "security"
+      match:
+        dependency-type: "all"
+        update-type: "security:patch"
+    # Ignore major version updates for critical packages
+    ignore:
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@mui/material"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@mui/icons-material"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
-  # Docker dependencies
+  # Docker dependencies - Container images
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 8
     reviewers:
       - "T-DevH"
     assignees:
@@ -47,12 +94,54 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "infrastructure"
+    # Auto-merge for patch updates
+    auto-merge:
+      enabled: true
+      labels:
+        - "dependencies"
+        - "docker"
+      match:
+        dependency-type: "all"
+        update-type: "version-update:semver-patch"
 
-  # GitHub Actions
+  # GitHub Actions - CI/CD workflows
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 8
+    reviewers:
+      - "T-DevH"
+    assignees:
+      - "T-DevH"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci-cd"
+    # Auto-merge for patch updates
+    auto-merge:
+      enabled: true
+      labels:
+        - "dependencies"
+        - "github-actions"
+      match:
+        dependency-type: "all"
+        update-type: "version-update:semver-patch"
+
+  # Helm Charts - Kubernetes deployments
+  - package-ecosystem: "helm"
+    directory: "/helm"
+    schedule:
+      interval: "monthly"
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 5
@@ -63,3 +152,10 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    labels:
+      - "dependencies"
+      - "helm"
+      - "kubernetes"
+    # Manual review for Helm updates
+    auto-merge:
+      enabled: false
