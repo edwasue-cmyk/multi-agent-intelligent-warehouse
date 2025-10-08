@@ -137,6 +137,31 @@ The system now features **production-grade vector search** powered by NVIDIA's N
 - **Semantic Understanding** - Accurate similarity calculations for warehouse operations
 - **Production Ready** - Robust error handling and validation
 
+#### **Environment Variables Setup**
+
+The system requires NVIDIA API keys for full functionality. Copy `.env.example` to `.env` and configure the following variables:
+
+```bash
+# NVIDIA NGC API Keys (same key for all services)
+NVIDIA_API_KEY=your_nvidia_ngc_api_key_here
+RAIL_API_KEY=your_nvidia_ngc_api_key_here
+
+# Document Extraction Agent - NVIDIA NeMo API Keys
+NEMO_RETRIEVER_API_KEY=your_nvidia_ngc_api_key_here
+NEMO_OCR_API_KEY=your_nvidia_ngc_api_key_here
+NEMO_PARSE_API_KEY=your_nvidia_ngc_api_key_here
+LLAMA_NANO_VL_API_KEY=your_nvidia_ngc_api_key_here
+LLAMA_70B_API_KEY=your_nvidia_ngc_api_key_here
+```
+
+**Required NVIDIA Services:**
+- **NVIDIA_API_KEY**: Main NVIDIA NIM API key for LLM and embedding services
+- **NEMO_RETRIEVER_API_KEY**: Stage 1 - Document preprocessing with NeMo Retriever
+- **NEMO_OCR_API_KEY**: Stage 2 - Intelligent OCR with NeMoRetriever-OCR-v1
+- **NEMO_PARSE_API_KEY**: Stage 2 - Advanced OCR with Nemotron Parse
+- **LLAMA_NANO_VL_API_KEY**: Stage 3 - Small LLM processing with Llama Nemotron Nano VL 8B
+- **LLAMA_70B_API_KEY**: Stage 5 - Large LLM judge with Llama 3.1 Nemotron 70B
+
 #### **Enhanced Vector Search Optimization**
 
 The system features **advanced vector search optimization** for improved accuracy and performance with intelligent chunking, evidence scoring, and smart query routing. See [docs/retrieval/01-evidence-scoring.md](docs/retrieval/01-evidence-scoring.md) for detailed implementation.
