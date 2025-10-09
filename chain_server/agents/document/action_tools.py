@@ -403,7 +403,15 @@ class DocumentActionTools:
             overall_status = ProcessingStage.COMPLETED
             current_stage_name = "Completed"
         else:
-            overall_status = ProcessingStage.PROCESSING
+            # Map stage index to ProcessingStage enum
+            stage_mapping = {
+                0: ProcessingStage.PREPROCESSING,
+                1: ProcessingStage.OCR_EXTRACTION,
+                2: ProcessingStage.LLM_PROCESSING,
+                3: ProcessingStage.VALIDATION,
+                4: ProcessingStage.ROUTING
+            }
+            overall_status = stage_mapping.get(current_stage_index, ProcessingStage.PREPROCESSING)
             current_stage_name = stages[current_stage_index]["name"]
         
         # Update the stored status
