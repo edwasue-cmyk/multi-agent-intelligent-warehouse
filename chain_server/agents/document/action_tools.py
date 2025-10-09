@@ -9,6 +9,7 @@ from typing import Dict, Any, List, Optional
 from datetime import datetime
 import uuid
 import os
+import time
 
 from chain_server.services.llm.nim_client import get_nim_client
 from chain_server.agents.document.models.document_models import (
@@ -25,6 +26,7 @@ class DocumentActionTools:
         self.nim_client = None
         self.supported_file_types = ["pdf", "png", "jpg", "jpeg", "tiff", "bmp"]
         self.max_file_size = 50 * 1024 * 1024  # 50MB
+        self.document_statuses = {}  # Track document processing status
     
     async def initialize(self):
         """Initialize document processing tools."""
@@ -57,6 +59,22 @@ class DocumentActionTools:
             
             # Generate document ID
             document_id = str(uuid.uuid4())
+            
+            # Initialize document status tracking
+            self.document_statuses[document_id] = {
+                "status": ProcessingStage.UPLOADED,
+                "current_stage": "Preprocessing",
+                "progress": 0,
+                "stages": [
+                    {"name": "Preprocessing", "status": "processing", "started_at": datetime.now()},
+                    {"name": "OCR Extraction", "status": "pending", "started_at": None},
+                    {"name": "LLM Processing", "status": "pending", "started_at": None},
+                    {"name": "Validation", "status": "pending", "started_at": None},
+                    {"name": "Routing", "status": "pending", "started_at": None}
+                ],
+                "upload_time": datetime.now(),
+                "estimated_completion": datetime.now().timestamp() + 60
+            }
             
             # Create document record (in real implementation, this would save to database)
             document_record = {
@@ -338,14 +356,61 @@ class DocumentActionTools:
         }
     
     async def _get_processing_status(self, document_id: str) -> Dict[str, Any]:
-        """Get processing status (mock implementation)."""
+        """Get processing status with progressive updates."""
+        if document_id not in self.document_statuses:
+            return {
+                "status": ProcessingStage.FAILED,
+                "current_stage": "Unknown",
+                "progress": 0,
+                "stages": [],
+                "estimated_completion": None
+            }
+        
+        status_info = self.document_statuses[document_id]
+        upload_time = status_info["upload_time"]
+        elapsed_time = (datetime.now() - upload_time).total_seconds()
+        
+        # Progressive stage simulation based on elapsed time
+        stages = status_info["stages"]
+        total_stages = len(stages)
+        
+        # Calculate current stage based on elapsed time (each stage takes ~12 seconds)
+        stage_duration = 12  # seconds per stage
+        current_stage_index = min(int(elapsed_time / stage_duration), total_stages - 1)
+        
+        # Update stages based on elapsed time
+        for i, stage in enumerate(stages):
+            if i < current_stage_index:
+                stage["status"] = "completed"
+            elif i == current_stage_index:
+                stage["status"] = "processing"
+                if stage["started_at"] is None:
+                    stage["started_at"] = datetime.now()
+            else:
+                stage["status"] = "pending"
+        
+        # Calculate progress percentage
+        progress = min((current_stage_index + 1) / total_stages * 100, 100)
+        
+        # Determine overall status
+        if current_stage_index >= total_stages - 1:
+            overall_status = ProcessingStage.COMPLETED
+            current_stage_name = "Completed"
+        else:
+            overall_status = ProcessingStage.PROCESSING
+            current_stage_name = stages[current_stage_index]["name"]
+        
+        # Update the stored status
+        status_info["status"] = overall_status
+        status_info["current_stage"] = current_stage_name
+        status_info["progress"] = progress
+        
         return {
-            "status": ProcessingStage.OCR_EXTRACTION,
-            "current_stage": "OCR Extraction",
-            "progress_percentage": 65.0,
-            "stages_completed": ["Preprocessing", "Layout Detection"],
-            "stages_pending": ["LLM Processing", "Validation", "Routing"],
-            "estimated_completion": datetime.now().timestamp() + 30
+            "status": overall_status,
+            "current_stage": current_stage_name,
+            "progress": progress,
+            "stages": stages,
+            "estimated_completion": status_info["estimated_completion"]
         }
     
     async def _get_extraction_data(self, document_id: str) -> Dict[str, Any]:

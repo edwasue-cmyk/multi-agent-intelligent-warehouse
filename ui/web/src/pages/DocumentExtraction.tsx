@@ -230,11 +230,14 @@ const DocumentExtraction: React.FC = () => {
             const updatedDoc = {
               ...doc,
               progress: status.progress,
-              stages: doc.stages.map((stage, index) => ({
-                ...stage,
-                completed: status.stages[index]?.status === 'completed',
-                current: stage.name === status.current_stage
-              }))
+              stages: doc.stages.map((stage, index) => {
+                const backendStage = status.stages[index];
+                return {
+                  ...stage,
+                  completed: backendStage?.status === 'completed',
+                  current: backendStage?.status === 'processing'
+                };
+              })
             };
             
             // If processing is complete, move to completed documents
@@ -414,15 +417,36 @@ const DocumentExtraction: React.FC = () => {
             <ListItem key={index}>
               <ListItemIcon>
                 {stage.completed ? (
-                  <CheckCircle color="success" />
+                  <CheckCircle color="success" sx={{ fontSize: 20 }} />
                 ) : stage.current ? (
-                  <LinearProgress sx={{ width: 20, height: 20 }} />
+                  <CircularProgress size={20} color="primary" />
                 ) : (
-                  <div style={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: '#e0e0e0' }} />
+                  <div style={{ 
+                    width: 20, 
+                    height: 20, 
+                    borderRadius: '50%', 
+                    backgroundColor: '#e0e0e0',
+                    border: '2px solid #ccc'
+                  }} />
                 )}
               </ListItemIcon>
               <ListItemText 
-                primary={stage.name}
+                primary={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="body2" sx={{ 
+                      fontWeight: stage.current ? 'bold' : 'normal',
+                      color: stage.completed ? 'success.main' : stage.current ? 'primary.main' : 'text.secondary'
+                    }}>
+                      {stage.name}
+                    </Typography>
+                    {stage.current && (
+                      <Chip label="Processing" size="small" color="primary" />
+                    )}
+                    {stage.completed && (
+                      <Chip label="Complete" size="small" color="success" />
+                    )}
+                  </Box>
+                }
                 secondary={stage.description}
               />
             </ListItem>
