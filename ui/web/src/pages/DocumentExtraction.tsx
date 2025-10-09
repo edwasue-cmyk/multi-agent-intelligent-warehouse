@@ -137,9 +137,7 @@ const DocumentExtraction: React.FC = () => {
   const loadAnalyticsData = async () => {
     try {
       const response = await documentAPI.getDocumentAnalytics();
-      if (response.success) {
-        setAnalyticsData(response.data);
-      }
+      setAnalyticsData(response);
     } catch (error) {
       console.error('Failed to load analytics data:', error);
     }
@@ -173,7 +171,7 @@ const DocumentExtraction: React.FC = () => {
       clearInterval(progressInterval);
       setUploadProgress(100);
       
-      if (response.success) {
+      if (response.document_id) {
         const documentId = response.document_id;
         const newDocument: DocumentItem = {
           id: documentId,
@@ -203,7 +201,17 @@ const DocumentExtraction: React.FC = () => {
       
     } catch (error) {
       console.error('Upload failed:', error);
-      setSnackbarMessage(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      let errorMessage = 'Upload failed';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Unsupported file type')) {
+          errorMessage = 'Unsupported file type. Please upload PDF, PNG, JPG, JPEG, TIFF, or BMP files only.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setSnackbarMessage(errorMessage);
       setSnackbarOpen(true);
     } finally {
       setIsUploading(false);
@@ -215,43 +223,41 @@ const DocumentExtraction: React.FC = () => {
     const checkStatus = async () => {
       try {
         const statusResponse = await documentAPI.getDocumentStatus(documentId);
-        if (statusResponse.success) {
-          const status = statusResponse.data;
-          
-          setProcessingDocuments(prev => prev.map(doc => {
-            if (doc.id === documentId) {
-              const updatedDoc = {
-                ...doc,
-                progress: status.progress_percentage,
-                stages: doc.stages.map((stage, index) => ({
-                  ...stage,
-                  completed: status.stages_completed.includes(stage.name),
-                  current: stage.name === status.current_stage
-                }))
-              };
-              
-              // If processing is complete, move to completed documents
-              if (status.status === 'completed') {
-                setCompletedDocuments(prevCompleted => [...prevCompleted, {
-                  ...updatedDoc,
-                  status: 'completed',
-                  progress: 100,
-                  qualityScore: 4.2, // Mock quality score
-                  processingTime: 45, // Mock processing time
-                  routingDecision: 'Auto-Approved'
-                }]);
-                return null; // Remove from processing
-              }
-              
-              return updatedDoc;
+        const status = statusResponse;
+        
+        setProcessingDocuments(prev => prev.map(doc => {
+          if (doc.id === documentId) {
+            const updatedDoc = {
+              ...doc,
+              progress: status.progress,
+              stages: doc.stages.map((stage, index) => ({
+                ...stage,
+                completed: status.stages[index]?.status === 'completed',
+                current: stage.name === status.current_stage
+              }))
+            };
+            
+            // If processing is complete, move to completed documents
+            if (status.status === 'completed') {
+              setCompletedDocuments(prevCompleted => [...prevCompleted, {
+                ...updatedDoc,
+                status: 'completed',
+                progress: 100,
+                qualityScore: 4.2, // Mock quality score
+                processingTime: 45, // Mock processing time
+                routingDecision: 'Auto-Approved'
+              }]);
+              return null; // Remove from processing
             }
-            return doc;
-          }).filter(doc => doc !== null) as DocumentItem[]);
-          
-          // Continue monitoring if not completed
-          if (status.status !== 'completed' && status.status !== 'failed') {
-            setTimeout(checkStatus, 2000); // Check every 2 seconds
+            
+            return updatedDoc;
           }
+          return doc;
+        }).filter(doc => doc !== null) as DocumentItem[]);
+        
+        // Continue monitoring if not completed
+        if (status.status !== 'completed' && status.status !== 'failed') {
+          setTimeout(checkStatus, 2000); // Check every 2 seconds
         }
       } catch (error) {
         console.error('Failed to check document status:', error);
@@ -264,14 +270,9 @@ const DocumentExtraction: React.FC = () => {
   const handleViewResults = async (document: DocumentItem) => {
     try {
       const response = await documentAPI.getDocumentResults(document.id);
-      if (response.success) {
-        setDocumentResults(response.data);
-        setSelectedDocument(document);
-        setResultsDialogOpen(true);
-      } else {
-        setSnackbarMessage('Failed to load document results');
-        setSnackbarOpen(true);
-      }
+      setDocumentResults(response);
+      setSelectedDocument(document);
+      setResultsDialogOpen(true);
     } catch (error) {
       console.error('Failed to get document results:', error);
       setSnackbarMessage('Failed to load document results');
@@ -348,6 +349,16 @@ const DocumentExtraction: React.FC = () => {
             input.onchange = (e) => {
               const file = (e.target as HTMLInputElement).files?.[0];
               if (file) {
+                // Validate file type before upload
+                const allowedTypes = ['.pdf', '.png', '.jpg', '.jpeg', '.tiff', '.bmp'];
+                const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+                
+                if (!allowedTypes.includes(fileExtension)) {
+                  setSnackbarMessage('Unsupported file type. Please upload PDF, PNG, JPG, JPEG, TIFF, or BMP files only.');
+                  setSnackbarOpen(true);
+                  return;
+                }
+                
                 handleDocumentUpload(file);
               }
             };
