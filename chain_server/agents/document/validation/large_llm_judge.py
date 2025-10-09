@@ -208,6 +208,7 @@ class LargeLLMJudge:
                 response.raise_for_status()
                 
                 result = response.json()
+                # Extract response content from chat completions
                 content = result["choices"][0]["message"]["content"]
                 
                 # Try to parse JSON response

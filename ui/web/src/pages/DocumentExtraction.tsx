@@ -123,10 +123,32 @@ const DocumentExtraction: React.FC = () => {
   const [documentResults, setDocumentResults] = useState<DocumentResults | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
+  };
+
+  const createFilePreview = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      if (file.type.startsWith('image/')) {
+        reader.onload = (e) => {
+          resolve(e.target?.result as string);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      } else if (file.type === 'application/pdf') {
+        // For PDFs, we'll show a PDF icon with file info
+        resolve('pdf');
+      } else {
+        // For other file types, show a generic document icon
+        resolve('document');
+      }
+    });
   };
 
   // Load analytics data when component mounts
@@ -144,6 +166,7 @@ const DocumentExtraction: React.FC = () => {
   };
 
   const handleDocumentUpload = async (file: File) => {
+    console.log('Starting document upload for:', file.name);
     setIsUploading(true);
     setUploadProgress(0);
     
@@ -151,6 +174,7 @@ const DocumentExtraction: React.FC = () => {
       // Simulate upload progress
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
+          console.log('Upload progress:', prev + 10);
           if (prev >= 90) {
             clearInterval(progressInterval);
             return 90;
@@ -167,12 +191,14 @@ const DocumentExtraction: React.FC = () => {
       
       // Upload document to backend
       const response = await documentAPI.uploadDocument(formData);
+      console.log('Upload response:', response);
       
       clearInterval(progressInterval);
       setUploadProgress(100);
       
       if (response.document_id) {
         const documentId = response.document_id;
+        console.log('Document uploaded successfully with ID:', documentId);
         const newDocument: DocumentItem = {
           id: documentId,
           filename: file.name,
@@ -192,8 +218,13 @@ const DocumentExtraction: React.FC = () => {
         setSnackbarMessage('Document uploaded successfully!');
         setSnackbarOpen(true);
         
+        console.log('Starting to monitor document processing for:', documentId);
         // Start monitoring processing status
         monitorDocumentProcessing(documentId);
+        
+        // Clear preview after successful upload
+        setSelectedFile(null);
+        setFilePreview(null);
         
       } else {
         throw new Error(response.message || 'Upload failed');
@@ -220,18 +251,36 @@ const DocumentExtraction: React.FC = () => {
   };
 
   const monitorDocumentProcessing = async (documentId: string) => {
+    console.log('monitorDocumentProcessing called for:', documentId);
     const checkStatus = async () => {
       try {
+        console.log('Checking status for document:', documentId);
         const statusResponse = await documentAPI.getDocumentStatus(documentId);
         const status = statusResponse;
         
         setProcessingDocuments(prev => prev.map(doc => {
           if (doc.id === documentId) {
+            // Create a mapping from backend stage names to frontend stage names
+            const stageMapping: { [key: string]: string } = {
+              'preprocessing': 'Preprocessing',
+              'ocr_extraction': 'OCR Extraction',
+              'llm_processing': 'LLM Processing',
+              'validation': 'Validation',
+              'routing': 'Routing'
+            };
+            
+            console.log('Backend status:', status);
+            console.log('Backend stages:', status.stages);
+            
             const updatedDoc = {
               ...doc,
               progress: status.progress,
-              stages: doc.stages.map((stage, index) => {
-                const backendStage = status.stages[index];
+              stages: doc.stages.map((stage) => {
+                // Find the corresponding backend stage by matching the stage name
+                const backendStage = status.stages.find((bs: any) => 
+                  stageMapping[bs.stage_name] === stage.name
+                );
+                console.log(`Mapping stage "${stage.name}" to backend stage:`, backendStage);
                 return {
                   ...stage,
                   completed: backendStage?.status === 'completed',
@@ -242,14 +291,22 @@ const DocumentExtraction: React.FC = () => {
             
             // If processing is complete, move to completed documents
             if (status.status === 'completed') {
-              setCompletedDocuments(prevCompleted => [...prevCompleted, {
-                ...updatedDoc,
-                status: 'completed',
-                progress: 100,
-                qualityScore: 4.2, // Mock quality score
-                processingTime: 45, // Mock processing time
-                routingDecision: 'Auto-Approved'
-              }]);
+              setCompletedDocuments(prevCompleted => {
+                // Check if document already exists in completed documents
+                const exists = prevCompleted.some(doc => doc.id === documentId);
+                if (exists) {
+                  return prevCompleted; // Don't add duplicate
+                }
+                
+                return [...prevCompleted, {
+                  ...updatedDoc,
+                  status: 'completed',
+                  progress: 100,
+                  qualityScore: 4.2, // Mock quality score
+                  processingTime: 45, // Mock processing time
+                  routingDecision: 'Auto-Approved'
+                }];
+              });
               return null; // Remove from processing
             }
             
@@ -273,7 +330,31 @@ const DocumentExtraction: React.FC = () => {
   const handleViewResults = async (document: DocumentItem) => {
     try {
       const response = await documentAPI.getDocumentResults(document.id);
-      setDocumentResults(response);
+      
+      // Transform the API response to match frontend expectations
+      const transformedResults: DocumentResults = {
+        document_id: response.document_id,
+        extracted_data: {},
+        confidence_scores: {},
+        quality_score: response.quality_score?.overall_score || 0,
+        routing_decision: response.routing_decision?.routing_action || 'unknown',
+        processing_stages: response.extraction_results?.map((result: any) => result.stage) || []
+      };
+      
+      // Flatten extraction results into extracted_data
+      if (response.extraction_results && Array.isArray(response.extraction_results)) {
+        response.extraction_results.forEach((result: any) => {
+          if (result.processed_data) {
+            Object.assign(transformedResults.extracted_data, result.processed_data);
+          }
+          // Add confidence scores
+          if (result.confidence_score !== undefined) {
+            transformedResults.confidence_scores[result.stage] = result.confidence_score;
+          }
+        });
+      }
+      
+      setDocumentResults(transformedResults);
       setSelectedDocument(document);
       setResultsDialogOpen(true);
     } catch (error) {
@@ -349,7 +430,7 @@ const DocumentExtraction: React.FC = () => {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.pdf,.png,.jpg,.jpeg,.tiff,.bmp';
-            input.onchange = (e) => {
+            input.onchange = async (e) => {
               const file = (e.target as HTMLInputElement).files?.[0];
               if (file) {
                 // Validate file type before upload
@@ -362,22 +443,104 @@ const DocumentExtraction: React.FC = () => {
                   return;
                 }
                 
-                handleDocumentUpload(file);
+                // Create preview
+                try {
+                  const preview = await createFilePreview(file);
+                  setSelectedFile(file);
+                  setFilePreview(preview);
+                } catch (error) {
+                  console.error('Failed to create preview:', error);
+                  setSelectedFile(file);
+                  setFilePreview('document');
+                }
               }
             };
             input.click();
           }}
         >
-          <UploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-          <Typography variant="h6" gutterBottom>
-            {isUploading ? 'Uploading...' : 'Click to Upload Document'}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Supported formats: PDF, PNG, JPG, JPEG, TIFF, BMP
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Maximum file size: 50MB
-          </Typography>
+          {selectedFile && filePreview ? (
+            <Box>
+              {filePreview === 'pdf' ? (
+                <Box sx={{ mb: 2 }}>
+                  <DocumentIcon sx={{ fontSize: 64, color: 'error.main', mb: 1 }} />
+                  <Typography variant="h6" gutterBottom>
+                    {selectedFile.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    PDF Document • {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </Typography>
+                </Box>
+              ) : filePreview === 'document' ? (
+                <Box sx={{ mb: 2 }}>
+                  <DocumentIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 1 }} />
+                  <Typography variant="h6" gutterBottom>
+                    {selectedFile.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Document • {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </Typography>
+                </Box>
+              ) : (
+                <Box sx={{ mb: 2 }}>
+                  <img 
+                    src={filePreview} 
+                    alt="Preview" 
+                    style={{ 
+                      maxWidth: '300px', 
+                      maxHeight: '200px', 
+                      borderRadius: '8px',
+                      border: '1px solid #ddd'
+                    }} 
+                  />
+                  <Typography variant="h6" gutterBottom sx={{ mt: 1 }}>
+                    {selectedFile.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  </Typography>
+                </Box>
+              )}
+              
+              <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 2 }}>
+                <Button 
+                  variant="contained" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (selectedFile) {
+                      handleDocumentUpload(selectedFile);
+                    }
+                  }}
+                  disabled={isUploading}
+                >
+                  Upload Document
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedFile(null);
+                    setFilePreview(null);
+                  }}
+                  disabled={isUploading}
+                >
+                  Cancel
+                </Button>
+              </Box>
+            </Box>
+          ) : (
+            <Box>
+              <UploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" gutterBottom>
+                {isUploading ? 'Uploading...' : 'Click to Select Document'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Supported formats: PDF, PNG, JPG, JPEG, TIFF, BMP
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Maximum file size: 50MB
+              </Typography>
+            </Box>
+          )}
         </Box>
         
         <Alert severity="info" sx={{ mt: 2 }}>
@@ -644,7 +807,7 @@ const DocumentExtraction: React.FC = () => {
           </Box>
         </DialogTitle>
         <DialogContent>
-          {documentResults ? (
+          {documentResults && documentResults.extracted_data ? (
             <Box>
               <Typography variant="h6" gutterBottom>
                 Extracted Data
@@ -664,7 +827,7 @@ const DocumentExtraction: React.FC = () => {
                         <TableCell>{key.replace(/_/g, ' ').toUpperCase()}</TableCell>
                         <TableCell>{typeof value === 'object' ? JSON.stringify(value) : String(value)}</TableCell>
                         <TableCell>
-                          {documentResults.confidence_scores[key] ? 
+                          {documentResults.confidence_scores && documentResults.confidence_scores[key] ? 
                             `${Math.round(documentResults.confidence_scores[key] * 100)}%` : 
                             'N/A'
                           }
@@ -700,8 +863,13 @@ const DocumentExtraction: React.FC = () => {
               </List>
             </Box>
           ) : (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-              <CircularProgress />
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 4 }}>
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                No Results Available
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Document processing may still be in progress or failed to complete.
+              </Typography>
             </Box>
           )}
         </DialogContent>

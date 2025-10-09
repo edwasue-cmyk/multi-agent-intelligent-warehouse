@@ -25,18 +25,28 @@ logger = logging.getLogger(__name__)
 # Create router
 router = APIRouter(prefix="/api/v1/document", tags=["document"])
 
-# Global document tools instance
-_document_tools: Optional[DocumentActionTools] = None
+# Global document tools instance - use a class-based singleton
+class DocumentToolsSingleton:
+    _instance: Optional[DocumentActionTools] = None
+    _initialized: bool = False
+    
+    @classmethod
+    async def get_instance(cls) -> DocumentActionTools:
+        """Get or create document action tools instance."""
+        if cls._instance is None or not cls._initialized:
+            logger.info("Creating new DocumentActionTools instance")
+            cls._instance = DocumentActionTools()
+            await cls._instance.initialize()
+            cls._initialized = True
+            logger.info(f"DocumentActionTools initialized with {len(cls._instance.document_statuses)} documents")
+        else:
+            logger.info(f"Using existing DocumentActionTools instance with {len(cls._instance.document_statuses)} documents")
+        
+        return cls._instance
 
 async def get_document_tools() -> DocumentActionTools:
     """Get or create document action tools instance."""
-    global _document_tools
-    
-    if _document_tools is None:
-        _document_tools = DocumentActionTools()
-        await _document_tools.initialize()
-    
-    return _document_tools
+    return await DocumentToolsSingleton.get_instance()
 
 @router.post("/upload", response_model=DocumentUploadResponse)
 async def upload_document(
@@ -98,8 +108,11 @@ async def upload_document(
             file_path=temp_file_path,
             document_type=document_type,
             user_id=user_id,
-            metadata=parsed_metadata
+            metadata=parsed_metadata,
+            document_id=document_id  # Pass the document ID from router
         )
+        
+        logger.info(f"Upload result: {result}")
         
         if result["success"]:
             # Schedule background processing
@@ -453,24 +466,71 @@ async def process_document_background(
     user_id: str,
     metadata: Dict[str, Any]
 ):
-    """Background task for document processing."""
+    """Background task for document processing using NVIDIA NeMo pipeline."""
     try:
-        logger.info(f"Starting background processing for document: {document_id}")
+        logger.info(f"Starting NVIDIA NeMo processing pipeline for document: {document_id}")
         
-        # Simulate processing stages
-        stages = [
-            "preprocessing",
-            "ocr_extraction", 
-            "llm_processing",
-            "validation",
-            "routing"
-        ]
+        # Import the actual pipeline components
+        from chain_server.agents.document.preprocessing.nemo_retriever import NeMoRetrieverPreprocessor
+        from chain_server.agents.document.ocr.nemo_ocr import NeMoOCRService
+        from chain_server.agents.document.processing.small_llm_processor import SmallLLMProcessor
+        from chain_server.agents.document.validation.large_llm_judge import LargeLLMJudge
+        from chain_server.agents.document.routing.intelligent_router import IntelligentRouter
         
-        for i, stage in enumerate(stages):
-            logger.info(f"Processing stage {i+1}/{len(stages)}: {stage}")
-            await asyncio.sleep(2)  # Simulate processing time
+        # Initialize pipeline components
+        preprocessor = NeMoRetrieverPreprocessor()
+        ocr_processor = NeMoOCRService()
+        llm_processor = SmallLLMProcessor()
+        judge = LargeLLMJudge()
+        router = IntelligentRouter()
         
-        logger.info(f"Background processing completed for document: {document_id}")
+        # Stage 1: Document Preprocessing
+        logger.info(f"Stage 1: Document preprocessing for {document_id}")
+        preprocessing_result = await preprocessor.process_document(file_path)
+        
+        # Stage 2: OCR Extraction
+        logger.info(f"Stage 2: OCR extraction for {document_id}")
+        ocr_result = await ocr_processor.extract_text(
+            preprocessing_result.get("images", []),
+            preprocessing_result.get("metadata", {})
+        )
+        
+        # Stage 3: Small LLM Processing
+        logger.info(f"Stage 3: Small LLM processing for {document_id}")
+        llm_result = await llm_processor.process_document(
+            preprocessing_result.get("images", []),
+            ocr_result.get("text", ""),
+            document_type
+        )
+        
+        # Stage 4: Large LLM Judge & Validation
+        logger.info(f"Stage 4: Large LLM judge validation for {document_id}")
+        validation_result = await judge.evaluate_document(
+            llm_result,
+            document_type,
+            preprocessing_result.get("metadata", {})
+        )
+        
+        # Stage 5: Intelligent Routing
+        logger.info(f"Stage 5: Intelligent routing for {document_id}")
+        routing_result = await router.route_document(
+            validation_result,
+            llm_result,
+            document_type
+        )
+        
+        # Store results in the document tools
+        tools = await get_document_tools()
+        await tools._store_processing_results(
+            document_id=document_id,
+            preprocessing_result=preprocessing_result,
+            ocr_result=ocr_result,
+            llm_result=llm_result,
+            validation_result=validation_result,
+            routing_result=routing_result
+        )
+        
+        logger.info(f"NVIDIA NeMo processing pipeline completed for document: {document_id}")
         
         # Clean up temporary file
         try:
@@ -479,7 +539,13 @@ async def process_document_background(
             logger.warning(f"Could not remove temporary file: {file_path}")
             
     except Exception as e:
-        logger.error(f"Background processing failed for document {document_id}: {e}")
+        logger.error(f"NVIDIA NeMo processing failed for document {document_id}: {e}", exc_info=True)
+        # Update status to failed
+        try:
+            tools = await get_document_tools()
+            await tools._update_document_status(document_id, "failed", str(e))
+        except Exception as status_error:
+            logger.error(f"Failed to update document status: {status_error}")
 
 @router.get("/health")
 async def document_health_check():

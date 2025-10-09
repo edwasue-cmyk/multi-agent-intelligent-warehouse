@@ -1,0 +1,4 @@
+Test Invoice Document
+Invoice Number: INV-2024-001
+Vendor: Test Company
+Amount: 00.00

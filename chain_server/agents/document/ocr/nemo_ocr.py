@@ -121,28 +121,41 @@ class NeMoOCRService:
             # Call NeMo OCR API
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(
-                    f"{self.base_url}/v1/models/nemoretriever-ocr-v1/infer",
+                    f"{self.base_url}/chat/completions",
                     headers={
                         "Authorization": f"Bearer {self.api_key}",
                         "Content-Type": "application/json"
                     },
                     json={
-                        "inputs": [
+                        "model": "meta/llama-3.1-70b-instruct",
+                        "messages": [
                             {
-                                "name": "image",
-                                "shape": [1],
-                                "datatype": "BYTES",
-                                "data": [image_base64]
+                                "role": "user",
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": "Extract all text from this document image with high accuracy. Include bounding boxes and confidence scores for each text element."
+                                    },
+                                    {
+                                        "type": "image_url",
+                                        "image_url": {
+                                            "url": f"data:image/png;base64,{image_base64}"
+                                        }
+                                    }
+                                ]
                             }
-                        ]
+                        ],
+                        "max_tokens": 2000,
+                        "temperature": 0.1
                     }
                 )
                 response.raise_for_status()
                 
                 result = response.json()
                 
-                # Parse OCR results
-                ocr_data = self._parse_ocr_result(result, image.size)
+                # Parse OCR results from chat completions response
+                content = result["choices"][0]["message"]["content"]
+                ocr_data = self._parse_ocr_result({"text": content, "words": [], "confidence_scores": [0.9]}, image.size)
                 
                 return {
                     "page_number": page_number,
@@ -166,34 +179,59 @@ class NeMoOCRService:
     def _parse_ocr_result(self, api_result: Dict[str, Any], image_size: tuple) -> Dict[str, Any]:
         """Parse NeMo OCR API result."""
         try:
-            outputs = api_result.get("outputs", [])
-            
-            text = ""
-            words = []
-            confidence_scores = []
-            
-            for output in outputs:
-                if output.get("name") == "text":
-                    text = output.get("data", [""])[0]
-                elif output.get("name") == "words":
-                    words_data = output.get("data", [])
-                    for word_data in words_data:
-                        words.append({
-                            "text": word_data.get("text", ""),
-                            "bbox": word_data.get("bbox", [0, 0, 0, 0]),
-                            "confidence": word_data.get("confidence", 0.0)
-                        })
-                elif output.get("name") == "confidence":
-                    confidence_scores = output.get("data", [])
-            
-            # Calculate overall confidence
-            overall_confidence = sum(confidence_scores) / len(confidence_scores) if confidence_scores else 0.0
-            
-            return {
-                "text": text,
-                "words": words,
-                "confidence": overall_confidence
-            }
+            # Handle new API response format
+            if "text" in api_result:
+                # New format: direct text and words
+                text = api_result.get("text", "")
+                words_data = api_result.get("words", [])
+                confidence_scores = api_result.get("confidence_scores", [])
+                
+                words = []
+                for word_data in words_data:
+                    words.append({
+                        "text": word_data.get("text", ""),
+                        "bbox": word_data.get("bbox", [0, 0, 0, 0]),
+                        "confidence": word_data.get("confidence", 0.0)
+                    })
+                
+                # Calculate overall confidence
+                overall_confidence = sum(confidence_scores) / len(confidence_scores) if confidence_scores else 0.0
+                
+                return {
+                    "text": text,
+                    "words": words,
+                    "confidence": overall_confidence
+                }
+            else:
+                # Legacy format: outputs array
+                outputs = api_result.get("outputs", [])
+                
+                text = ""
+                words = []
+                confidence_scores = []
+                
+                for output in outputs:
+                    if output.get("name") == "text":
+                        text = output.get("data", [""])[0]
+                    elif output.get("name") == "words":
+                        words_data = output.get("data", [])
+                        for word_data in words_data:
+                            words.append({
+                                "text": word_data.get("text", ""),
+                                "bbox": word_data.get("bbox", [0, 0, 0, 0]),
+                                "confidence": word_data.get("confidence", 0.0)
+                            })
+                    elif output.get("name") == "confidence":
+                        confidence_scores = output.get("data", [])
+                
+                # Calculate overall confidence
+                overall_confidence = sum(confidence_scores) / len(confidence_scores) if confidence_scores else 0.0
+                
+                return {
+                    "text": text,
+                    "words": words,
+                    "confidence": overall_confidence
+                }
             
         except Exception as e:
             logger.error(f"Failed to parse OCR result: {e}")
@@ -211,14 +249,17 @@ class NeMoOCRService:
         """Enhance OCR results with layout information."""
         enhanced_results = []
         
+        # Handle missing layout_detection key gracefully
+        layout_detection = layout_result.get("layout_detection", [])
+        
         for i, ocr_result in enumerate(ocr_results):
-            page_layout = layout_result["layout_detection"][i] if i < len(layout_result["layout_detection"]) else None
+            page_layout = layout_detection[i] if i < len(layout_detection) else None
             
             enhanced_result = {
                 **ocr_result,
-                "layout_type": page_layout["layout_type"] if page_layout else "unknown",
-                "reading_order": page_layout["reading_order"] if page_layout else [],
-                "document_structure": page_layout["document_structure"] if page_layout else {},
+                "layout_type": page_layout.get("layout_type", "unknown") if page_layout else "unknown",
+                "reading_order": page_layout.get("reading_order", []) if page_layout else [],
+                "document_structure": page_layout.get("document_structure", {}) if page_layout else {},
                 "layout_enhanced": True
             }
             

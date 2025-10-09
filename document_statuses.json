@@ -1,0 +1,1994 @@
+{
+  "00975e32-b823-45c3-9dcd-a27615385432": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "Preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T19:03:01.600741"
+      },
+      {
+        "name": "OCR Extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "LLM Processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "Validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "Routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T19:03:01.600747",
+    "estimated_completion": 1759975441.600748
+  },
+  "95b54785-d355-440a-97dd-016ffbccbfc1": {
+    "status": "preprocessing",
+    "current_stage": "Preprocessing",
+    "progress": 20.0,
+    "stages": [
+      {
+        "name": "Preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T19:09:19.220972"
+      },
+      {
+        "name": "OCR Extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "LLM Processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "Validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "Routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T19:09:19.220976",
+    "estimated_completion": 1759975819.220976
+  },
+  "957ef8cc-a74e-4294-bf69-21ef75cace87": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "Preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T19:17:46.422071"
+      },
+      {
+        "name": "OCR Extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "LLM Processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "Validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "Routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T19:17:46.422076",
+    "estimated_completion": 1759976326.422077
+  },
+  "e72491eb-6a15-4732-b2af-c2d89fa59299": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "Preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T19:18:42.109173"
+      },
+      {
+        "name": "OCR Extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "LLM Processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "Validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "Routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T19:18:42.109180",
+    "estimated_completion": 1759976382.10918
+  },
+  "ebd74ebb-7b89-4056-8b62-279b01e3ed42": {
+    "status": "ocr_extraction",
+    "current_stage": "OCR Extraction",
+    "progress": 40.0,
+    "stages": [
+      {
+        "name": "Preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T19:21:29.202895"
+      },
+      {
+        "name": "OCR Extraction",
+        "status": "processing",
+        "started_at": "2025-10-08T19:21:43.295905"
+      },
+      {
+        "name": "LLM Processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "Validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "Routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T19:21:29.202899",
+    "estimated_completion": 1759976549.202899
+  },
+  "2c37b81c-5eab-47ce-8c21-8b5c2d9864da": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "Preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T19:22:02.270137"
+      },
+      {
+        "name": "OCR Extraction",
+        "status": "completed",
+        "started_at": null
+      },
+      {
+        "name": "LLM Processing",
+        "status": "completed",
+        "started_at": null
+      },
+      {
+        "name": "Validation",
+        "status": "completed",
+        "started_at": null
+      },
+      {
+        "name": "Routing",
+        "status": "processing",
+        "started_at": "2025-10-08T19:23:47.275270"
+      }
+    ],
+    "upload_time": "2025-10-08T19:22:02.270145",
+    "estimated_completion": 1759976582.270146
+  },
+  "ec118a3f-fb06-42b9-a50a-62002f2a9609": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "Preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T19:27:07.183269"
+      },
+      {
+        "name": "OCR Extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "LLM Processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "Validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "Routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T19:27:07.183276",
+    "estimated_completion": 1759976887.183277
+  },
+  "245681fd-9cba-4a48-aa86-887cf28648af": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "Preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T19:28:14.643641"
+      },
+      {
+        "name": "OCR Extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "LLM Processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "Validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "Routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T19:28:14.643647",
+    "estimated_completion": 1759976954.643648
+  },
+  "1bec8650-bf79-46a6-92d2-c99d4d6f278f": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T19:28:35.171722"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T19:28:35.171726",
+    "estimated_completion": 1759976975.171726
+  },
+  "4815829d-1c08-4b1a-8677-f2eefa6dcf0a": {
+    "status": "ocr_extraction",
+    "current_stage": "OCR Extraction",
+    "progress": 40.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T19:29:18.860126"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "processing",
+        "started_at": "2025-10-08T19:29:34.696598"
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T19:29:18.860131",
+    "estimated_completion": 1759977018.860131
+  },
+  "7b81b95c-edfa-40fa-b461-f3ec2b1311eb": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T19:30:30.721127"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T19:30:30.721132",
+    "estimated_completion": 1759977090.721133
+  },
+  "7ed57718-8e3f-423a-ab98-fd57732d76ee": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T19:30:55.623836"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T19:30:55.623840",
+    "estimated_completion": 1759977115.623841
+  },
+  "7877eb38-3012-46d4-81ce-f10a40f54d9b": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T19:34:33.218884"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T19:34:33.218887",
+    "estimated_completion": 1759977333.218887
+  },
+  "47303a6e-78e0-4d5b-8917-c95021c0306d": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T19:45:02.845502"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T19:45:02.845509",
+    "estimated_completion": 1759977962.845509
+  },
+  "15e703c1-c044-4830-8f82-f7324454d02a": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T19:46:34.519101"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T19:46:34.519107",
+    "estimated_completion": 1759978054.519107
+  },
+  "3b8c7dc3-42b4-4548-8568-9257d46ba351": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:00:13.553967"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T20:00:13.553970",
+    "estimated_completion": 1759978873.553971
+  },
+  "f747fc4e-ebb6-482d-9907-f204cf2520ae": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:00:40.560916"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T20:00:40.560920",
+    "estimated_completion": 1759978900.56092
+  },
+  "3a618a4d-7657-4ed2-befa-4c4ef691cdb0": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:01:05.202779"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T20:01:05.202783",
+    "estimated_completion": 1759978925.202783
+  },
+  "313cf0d3-5cb0-4774-b7c0-5f0c4f661a91": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:02:55.214332"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T20:02:55.214335",
+    "estimated_completion": 1759979035.214336
+  },
+  "3ed5c868-1c43-4214-9712-d645ccf5bf0a": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:03:23.887126"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T20:03:23.887130",
+    "estimated_completion": 1759979063.88713
+  },
+  "ebe89568-cd2a-47d0-8c7e-070acbb0c37d": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:04:00.986208"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T20:04:00.986212",
+    "estimated_completion": 1759979100.986213
+  },
+  "5b6a7f37-589b-4cec-b293-f6e542ae0270": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:04:22.593296"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T20:04:22.593300",
+    "estimated_completion": 1759979122.593301
+  },
+  "aea2726c-0b8b-4f4f-a657-e17f21c3d788": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:05:08.581305"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T20:05:08.581309",
+    "estimated_completion": 1759979168.581309
+  },
+  "f49810dd-1397-467f-943a-c6ddf38db38e": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:05:41.688095"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T20:05:41.688099",
+    "estimated_completion": 1759979201.688099
+  },
+  "83a75dcc-b9ff-4397-b05b-f5d2ff5848e3": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:06:16.736901"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T20:06:16.736905",
+    "estimated_completion": 1759979236.736905
+  },
+  "1a1512fa-a14c-4621-9cf4-9929b7e3b9c0": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:07:15.713780"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T20:07:15.713784",
+    "estimated_completion": 1759979295.713784
+  },
+  "a810da76-6b84-4cce-8ecd-a13daababad3": {
+    "status": "uploaded",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:09:57.909814"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T20:09:57.909818",
+    "estimated_completion": 1759979457.909819
+  },
+  "e403da36-1741-46af-9b59-f8ba6508bdeb": {
+    "status": "preprocessing",
+    "current_stage": "Preprocessing",
+    "progress": 20.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:10:39.700914"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T20:10:39.700917",
+    "estimated_completion": 1759979499.700918
+  },
+  "2ae5970f-3039-42b9-be6b-dce1f1c543d3": {
+    "status": "preprocessing",
+    "current_stage": "Preprocessing",
+    "progress": 20.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:11:57.771652"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T20:11:57.771655",
+    "estimated_completion": 1759979577.771656
+  },
+  "505d7c58-dc0e-4328-bbcd-99b5998d4b04": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:17:28.749142"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T20:17:40.836679"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:17:52.884021"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T20:18:04.930488"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:18:16.978624"
+      }
+    ],
+    "upload_time": "2025-10-08T20:17:28.749148",
+    "estimated_completion": 1759979908.749148
+  },
+  "0be3442a-dfdd-41fa-b5b9-71ead818b923": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:18:47.618053"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T20:18:59.719524"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:19:11.790433"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T20:19:23.840301"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:19:35.887343"
+      }
+    ],
+    "upload_time": "2025-10-08T20:18:47.618059",
+    "estimated_completion": 1759979987.61806
+  },
+  "d5b3b978-877e-42c1-b5f9-9f887c445820": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:22:24.831330"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T20:22:36.918700"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:22:48.968488"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T20:23:01.039694"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:23:13.095187"
+      }
+    ],
+    "upload_time": "2025-10-08T20:22:24.831337",
+    "estimated_completion": 1759980204.831337
+  },
+  "774838c3-7ce8-4f5b-9d70-fcd74eafe14f": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:26:25.154889"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T20:26:37.369853"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:26:49.416341"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T20:27:01.462388"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:27:13.532445"
+      }
+    ],
+    "upload_time": "2025-10-08T20:26:25.154895",
+    "estimated_completion": 1759980445.154895
+  },
+  "8ee6d238-9a8c-46df-bec3-1a15d35af3e7": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:27:58.688035"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T20:28:10.803366"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:28:22.859720"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T20:28:34.910136"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:28:46.958851"
+      }
+    ],
+    "upload_time": "2025-10-08T20:27:58.688040",
+    "estimated_completion": 1759980538.688041
+  },
+  "72d9660c-3c84-453b-847e-ae11eae8c5b7": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:52:28.933540"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T20:52:41.132522"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:52:53.180595"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T20:53:05.229671"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:53:17.277844"
+      }
+    ],
+    "upload_time": "2025-10-08T20:52:28.933546",
+    "estimated_completion": 1759982008.933546
+  },
+  "9c28716e-50fd-483d-b3c1-04d8cc16e29b": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:54:52.693249"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T20:55:04.772670"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:55:16.821917"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T20:55:28.870124"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:55:40.918169"
+      }
+    ],
+    "upload_time": "2025-10-08T20:54:52.693254",
+    "estimated_completion": 1759982152.693255
+  },
+  "b37096f5-f72a-4f8a-ae66-658128be6be3": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:55:57.807901"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T20:56:09.880908"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:56:22.007894"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T20:56:34.056295"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T20:56:46.105525"
+      }
+    ],
+    "upload_time": "2025-10-08T20:55:57.807907",
+    "estimated_completion": 1759982217.807907
+  },
+  "73a26e1f-1edb-4952-bcbb-c0a63ea2dd73": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T20:59:51.237581"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T21:00:03.325285"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T21:00:15.375306"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T21:00:27.424471"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T21:00:39.472412"
+      }
+    ],
+    "upload_time": "2025-10-08T20:59:51.237586",
+    "estimated_completion": 1759982451.237587
+  },
+  "4d8d52dc-7728-4ad8-977c-83f2821f822c": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T21:23:03.690460"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T21:23:15.865647"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T21:23:27.915797"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T21:23:39.962347"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T21:23:52.009199"
+      }
+    ],
+    "upload_time": "2025-10-08T21:23:03.690467",
+    "estimated_completion": 1759983843.690467,
+    "error_message": "cannot import name 'NeMoOCRProcessor' from 'chain_server.agents.document.ocr.nemo_ocr' (/home/tarik-devh/Projects/warehouseassistant/warehouse-operational-assistant/chain_server/agents/document/ocr/nemo_ocr.py)"
+  },
+  "d4d81804-d742-48de-be05-f85ac34dec4c": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T21:26:26.942855"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T21:26:39.334110"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T21:26:51.385254"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T21:27:03.435897"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T21:27:15.487189"
+      }
+    ],
+    "upload_time": "2025-10-08T21:26:26.942862",
+    "estimated_completion": 1759984046.942863,
+    "error_message": "'layout_detection'"
+  },
+  "97693fa6-b60b-4d5d-8895-cc5c0ea7ffe4": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T21:32:17.917574"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T21:32:30.288915"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T21:32:42.355204"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T21:32:54.406107"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T21:33:06.457228"
+      }
+    ],
+    "upload_time": "2025-10-08T21:32:17.917581",
+    "estimated_completion": 1759984397.917581,
+    "error_message": "'layout_detection'"
+  },
+  "f63060b2-fdd2-40c3-a418-cd1bb7f69182": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T21:39:34.017340"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T21:39:57.661394"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T21:40:19.708756"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T21:40:38.549115"
+      }
+    ],
+    "upload_time": "2025-10-08T21:39:34.017347",
+    "estimated_completion": 1759984834.017347,
+    "error_message": "Failed to open file '/tmp/document_uploads/f63060b2-fdd2-40c3-a418-cd1bb7f69182_test_invoice.pdf'."
+  },
+  "07872236-e877-4bf4-95ac-9aebf7db7f61": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T21:43:08.187746"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T21:43:20.398115"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T21:43:32.451291"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T21:43:44.502487"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T21:43:56.554368"
+      }
+    ],
+    "upload_time": "2025-10-08T21:43:08.187752",
+    "estimated_completion": 1759985048.187753,
+    "error_message": "'layout_detection'"
+  },
+  "a43fab41-d8c9-4db4-b64f-8b7e7c366e84": {
+    "status": "failed",
+    "current_stage": "Preprocessing",
+    "progress": 0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T21:47:11.811211"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T21:47:11.811215",
+    "estimated_completion": 1759985291.811215,
+    "error_message": "Failed to open file '/tmp/document_uploads/a43fab41-d8c9-4db4-b64f-8b7e7c366e84_test_invoice.pdf'."
+  },
+  "55779127-8e27-4c1e-bcb1-1d3a65eb3ced": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T21:47:40.044774"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T21:47:52.287971"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T21:48:04.343242"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T21:48:16.402936"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T21:48:28.466082"
+      }
+    ],
+    "upload_time": "2025-10-08T21:47:40.044780",
+    "estimated_completion": 1759985320.04478,
+    "error_message": "'layout_detection'"
+  },
+  "3860350f-f60d-448e-bcc2-538ce58e158c": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T21:52:53.791427"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T21:53:06.060510"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T21:53:18.125555"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T21:53:30.180712"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T21:53:42.233295"
+      }
+    ],
+    "upload_time": "2025-10-08T21:52:53.791434",
+    "estimated_completion": 1759985633.791435,
+    "error_message": "'layout_detection'"
+  },
+  "22643789-5b18-41a4-b711-cd1b500d7f0e": {
+    "status": "preprocessing",
+    "current_stage": "Preprocessing",
+    "progress": 20.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "processing",
+        "started_at": "2025-10-08T21:56:58.573292"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T21:56:58.573298",
+    "estimated_completion": 1759985878.573299,
+    "error_message": "'layout_detection'"
+  },
+  "0c2ba8f2-035a-4f2a-ab5a-f34492e5364d": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:01:37.611954"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T22:01:49.841701"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:02:01.896856"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T22:02:13.949967"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T22:02:26.006994"
+      }
+    ],
+    "upload_time": "2025-10-08T22:01:37.611959",
+    "estimated_completion": 1759986157.61196,
+    "error_message": "'layout_detection'"
+  },
+  "cd9e06c1-78ca-4dce-814f-519c46a7a7de": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:03:49.053575"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T22:04:01.238939"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:04:13.297166"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T22:04:25.349326"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T22:04:37.401725"
+      }
+    ],
+    "upload_time": "2025-10-08T22:03:49.053579",
+    "estimated_completion": 1759986289.05358,
+    "error_message": "'layout_detection'"
+  },
+  "e52eed6d-f411-4d13-b7c7-6ef56eb913fe": {
+    "status": "validation",
+    "current_stage": "Validation",
+    "progress": 80.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:07:53.935896"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T22:08:06.963631"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "processing",
+        "started_at": "2025-10-08T22:08:39.458503"
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T22:07:53.935901",
+    "estimated_completion": 1759986533.935901,
+    "error_message": "'layout_detection'"
+  },
+  "bf421527-986c-456d-b6a5-139a13463098": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:09:25.698662"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T22:09:37.920438"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:09:49.980080"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T22:10:02.033499"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T22:10:14.086726"
+      }
+    ],
+    "upload_time": "2025-10-08T22:09:25.698668",
+    "estimated_completion": 1759986625.698669,
+    "error_message": "'layout_detection'"
+  },
+  "dc639f40-d2e0-4f5f-851e-bccd7ca29877": {
+    "status": "ocr_extraction",
+    "current_stage": "OCR Extraction",
+    "progress": 40.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:13:44.132521"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "processing",
+        "started_at": "2025-10-08T22:13:56.662671"
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T22:13:44.132525",
+    "estimated_completion": 1759986884.132525,
+    "error_message": "'layout_detection'"
+  },
+  "4dda978a-4a2e-407d-b372-3b9f551d3587": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:15:07.985052"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T22:15:20.259193"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:15:32.333402"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T22:15:44.400035"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T22:15:56.469959"
+      }
+    ],
+    "upload_time": "2025-10-08T22:15:07.985056",
+    "estimated_completion": 1759986967.985057,
+    "error_message": "'layout_detection'"
+  },
+  "2df0c404-f847-4661-b4f9-b7c24abb2f5c": {
+    "status": "llm_processing",
+    "current_stage": "LLM Processing",
+    "progress": 60.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:17:20.247800"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T22:17:32.479489"
+      },
+      {
+        "name": "llm_processing",
+        "status": "processing",
+        "started_at": "2025-10-08T22:17:44.565333"
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T22:17:20.247806",
+    "estimated_completion": 1759987100.247807,
+    "error_message": "'layout_detection'"
+  },
+  "2f37424d-e967-4a61-99a9-d98c614cb6f4": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:20:01.961878"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T22:20:14.321811"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:20:26.393644"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T22:20:38.467451"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T22:20:50.541641"
+      }
+    ],
+    "upload_time": "2025-10-08T22:20:01.961882",
+    "estimated_completion": 1759987261.961883,
+    "error_message": "'layout_detection'"
+  },
+  "de1dfea2-161e-4981-add1-cf0c786125cd": {
+    "status": "ocr_extraction",
+    "current_stage": "OCR Extraction",
+    "progress": 40.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:24:05.936031"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "processing",
+        "started_at": "2025-10-08T22:24:19.233470"
+      },
+      {
+        "name": "llm_processing",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "pending",
+        "started_at": null
+      },
+      {
+        "name": "routing",
+        "status": "pending",
+        "started_at": null
+      }
+    ],
+    "upload_time": "2025-10-08T22:24:05.936035",
+    "estimated_completion": 1759987505.936035,
+    "error_message": "'str' object has no attribute 'save'"
+  },
+  "64a32d15-685e-49b1-9c30-a6a135a558da": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:25:24.394569"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T22:25:36.613859"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:25:48.684023"
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T22:26:00.751420"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T22:26:12.833740"
+      }
+    ],
+    "upload_time": "2025-10-08T22:25:24.394574",
+    "estimated_completion": 1759987584.394575,
+    "error_message": "'str' object has no attribute 'save'"
+  },
+  "16c2c8b5-a567-4019-9804-020d1637d10e": {
+    "status": "completed",
+    "current_stage": "Completed",
+    "progress": 100.0,
+    "stages": [
+      {
+        "name": "preprocessing",
+        "status": "completed",
+        "started_at": "2025-10-08T22:35:44.103764"
+      },
+      {
+        "name": "ocr_extraction",
+        "status": "completed",
+        "started_at": "2025-10-08T22:35:56.389986"
+      },
+      {
+        "name": "llm_processing",
+        "status": "completed",
+        "started_at": null
+      },
+      {
+        "name": "validation",
+        "status": "completed",
+        "started_at": "2025-10-08T22:36:29.174415"
+      },
+      {
+        "name": "routing",
+        "status": "processing",
+        "started_at": "2025-10-08T22:36:52.117175"
+      }
+    ],
+    "upload_time": "2025-10-08T22:35:44.103770",
+    "estimated_completion": 1759988204.103771,
+    "error_message": "Client error '400 Bad Request' for url 'https://integrate.api.nvidia.com/v1/chat/completions'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400"
+  }
+}

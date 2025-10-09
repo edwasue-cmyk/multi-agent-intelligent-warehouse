@@ -264,7 +264,7 @@ class SmallLLMProcessor:
                         "Content-Type": "application/json"
                     },
                     json={
-                        "model": "meta/llama-nemotron-nano-vl-8b",
+                        "model": "meta/llama-3.1-70b-instruct",
                         "messages": messages,
                         "max_tokens": 2000,
                         "temperature": 0.1
@@ -274,7 +274,7 @@ class SmallLLMProcessor:
                 
                 result = response.json()
                 
-                # Extract response content
+                # Extract response content from chat completions
                 content = result["choices"][0]["message"]["content"]
                 
                 # Try to parse JSON response
