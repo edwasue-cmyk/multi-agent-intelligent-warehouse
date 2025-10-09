@@ -10,6 +10,8 @@ from datetime import datetime
 import uuid
 import os
 import time
+import json
+from pathlib import Path
 
 from chain_server.services.llm.nim_client import get_nim_client
 from chain_server.agents.document.models.document_models import (
@@ -27,15 +29,57 @@ class DocumentActionTools:
         self.supported_file_types = ["pdf", "png", "jpg", "jpeg", "tiff", "bmp"]
         self.max_file_size = 50 * 1024 * 1024  # 50MB
         self.document_statuses = {}  # Track document processing status
+        self.status_file = Path("document_statuses.json")  # Persistent storage
     
     async def initialize(self):
         """Initialize document processing tools."""
         try:
             self.nim_client = await get_nim_client()
+            await self._load_status_data()  # Load persistent status data
             logger.info("Document Action Tools initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize Document Action Tools: {e}")
             raise
+    
+    def _load_status_data(self):
+        """Load document status data from persistent storage."""
+        try:
+            if self.status_file.exists():
+                with open(self.status_file, 'r') as f:
+                    data = json.load(f)
+                    # Convert datetime strings back to datetime objects
+                    for doc_id, status_info in data.items():
+                        if 'upload_time' in status_info:
+                            status_info['upload_time'] = datetime.fromisoformat(status_info['upload_time'])
+                        for stage in status_info.get('stages', []):
+                            if stage.get('started_at'):
+                                stage['started_at'] = datetime.fromisoformat(stage['started_at'])
+                    self.document_statuses = data
+                    logger.info(f"Loaded {len(self.document_statuses)} document statuses from persistent storage")
+            else:
+                logger.info("No persistent status file found, starting with empty status tracking")
+        except Exception as e:
+            logger.error(f"Failed to load status data: {e}")
+            self.document_statuses = {}
+    
+    def _save_status_data(self):
+        """Save document status data to persistent storage."""
+        try:
+            # Convert datetime objects to strings for JSON serialization
+            data_to_save = {}
+            for doc_id, status_info in self.document_statuses.items():
+                data_to_save[doc_id] = status_info.copy()
+                if 'upload_time' in data_to_save[doc_id]:
+                    data_to_save[doc_id]['upload_time'] = data_to_save[doc_id]['upload_time'].isoformat()
+                for stage in data_to_save[doc_id].get('stages', []):
+                    if stage.get('started_at'):
+                        stage['started_at'] = stage['started_at'].isoformat()
+            
+            with open(self.status_file, 'w') as f:
+                json.dump(data_to_save, f, indent=2)
+            logger.debug(f"Saved {len(self.document_statuses)} document statuses to persistent storage")
+        except Exception as e:
+            logger.error(f"Failed to save status data: {e}")
     
     async def upload_document(
         self, 
@@ -78,6 +122,9 @@ class DocumentActionTools:
             
             logger.info(f"Initialized document status for {document_id}")
             logger.info(f"Document statuses now: {list(self.document_statuses.keys())}")
+            
+            # Save status data to persistent storage
+            self._save_status_data()
             
             # Create document record (in real implementation, this would save to database)
             document_record = {
@@ -418,6 +465,9 @@ class DocumentActionTools:
         status_info["status"] = overall_status
         status_info["current_stage"] = current_stage_name
         status_info["progress"] = progress
+        
+        # Save updated status to persistent storage
+        self._save_status_data()
         
         return {
             "status": overall_status,
