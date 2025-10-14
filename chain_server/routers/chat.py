@@ -58,14 +58,40 @@ async def chat(req: ChatRequest):
             )
         except Exception as query_error:
             logger.error(f"Query processing error: {query_error}")
-            # Return a fallback response instead of failing
+            # Return a more helpful fallback response
+            error_type = type(query_error).__name__
+            error_message = str(query_error)
+            
+            # Provide specific error messages based on error type
+            if "timeout" in error_message.lower():
+                user_message = "The request timed out. Please try again with a simpler question."
+            elif "connection" in error_message.lower():
+                user_message = "I'm having trouble connecting to the processing service. Please try again in a moment."
+            elif "validation" in error_message.lower():
+                user_message = "There was an issue with your request format. Please try rephrasing your question."
+            else:
+                user_message = "I encountered an error processing your query. Please try rephrasing your question or contact support if the issue persists."
+            
             return ChatResponse(
-                reply=f"I encountered an error processing your query: {str(query_error)}. Please try rephrasing your question or contact support if the issue persists.",
+                reply=user_message,
                 route="error",
                 intent="error",
                 session_id=req.session_id or "default",
-                context={"error": str(query_error)},
-                confidence=0.0
+                context={
+                    "error": error_message,
+                    "error_type": error_type,
+                    "suggestions": [
+                        "Try rephrasing your question",
+                        "Check if the equipment ID or task name is correct",
+                        "Contact support if the issue persists"
+                    ]
+                },
+                confidence=0.0,
+                recommendations=[
+                    "Try rephrasing your question",
+                    "Check if the equipment ID or task name is correct", 
+                    "Contact support if the issue persists"
+                ]
             )
         
         # Check output safety with guardrails
@@ -98,12 +124,25 @@ async def chat(req: ChatRequest):
         
     except Exception as e:
         logger.error(f"Error in chat endpoint: {e}")
-        # Return a user-friendly error response instead of raising an exception
+        # Return a user-friendly error response with helpful suggestions
         return ChatResponse(
             reply="I'm sorry, I encountered an unexpected error. Please try again or contact support if the issue persists.",
             route="error",
             intent="error",
             session_id=req.session_id or "default",
-            context={"error": str(e)},
-            confidence=0.0
+            context={
+                "error": str(e),
+                "error_type": type(e).__name__,
+                "suggestions": [
+                    "Try refreshing the page",
+                    "Check your internet connection",
+                    "Contact support if the issue persists"
+                ]
+            },
+            confidence=0.0,
+            recommendations=[
+                "Try refreshing the page",
+                "Check your internet connection", 
+                "Contact support if the issue persists"
+            ]
         )

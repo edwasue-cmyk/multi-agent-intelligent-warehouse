@@ -55,7 +55,7 @@ class IntentClassifier:
         "hazard", "accident", "protocol", "training", "audit",
         "over-temp", "overtemp", "temperature", "event", "detected",
         "alert", "warning", "emergency", "malfunction", "failure",
-        "ppe", "protective", "equipment", "helmet", "gloves", "boots",
+        "ppe", "protective", "helmet", "gloves", "boots", "safety harness",
         "procedures", "guidelines", "standards", "regulations",
         "evacuation", "fire", "chemical", "lockout", "tagout", "loto",
         "injury", "report", "investigation", "corrective", "action",
@@ -73,39 +73,150 @@ class IntentClassifier:
     
     @classmethod
     def classify_intent(cls, message: str) -> str:
-        """Classify user intent based on message content."""
+        """Enhanced intent classification with better logic and ambiguity handling."""
         message_lower = message.lower()
         
-        # Check for document-related keywords first (high priority)
+        # Check for document-related keywords first (highest priority)
         if any(keyword in message_lower for keyword in cls.DOCUMENT_KEYWORDS):
             return "document"
         
-        # Check for safety-related keywords (highest priority)
-        if any(keyword in message_lower for keyword in cls.SAFETY_KEYWORDS):
-            return "safety"
+        # Check for specific safety-related queries (not general equipment)
+        safety_score = sum(1 for keyword in cls.SAFETY_KEYWORDS if keyword in message_lower)
+        if safety_score > 0:
+            # Only route to safety if it's clearly safety-related, not general equipment
+            safety_context_indicators = ["procedure", "policy", "incident", "compliance", "safety", "ppe", "hazard"]
+            if any(indicator in message_lower for indicator in safety_context_indicators):
+                return "safety"
         
-        # Check for equipment dispatch/assignment keywords (high priority)
-        if any(term in message_lower for term in ["dispatch", "assign", "deploy"]) and any(term in message_lower for term in ["forklift", "equipment", "conveyor", "truck", "amr", "agv"]):
+        # Check for equipment-specific queries (availability, status, assignment)
+        equipment_indicators = ["available", "status", "assign", "dispatch", "utilization", "maintenance", "telemetry"]
+        equipment_objects = ["forklift", "scanner", "conveyor", "truck", "amr", "agv", "equipment"]
+        
+        if any(indicator in message_lower for indicator in equipment_indicators) and \
+           any(obj in message_lower for obj in equipment_objects):
             return "equipment"
         
-        # Check for operations-related keywords (high priority for workflow tasks)
+        # Check for operations-related keywords (workflow, tasks, management)
         operations_score = sum(1 for keyword in cls.OPERATIONS_KEYWORDS if keyword in message_lower)
+        if operations_score > 0:
+            # Prioritize operations for workflow-related terms
+            workflow_terms = ["task", "wave", "order", "create", "pick", "pack", "management", "workflow"]
+            if any(term in message_lower for term in workflow_terms):
+                return "operations"
+        
+        # Check for equipment-related keywords (fallback)
         equipment_score = sum(1 for keyword in cls.EQUIPMENT_KEYWORDS if keyword in message_lower)
-        
-        # Prioritize operations if it has more keywords or contains workflow terms (but not equipment dispatch)
-        if operations_score > 0 and any(term in message_lower for term in ["wave", "order", "create", "pick", "pack"]) and not any(term in message_lower for term in ["dispatch", "assign", "deploy"]):
-            return "operations"
-        
-        # Check for equipment-related keywords
         if equipment_score > 0:
             return "equipment"
         
-        # Check for operations-related keywords (fallback)
-        if operations_score > 0:
-            return "operations"
+        # Handle ambiguous queries
+        ambiguous_patterns = [
+            "inventory", "management", "help", "assistance", "support"
+        ]
+        if any(pattern in message_lower for pattern in ambiguous_patterns):
+            return "ambiguous"
         
-        # Default to general inquiry
-        return "general"
+        # Default to equipment for general queries
+        return "equipment"
+
+def handle_ambiguous_query(state: WarehouseState) -> WarehouseState:
+    """Handle ambiguous queries with clarifying questions."""
+    try:
+        if not state["messages"]:
+            return state
+            
+        latest_message = state["messages"][-1]
+        if isinstance(latest_message, HumanMessage):
+            message_text = latest_message.content
+        else:
+            message_text = str(latest_message.content)
+        
+        message_lower = message_text.lower()
+        
+        # Define clarifying questions based on ambiguous patterns
+        clarifying_responses = {
+            "inventory": {
+                "question": "I can help with inventory management. Are you looking for:",
+                "options": [
+                    "Equipment inventory and status",
+                    "Product inventory management", 
+                    "Inventory tracking and reporting"
+                ]
+            },
+            "management": {
+                "question": "What type of management do you need help with?",
+                "options": [
+                    "Equipment management",
+                    "Task management",
+                    "Safety management"
+                ]
+            },
+            "help": {
+                "question": "I'm here to help! What would you like to do?",
+                "options": [
+                    "Check equipment status",
+                    "Create a task",
+                    "View safety procedures",
+                    "Upload a document"
+                ]
+            },
+            "assistance": {
+                "question": "I can assist you with warehouse operations. What do you need?",
+                "options": [
+                    "Equipment assistance",
+                    "Task assistance", 
+                    "Safety assistance",
+                    "Document assistance"
+                ]
+            }
+        }
+        
+        # Find matching pattern
+        for pattern, response in clarifying_responses.items():
+            if pattern in message_lower:
+                # Create clarifying question response
+                clarifying_message = AIMessage(content=response["question"])
+                state["messages"].append(clarifying_message)
+                
+                # Store clarifying context
+                state["context"]["clarifying"] = {
+                    "text": response["question"],
+                    "options": response["options"],
+                    "original_query": message_text
+                }
+                
+                state["agent_responses"]["clarifying"] = response["question"]
+                state["final_response"] = response["question"]
+                return state
+        
+        # Default clarifying question
+        default_response = {
+            "question": "I can help with warehouse operations. What would you like to do?",
+            "options": [
+                "Check equipment status",
+                "Create a task",
+                "View safety procedures",
+                "Upload a document"
+            ]
+        }
+        
+        clarifying_message = AIMessage(content=default_response["question"])
+        state["messages"].append(clarifying_message)
+        
+        state["context"]["clarifying"] = {
+            "text": default_response["question"],
+            "options": default_response["options"],
+            "original_query": message_text
+        }
+        
+        state["agent_responses"]["clarifying"] = default_response["question"]
+        state["final_response"] = default_response["question"]
+        
+    except Exception as e:
+        logger.error(f"Error handling ambiguous query: {e}")
+        state["final_response"] = "I'm not sure how to help with that. Could you please be more specific?"
+    
+    return state
 
 def route_intent(state: WarehouseState) -> WarehouseState:
     """Route user message to appropriate agent based on intent classification."""
@@ -128,6 +239,10 @@ def route_intent(state: WarehouseState) -> WarehouseState:
         state["routing_decision"] = intent
         
         logger.info(f"Intent classified as: {intent} for message: {message_text[:100]}...")
+        
+        # Handle ambiguous queries with clarifying questions
+        if intent == "ambiguous":
+            return handle_ambiguous_query(state)
         
     except Exception as e:
         logger.error(f"Error in intent routing: {e}")
