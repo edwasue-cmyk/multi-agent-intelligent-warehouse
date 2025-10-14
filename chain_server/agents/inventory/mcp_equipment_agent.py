@@ -17,7 +17,7 @@ from inventory_retriever.hybrid_retriever import get_hybrid_retriever, SearchCon
 from memory_retriever.memory_manager import get_memory_manager
 from chain_server.services.mcp.tool_discovery import ToolDiscoveryService, DiscoveredTool, ToolCategory
 from chain_server.services.mcp.base import MCPManager
-from .equipment_asset_tools import get_equipment_asset_tools, EquipmentAssetTools
+from .equipment_asset_tools import get_equipment_asset_tools
 
 logger = logging.getLogger(__name__)
 
