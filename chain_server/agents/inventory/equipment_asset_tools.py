@@ -643,6 +643,136 @@ class EquipmentAssetTools:
                 "maintenance_schedule": [],
                 "total_scheduled": 0
             }
+    
+    async def get_equipment_utilization(
+        self,
+        asset_id: Optional[str] = None,
+        equipment_type: Optional[str] = None,
+        time_period: str = "day"
+    ) -> Dict[str, Any]:
+        """
+        Get equipment utilization metrics and performance data.
+        
+        Args:
+            asset_id: Specific equipment asset ID (optional)
+            equipment_type: Type of equipment (optional)
+            time_period: Time period for utilization data (day, week, month)
+            
+        Returns:
+            Dictionary containing utilization metrics
+        """
+        logger.info(f"Getting equipment utilization for asset_id: {asset_id}, type: {equipment_type}, period: {time_period}")
+        
+        try:
+            # Calculate time range based on period
+            now = datetime.now()
+            if time_period == "day":
+                start_time = now - timedelta(days=1)
+            elif time_period == "week":
+                start_time = now - timedelta(weeks=1)
+            elif time_period == "month":
+                start_time = now - timedelta(days=30)
+            else:
+                start_time = now - timedelta(days=1)
+            
+            # Build query conditions
+            where_conditions = ["a.assigned_at >= $1 AND a.assigned_at <= $2"]
+            params = [start_time, now]
+            param_count = 3
+            
+            if asset_id:
+                where_conditions.append(f"a.asset_id = ${param_count}")
+                params.append(asset_id)
+                param_count += 1
+            
+            if equipment_type:
+                where_conditions.append(f"e.type = ${param_count}")
+                params.append(equipment_type)
+                param_count += 1
+            
+            where_clause = " AND ".join(where_conditions)
+            
+            # Get utilization data
+            utilization_query = f"""
+                SELECT 
+                    a.asset_id,
+                    e.type as equipment_type,
+                    e.model,
+                    e.zone,
+                    COUNT(a.id) as total_assignments,
+                    SUM(EXTRACT(EPOCH FROM (COALESCE(a.released_at, NOW()) - a.assigned_at))/3600) as total_hours_used,
+                    AVG(EXTRACT(EPOCH FROM (COALESCE(a.released_at, NOW()) - a.assigned_at))/3600) as avg_hours_per_assignment,
+                    MAX(a.assigned_at) as last_assigned,
+                    MIN(a.assigned_at) as first_assigned
+                FROM equipment_assignments a
+                JOIN equipment_assets e ON a.asset_id = e.asset_id
+                WHERE {where_clause}
+                GROUP BY a.asset_id, e.type, e.model, e.zone
+                ORDER BY total_hours_used DESC
+            """
+            
+            results = await self.sql_retriever.execute_query(utilization_query, tuple(params))
+            
+            utilization_data = []
+            total_hours = 0
+            total_assignments = 0
+            
+            for row in results:
+                hours_used = float(row['total_hours_used']) if row['total_hours_used'] else 0
+                total_hours += hours_used
+                total_assignments += int(row['total_assignments'])
+                
+                # Calculate utilization percentage (assuming 8 hours per day as standard)
+                max_possible_hours = 8 * (1 if time_period == "day" else 7 if time_period == "week" else 30)
+                utilization_percentage = min((hours_used / max_possible_hours) * 100, 100) if max_possible_hours > 0 else 0
+                
+                utilization_data.append({
+                    "asset_id": row['asset_id'],
+                    "equipment_type": row['equipment_type'],
+                    "model": row['model'],
+                    "zone": row['zone'],
+                    "total_assignments": int(row['total_assignments']),
+                    "total_hours_used": round(hours_used, 2),
+                    "avg_hours_per_assignment": round(float(row['avg_hours_per_assignment']) if row['avg_hours_per_assignment'] else 0, 2),
+                    "utilization_percentage": round(utilization_percentage, 1),
+                    "last_assigned": row['last_assigned'].isoformat() if row['last_assigned'] else None,
+                    "first_assigned": row['first_assigned'].isoformat() if row['first_assigned'] else None
+                })
+            
+            # Calculate overall metrics
+            avg_utilization = sum(item['utilization_percentage'] for item in utilization_data) / len(utilization_data) if utilization_data else 0
+            
+            return {
+                "utilization_data": utilization_data,
+                "summary": {
+                    "total_equipment": len(utilization_data),
+                    "total_hours_used": round(total_hours, 2),
+                    "total_assignments": total_assignments,
+                    "average_utilization_percentage": round(avg_utilization, 1),
+                    "time_period": time_period,
+                    "period_start": start_time.isoformat(),
+                    "period_end": now.isoformat()
+                },
+                "query_filters": {
+                    "asset_id": asset_id,
+                    "equipment_type": equipment_type,
+                    "time_period": time_period
+                },
+                "timestamp": now.isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting equipment utilization: {e}")
+            return {
+                "error": f"Failed to get equipment utilization: {str(e)}",
+                "utilization_data": [],
+                "summary": {
+                    "total_equipment": 0,
+                    "total_hours_used": 0,
+                    "total_assignments": 0,
+                    "average_utilization_percentage": 0
+                }
+            }
 
 # Global instance
 _equipment_asset_tools: Optional[EquipmentAssetTools] = None

@@ -53,6 +53,7 @@ class QualityDecision(str, Enum):
     """Quality validation decisions."""
     APPROVE = "APPROVE"
     REVIEW = "REVIEW"
+    REVIEW_REQUIRED = "REVIEW_REQUIRED"
     REJECT = "REJECT"
     RESCAN = "RESCAN"
 

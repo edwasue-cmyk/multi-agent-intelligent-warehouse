@@ -1,0 +1,109 @@
+{
+  "stage1": {
+    "document_type": "image",
+    "total_pages": 1,
+    "images": [
+      "<PIL.PngImagePlugin.PngImageFile image mode=RGB size=400x300 at 0x7F342A9AF160>"
+    ],
+    "processed_pages": [
+      {
+        "page_number": 1,
+        "image": "<PIL.PngImagePlugin.PngImageFile image mode=RGB size=400x300 at 0x7F342A9AF160>",
+        "elements": {
+          "elements": [
+            {
+              "type": "text_block",
+              "confidence": 0.9,
+              "bbox": [
+                0,
+                0,
+                100,
+                100
+              ],
+              "area": 10000
+            }
+          ],
+          "confidence": 0.9,
+          "model_used": "nv-yolox-page-elements-v1"
+        },
+        "dimensions": [
+          400,
+          300
+        ]
+      }
+    ],
+    "metadata": {
+      "file_path": "test_invoice.png",
+      "file_size": 5703,
+      "processing_timestamp": "2025-10-10T08:05:50.173101"
+    }
+  },
+  "stage2": {
+    "text": "I'm happy to help you with extracting text from the document image. However, I need to clarify a few things.\n\nThe text you provided appears to be a base64-encoded image data, which is not a human-readable format. To extract text from the image, I would need to decode the image data and then apply Optical Character Recognition (OCR) techniques.\n\nUnfortunately, I'm a large language model, I don't have the capability to directly decode and process image data. But I can guide you through the process of extracting text from the image using OCR tools.\n\nHere are a few options:\n\n1. **Use an online OCR tool**: You can upload the image to an online OCR tool, such as Online OCR Tools, OCR.space, or SmallPDF. These tools can extract text from the image and provide you with the output.\n2. **Use a desktop OCR software**: You can use desktop OCR software, such as Adobe Acrobat, ABBYY FineReader, or Readiris, to extract text from the image.\n3. **Use a programming library**: If you have programming expertise, you can use libraries like Tesseract.js (JavaScript), Pytesseract (Python), or OpenCV (Python) to extract text from the image.\n\nOnce you have extracted the text using one of these methods, I can help you with further processing, such as formatting, editing, or analyzing the text.\n\nPlease let me know which option you prefer, or if you need more guidance on how to proceed.",
+    "page_results": [
+      {
+        "page_number": 1,
+        "text": "I'm happy to help you with extracting text from the document image. However, I need to clarify a few things.\n\nThe text you provided appears to be a base64-encoded image data, which is not a human-readable format. To extract text from the image, I would need to decode the image data and then apply Optical Character Recognition (OCR) techniques.\n\nUnfortunately, I'm a large language model, I don't have the capability to directly decode and process image data. But I can guide you through the process of extracting text from the image using OCR tools.\n\nHere are a few options:\n\n1. **Use an online OCR tool**: You can upload the image to an online OCR tool, such as Online OCR Tools, OCR.space, or SmallPDF. These tools can extract text from the image and provide you with the output.\n2. **Use a desktop OCR software**: You can use desktop OCR software, such as Adobe Acrobat, ABBYY FineReader, or Readiris, to extract text from the image.\n3. **Use a programming library**: If you have programming expertise, you can use libraries like Tesseract.js (JavaScript), Pytesseract (Python), or OpenCV (Python) to extract text from the image.\n\nOnce you have extracted the text using one of these methods, I can help you with further processing, such as formatting, editing, or analyzing the text.\n\nPlease let me know which option you prefer, or if you need more guidance on how to proceed.",
+        "words": [],
+        "confidence": 0.9,
+        "image_dimensions": [
+          400,
+          300
+        ],
+        "layout_type": "unknown",
+        "reading_order": [],
+        "document_structure": {},
+        "layout_enhanced": true
+      }
+    ],
+    "confidence": 0.9,
+    "total_pages": 1,
+    "model_used": "NeMoRetriever-OCR-v1",
+    "processing_timestamp": "2025-10-10T08:05:56.626648",
+    "layout_enhanced": true
+  },
+  "stage3": {
+    "structured_data": {
+      "document_type": "invoice",
+      "extracted_fields": {},
+      "line_items": [],
+      "quality_assessment": {
+        "overall_confidence": 0.7,
+        "completeness": 0.8,
+        "accuracy": 0.8
+      },
+      "processing_metadata": {
+        "model_used": "Llama-3.1-70B-Instruct",
+        "timestamp": "2025-10-10T08:05:58.675581",
+        "multimodal": false
+      }
+    },
+    "confidence": 0.7,
+    "model_used": "Llama-3.1-70B-Instruct",
+    "processing_timestamp": "2025-10-10T08:05:58.675596",
+    "multimodal_processed": false
+  },
+  "stage4": {
+    "overall_score": 3.0,
+    "decision": "REVIEW_REQUIRED",
+    "completeness": {
+      "score": 3.0,
+      "reasoning": "Parsed from raw text"
+    },
+    "accuracy": {
+      "score": 3.0,
+      "reasoning": "Parsed from raw text"
+    },
+    "compliance": {
+      "score": 3.0,
+      "reasoning": "Parsed from raw text"
+    },
+    "quality": {
+      "score": 3.0,
+      "reasoning": "Parsed from raw text"
+    },
+    "issues_found": [],
+    "confidence": 0.8,
+    "reasoning": "Based on the provided document data and extracted entities, I will evaluate the invoice document according to the specified criteria.\n\n**Overall Assessment**\n\nThe document data indicates that the invo..."
+  }
+}

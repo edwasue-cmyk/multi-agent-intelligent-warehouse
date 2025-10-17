@@ -1,9 +1,1 @@
-Invoice #INV-2025-TEST-001
-Vendor: Test Company Inc.
-Date: 2025-01-03
-Amount: ,250.00
-Tax: 00.00
-Total: ,350.00
-
-Line Items:
-1. Widget A - Qty: 10 - Price: 25.00 - Total: ,250.00
+Test invoice content

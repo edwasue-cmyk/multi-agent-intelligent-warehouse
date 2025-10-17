@@ -346,10 +346,14 @@ const DocumentExtraction: React.FC = () => {
         response.extraction_results.forEach((result: any) => {
           if (result.processed_data) {
             Object.assign(transformedResults.extracted_data, result.processed_data);
-          }
-          // Add confidence scores
-          if (result.confidence_score !== undefined) {
-            transformedResults.confidence_scores[result.stage] = result.confidence_score;
+            
+            // Map confidence scores to individual fields
+            if (result.confidence_score !== undefined) {
+              // For each field in processed_data, assign the same confidence score
+              Object.keys(result.processed_data).forEach(fieldKey => {
+                transformedResults.confidence_scores[fieldKey] = result.confidence_score;
+              });
+            }
           }
         });
       }

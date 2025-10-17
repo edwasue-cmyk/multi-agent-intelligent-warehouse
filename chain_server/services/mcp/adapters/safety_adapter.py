@@ -8,16 +8,20 @@ with the MCP (Model Context Protocol) system for tool discovery and execution.
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
+from dataclasses import dataclass, field
 
 from chain_server.services.mcp.base import MCPAdapter, AdapterConfig, AdapterType, MCPTool, MCPToolType
+from chain_server.services.mcp.client import MCPConnectionType
 from chain_server.agents.safety.action_tools import get_safety_action_tools
 
 logger = logging.getLogger(__name__)
 
 class SafetyAdapterConfig(AdapterConfig):
     """Configuration for Safety MCP Adapter."""
-    adapter_type: AdapterType = AdapterType.SAFETY
-    name: str = "safety_action_tools"
+    adapter_type: AdapterType = field(default=AdapterType.SAFETY)
+    name: str = field(default="safety_action_tools")
+    endpoint: str = field(default="local://safety_tools")
+    connection_type: MCPConnectionType = field(default=MCPConnectionType.STDIO)
     description: str = "Safety and compliance management tools"
     version: str = "1.0.0"
     enabled: bool = True
@@ -264,6 +268,7 @@ async def get_safety_adapter() -> SafetyMCPAdapter:
     """Get the global safety adapter instance."""
     global _safety_adapter
     if _safety_adapter is None:
-        _safety_adapter = SafetyMCPAdapter()
+        config = SafetyAdapterConfig()
+        _safety_adapter = SafetyMCPAdapter(config)
         await _safety_adapter.initialize()
     return _safety_adapter

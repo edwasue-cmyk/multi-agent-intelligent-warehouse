@@ -36,6 +36,9 @@ async def get_mcp_services():
             # Start tool discovery
             await tool_discovery.start_discovery()
             
+            # Register MCP adapters as discovery sources
+            await _register_mcp_adapters(tool_discovery)
+            
             _mcp_services = {
                 "tool_discovery": tool_discovery,
                 "tool_binding": tool_binding,
@@ -49,6 +52,45 @@ async def get_mcp_services():
             raise HTTPException(status_code=500, detail=f"Failed to initialize MCP services: {str(e)}")
     
     return _mcp_services
+
+async def _register_mcp_adapters(tool_discovery: ToolDiscoveryService):
+    """Register MCP adapters as discovery sources."""
+    try:
+        # Register Equipment MCP Adapter
+        from chain_server.services.mcp.adapters.equipment_adapter import get_equipment_adapter
+        equipment_adapter = await get_equipment_adapter()
+        await tool_discovery.register_discovery_source(
+            "equipment_asset_tools",
+            equipment_adapter,
+            "mcp_adapter"
+        )
+        logger.info("Registered Equipment MCP Adapter")
+        
+        # Register Operations MCP Adapter
+        from chain_server.services.mcp.adapters.operations_adapter import get_operations_adapter
+        operations_adapter = await get_operations_adapter()
+        await tool_discovery.register_discovery_source(
+            "operations_action_tools",
+            operations_adapter,
+            "mcp_adapter"
+        )
+        logger.info("Registered Operations MCP Adapter")
+        
+        # Register Safety MCP Adapter
+        from chain_server.services.mcp.adapters.safety_adapter import get_safety_adapter
+        safety_adapter = await get_safety_adapter()
+        await tool_discovery.register_discovery_source(
+            "safety_action_tools",
+            safety_adapter,
+            "mcp_adapter"
+        )
+        logger.info("Registered Safety MCP Adapter")
+        
+        logger.info("All MCP adapters registered successfully")
+        
+    except Exception as e:
+        logger.error(f"Failed to register MCP adapters: {e}")
+        # Don't raise exception - allow service to continue without adapters
 
 @router.get("/status")
 async def get_mcp_status():
@@ -93,18 +135,7 @@ async def get_discovered_tools():
         tools = await tool_discovery.get_available_tools()
         
         return {
-            "tools": [
-                {
-                    "tool_id": tool.tool_id,
-                    "name": tool.name,
-                    "description": tool.description,
-                    "category": tool.category.value,
-                    "source": tool.source,
-                    "capabilities": tool.capabilities,
-                    "metadata": tool.metadata
-                }
-                for tool in tools
-            ],
+            "tools": tools,
             "total_tools": len(tools)
         }
     except Exception as e:
@@ -218,15 +249,21 @@ async def refresh_tool_discovery():
         services = await get_mcp_services()
         tool_discovery = services["tool_discovery"]
         
-        # Restart discovery
-        await tool_discovery.start_discovery()
+        # Discover tools from all registered sources
+        total_discovered = 0
+        for source_name in tool_discovery.discovery_sources.keys():
+            discovered = await tool_discovery.discover_tools_from_source(source_name)
+            total_discovered += discovered
+            logger.info(f"Discovered {discovered} tools from source '{source_name}'")
         
+        # Get current tool count
         tools = await tool_discovery.get_available_tools()
         
         return {
             "status": "success",
-            "message": "Tool discovery refreshed",
-            "total_tools": len(tools)
+            "message": f"Tool discovery refreshed. Discovered {total_discovered} tools from {len(tool_discovery.discovery_sources)} sources.",
+            "total_tools": len(tools),
+            "sources": list(tool_discovery.discovery_sources.keys())
         }
     except Exception as e:
         logger.error(f"Error refreshing tool discovery: {e}")

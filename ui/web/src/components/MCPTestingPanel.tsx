@@ -65,6 +65,8 @@ const MCPTestingPanel: React.FC = () => {
   const [testResult, setTestResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [refreshLoading, setRefreshLoading] = useState(false);
 
   // Load MCP status and tools on component mount
   useEffect(() => {
@@ -75,6 +77,7 @@ const MCPTestingPanel: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      setSuccess(null);
       
       // Load MCP status
       const status = await mcpAPI.getStatus();
@@ -84,10 +87,35 @@ const MCPTestingPanel: React.FC = () => {
       const toolsData = await mcpAPI.getTools();
       setTools(toolsData.tools || []);
       
+      if (toolsData.tools && toolsData.tools.length > 0) {
+        setSuccess(`Successfully loaded ${toolsData.tools.length} MCP tools`);
+      } else {
+        setError('No MCP tools discovered. Try refreshing discovery.');
+      }
+      
     } catch (err: any) {
       setError(`Failed to load MCP data: ${err.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefreshDiscovery = async () => {
+    try {
+      setRefreshLoading(true);
+      setError(null);
+      setSuccess(null);
+      
+      const result = await mcpAPI.refreshDiscovery();
+      setSuccess(`Discovery refreshed: ${result.total_tools} tools found`);
+      
+      // Reload data after refresh
+      await loadMcpData();
+      
+    } catch (err: any) {
+      setError(`Failed to refresh discovery: ${err.message}`);
+    } finally {
+      setRefreshLoading(false);
     }
   };
 
@@ -97,9 +125,16 @@ const MCPTestingPanel: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      setSuccess(null);
       
       const results = await mcpAPI.searchTools(searchQuery);
       setSearchResults(results.tools || []);
+      
+      if (results.tools && results.tools.length > 0) {
+        setSuccess(`Found ${results.tools.length} tools matching "${searchQuery}"`);
+      } else {
+        setError(`No tools found matching "${searchQuery}". Try a different search term.`);
+      }
       
     } catch (err: any) {
       setError(`Search failed: ${err.message}`);
@@ -114,9 +149,16 @@ const MCPTestingPanel: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      setSuccess(null);
       
       const result = await mcpAPI.testWorkflow(testMessage);
       setTestResult(result);
+      
+      if (result.status === 'success') {
+        setSuccess(`Workflow test completed successfully`);
+      } else {
+        setError(`Workflow test failed: ${result.error || 'Unknown error'}`);
+      }
       
     } catch (err: any) {
       setError(`Workflow test failed: ${err.message}`);
@@ -143,21 +185,6 @@ const MCPTestingPanel: React.FC = () => {
     }
   };
 
-  const handleRefreshDiscovery = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      await mcpAPI.refreshDiscovery();
-      await loadMcpData(); // Reload data after refresh
-      
-    } catch (err: any) {
-      setError(`Refresh failed: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="h5" gutterBottom>
@@ -167,6 +194,12 @@ const MCPTestingPanel: React.FC = () => {
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
+        </Alert>
+      )}
+
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
+          {success}
         </Alert>
       )}
 
@@ -222,12 +255,12 @@ const MCPTestingPanel: React.FC = () => {
                   
                   <Button
                     variant="outlined"
-                    startIcon={<RefreshIcon />}
+                    startIcon={refreshLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
                     onClick={handleRefreshDiscovery}
-                    disabled={loading}
+                    disabled={refreshLoading || loading}
                     sx={{ mt: 2 }}
                   >
-                    Refresh Discovery
+                    {refreshLoading ? 'Refreshing...' : 'Refresh Discovery'}
                   </Button>
                 </Box>
               ) : (
@@ -355,6 +388,41 @@ const MCPTestingPanel: React.FC = () => {
                 MCP Workflow Testing
               </Typography>
               
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Test the complete MCP workflow with sample messages:
+              </Typography>
+              
+              <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setTestMessage("Show me the status of forklift FL-001")}
+                >
+                  Equipment Status
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setTestMessage("Create a new picking task for order ORD-123")}
+                >
+                  Create Task
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setTestMessage("Report a safety incident in zone A")}
+                >
+                  Safety Report
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setTestMessage("What equipment is available?")}
+                >
+                  Available Equipment
+                </Button>
+              </Box>
+              
               <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
                 <TextField
                   fullWidth
@@ -365,11 +433,11 @@ const MCPTestingPanel: React.FC = () => {
                 />
                 <Button
                   variant="contained"
-                  startIcon={<PlayIcon />}
+                  startIcon={loading ? <CircularProgress size={16} /> : <PlayIcon />}
                   onClick={handleTestWorkflow}
                   disabled={loading || !testMessage.trim()}
                 >
-                  Test Workflow
+                  {loading ? 'Testing...' : 'Test Workflow'}
                 </Button>
               </Box>
               

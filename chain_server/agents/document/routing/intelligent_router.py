@@ -56,15 +56,15 @@ class IntelligentRouter:
     
     async def route_document(
         self, 
-        quality_scores: Dict[str, float],
-        judge_result: Dict[str, Any],
+        llm_result: Any,
+        judge_result: Any,
         document_type: str
     ) -> RoutingDecision:
         """
-        Route document based on quality scores and judge evaluation.
+        Route document based on LLM result and judge evaluation.
         
         Args:
-            quality_scores: Quality scores from QualityScorer
+            llm_result: Result from Small LLM processing
             judge_result: Result from Large LLM Judge
             document_type: Type of document
             
@@ -72,23 +72,21 @@ class IntelligentRouter:
             Routing decision with action and reasoning
         """
         try:
-            logger.info(f"Routing {document_type} document based on quality scores")
+            logger.info(f"Routing {document_type} document based on LLM and judge results")
             
-            # Get overall quality score
-            overall_score = quality_scores.get("overall_score", 0.0)
+            # Get overall quality score from judge result
+            overall_score = self._get_value(judge_result, "overall_score", 0.0)
+            judge_decision = self._get_value(judge_result, "decision", "REVIEW_REQUIRED")
             
             # Determine quality level
             quality_level = self._determine_quality_level(overall_score)
-            
-            # Get judge decision
-            judge_decision = judge_result.get("decision", "REVIEW_REQUIRED")
             
             # Make routing decision
             routing_decision = await self._make_routing_decision(
                 overall_score, 
                 quality_level, 
                 judge_decision, 
-                quality_scores, 
+                llm_result, 
                 judge_result, 
                 document_type
             )
@@ -100,6 +98,24 @@ class IntelligentRouter:
             logger.error(f"Document routing failed: {e}")
             raise
     
+    def _get_value(self, obj, key: str, default=None):
+        """Get value from object (dict or object with attributes)."""
+        if hasattr(obj, key):
+            return getattr(obj, key)
+        elif hasattr(obj, 'get'):
+            return obj.get(key, default)
+        else:
+            return default
+    
+    def _get_dict_value(self, obj, key: str, default=None):
+        """Get value from object treating it as a dictionary."""
+        if hasattr(obj, 'get'):
+            return obj.get(key, default)
+        elif hasattr(obj, key):
+            return getattr(obj, key)
+        else:
+            return default
+
     def _determine_quality_level(self, overall_score: float) -> str:
         """Determine quality level based on overall score."""
         if overall_score >= self.routing_thresholds["excellent"]:
@@ -116,40 +132,40 @@ class IntelligentRouter:
         overall_score: float,
         quality_level: str,
         judge_decision: str,
-        quality_scores: Dict[str, float],
-        judge_result: Dict[str, Any],
+        llm_result: Any,
+        judge_result: Any,
         document_type: str
     ) -> RoutingDecision:
         """Make the actual routing decision."""
         
         if quality_level == "excellent":
             return await self._route_excellent_quality(
-                overall_score, quality_scores, judge_result, document_type
+                overall_score, llm_result, judge_result, document_type
             )
         elif quality_level == "good":
             return await self._route_good_quality(
-                overall_score, quality_scores, judge_result, document_type
+                overall_score, llm_result, judge_result, document_type
             )
         elif quality_level == "needs_attention":
             return await self._route_needs_attention(
-                overall_score, quality_scores, judge_result, document_type
+                overall_score, llm_result, judge_result, document_type
             )
         else:  # poor
             return await self._route_poor_quality(
-                overall_score, quality_scores, judge_result, document_type
+                overall_score, llm_result, judge_result, document_type
             )
     
     async def _route_excellent_quality(
         self, 
         overall_score: float,
-        quality_scores: Dict[str, float],
-        judge_result: Dict[str, Any],
+        llm_result: Any,
+        judge_result: Any,
         document_type: str
     ) -> RoutingDecision:
         """Route excellent quality documents."""
         
         # Check if judge also approves
-        judge_decision = judge_result.get("decision", "REVIEW_REQUIRED")
+        judge_decision = self._get_value(judge_result, "decision", "REVIEW_REQUIRED")
         
         if judge_decision == "APPROVE":
             return RoutingDecision(
@@ -186,14 +202,14 @@ class IntelligentRouter:
     async def _route_good_quality(
         self, 
         overall_score: float,
-        quality_scores: Dict[str, float],
-        judge_result: Dict[str, Any],
+        llm_result: Any,
+        judge_result: Any,
         document_type: str
     ) -> RoutingDecision:
         """Route good quality documents with minor issues."""
         
         # Identify specific issues
-        issues = self._identify_specific_issues(quality_scores, judge_result)
+        issues = self._identify_specific_issues(llm_result, judge_result)
         
         return RoutingDecision(
             action=RoutingAction.FLAG_REVIEW,
@@ -213,14 +229,14 @@ class IntelligentRouter:
     async def _route_needs_attention(
         self, 
         overall_score: float,
-        quality_scores: Dict[str, float],
-        judge_result: Dict[str, Any],
+        llm_result: Any,
+        judge_result: Any,
         document_type: str
     ) -> RoutingDecision:
         """Route documents that need attention."""
         
         # Identify major issues
-        issues = self._identify_specific_issues(quality_scores, judge_result)
+        issues = self._identify_specific_issues(llm_result, judge_result)
         
         return RoutingDecision(
             action=RoutingAction.EXPERT_REVIEW,
@@ -240,14 +256,14 @@ class IntelligentRouter:
     async def _route_poor_quality(
         self, 
         overall_score: float,
-        quality_scores: Dict[str, float],
-        judge_result: Dict[str, Any],
+        llm_result: Any,
+        judge_result: Any,
         document_type: str
     ) -> RoutingDecision:
         """Route poor quality documents."""
         
         # Identify critical issues
-        issues = self._identify_specific_issues(quality_scores, judge_result)
+        issues = self._identify_specific_issues(llm_result, judge_result)
         
         return RoutingDecision(
             action=RoutingAction.REJECT,
@@ -267,42 +283,42 @@ class IntelligentRouter:
     
     def _identify_specific_issues(
         self, 
-        quality_scores: Dict[str, float], 
-        judge_result: Dict[str, Any]
+        llm_result: Any,
+        judge_result: Any
     ) -> List[str]:
         """Identify specific issues from quality scores and judge result."""
         issues = []
         
         # Check individual quality scores
-        if quality_scores.get("completeness_score", 5.0) < 4.0:
+        if self._get_value(llm_result, "completeness_score", 5.0) < 4.0:
             issues.append("Incomplete data extraction")
         
-        if quality_scores.get("accuracy_score", 5.0) < 4.0:
+        if self._get_value(llm_result, "accuracy_score", 5.0) < 4.0:
             issues.append("Accuracy concerns")
         
-        if quality_scores.get("consistency_score", 5.0) < 4.0:
+        if self._get_value(llm_result, "consistency_score", 5.0) < 4.0:
             issues.append("Data consistency issues")
         
-        if quality_scores.get("readability_score", 5.0) < 4.0:
+        if self._get_value(llm_result, "readability_score", 5.0) < 4.0:
             issues.append("Readability problems")
         
         # Check judge issues
-        judge_issues = judge_result.get("issues_found", [])
+        judge_issues = self._get_value(judge_result, "issues_found", [])
         issues.extend(judge_issues)
         
         # Check completeness issues
-        completeness = judge_result.get("completeness", {})
-        if completeness.get("missing_fields"):
+        completeness = self._get_value(judge_result, "completeness", {})
+        if self._get_value(completeness, "missing_fields"):
             issues.append(f"Missing fields: {', '.join(completeness['missing_fields'])}")
         
         # Check accuracy issues
-        accuracy = judge_result.get("accuracy", {})
-        if accuracy.get("calculation_errors"):
+        accuracy = self._get_value(judge_result, "accuracy", {})
+        if self._get_value(accuracy, "calculation_errors"):
             issues.append(f"Calculation errors: {', '.join(accuracy['calculation_errors'])}")
         
         # Check compliance issues
-        compliance = judge_result.get("compliance", {})
-        if compliance.get("compliance_issues"):
+        compliance = self._get_value(judge_result, "compliance", {})
+        if self._get_value(compliance, "compliance_issues"):
             issues.append(f"Compliance issues: {', '.join(compliance['compliance_issues'])}")
         
         return issues
@@ -354,13 +370,13 @@ class IntelligentRouter:
     
     async def get_routing_recommendations(
         self, 
-        quality_scores: Dict[str, float],
+        llm_result: Dict[str, float],
         document_type: str
     ) -> List[str]:
         """Get routing recommendations based on quality scores."""
         recommendations = []
         
-        overall_score = quality_scores.get("overall_score", 0.0)
+        overall_score = self._get_value(llm_result, "overall_score", 0.0)
         
         if overall_score >= 4.5:
             recommendations.append("Document is ready for automatic processing")
@@ -376,16 +392,16 @@ class IntelligentRouter:
             recommendations.append("Consider re-scanning or alternative processing methods")
         
         # Add specific recommendations based on individual scores
-        if quality_scores.get("completeness_score", 5.0) < 4.0:
+        if self._get_value(llm_result, "completeness_score", 5.0) < 4.0:
             recommendations.append("Improve field extraction completeness")
         
-        if quality_scores.get("accuracy_score", 5.0) < 4.0:
+        if self._get_value(llm_result, "accuracy_score", 5.0) < 4.0:
             recommendations.append("Enhance data validation and accuracy checks")
         
-        if quality_scores.get("consistency_score", 5.0) < 4.0:
+        if self._get_value(llm_result, "consistency_score", 5.0) < 4.0:
             recommendations.append("Implement consistency validation rules")
         
-        if quality_scores.get("readability_score", 5.0) < 4.0:
+        if self._get_value(llm_result, "readability_score", 5.0) < 4.0:
             recommendations.append("Improve document quality and OCR preprocessing")
         
         return recommendations

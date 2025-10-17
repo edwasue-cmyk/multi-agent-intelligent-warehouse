@@ -8,16 +8,20 @@ with the MCP (Model Context Protocol) system for tool discovery and execution.
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
+from dataclasses import dataclass, field
 
 from chain_server.services.mcp.base import MCPAdapter, AdapterConfig, AdapterType, MCPTool, MCPToolType
+from chain_server.services.mcp.client import MCPConnectionType
 from chain_server.agents.operations.action_tools import get_operations_action_tools
 
 logger = logging.getLogger(__name__)
 
 class OperationsAdapterConfig(AdapterConfig):
     """Configuration for Operations MCP Adapter."""
-    adapter_type: AdapterType = AdapterType.OPERATIONS
-    name: str = "operations_action_tools"
+    adapter_type: AdapterType = field(default=AdapterType.OPERATIONS)
+    name: str = field(default="operations_action_tools")
+    endpoint: str = field(default="local://operations_tools")
+    connection_type: MCPConnectionType = field(default=MCPConnectionType.STDIO)
     description: str = "Operations and task management tools"
     version: str = "1.0.0"
     enabled: bool = True
@@ -271,6 +275,7 @@ async def get_operations_adapter() -> OperationsMCPAdapter:
     """Get the global operations adapter instance."""
     global _operations_adapter
     if _operations_adapter is None:
-        _operations_adapter = OperationsMCPAdapter()
+        config = OperationsAdapterConfig()
+        _operations_adapter = OperationsMCPAdapter(config)
         await _operations_adapter.initialize()
     return _operations_adapter

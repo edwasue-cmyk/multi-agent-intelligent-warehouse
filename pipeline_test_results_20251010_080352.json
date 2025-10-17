@@ -1,0 +1,63 @@
+{
+  "stage1": {
+    "document_type": "image",
+    "total_pages": 1,
+    "images": [
+      "<PIL.PngImagePlugin.PngImageFile image mode=RGB size=400x300 at 0x7FF70D7EC640>"
+    ],
+    "processed_pages": [
+      {
+        "page_number": 1,
+        "image": "<PIL.PngImagePlugin.PngImageFile image mode=RGB size=400x300 at 0x7FF70D7EC640>",
+        "elements": {
+          "elements": [
+            {
+              "type": "title",
+              "confidence": 0.95,
+              "bbox": [
+                50,
+                50,
+                300,
+                100
+              ],
+              "area": 12500
+            },
+            {
+              "type": "table",
+              "confidence": 0.88,
+              "bbox": [
+                50,
+                200,
+                300,
+                100
+              ],
+              "area": -25000
+            },
+            {
+              "type": "text",
+              "confidence": 0.92,
+              "bbox": [
+                50,
+                150,
+                300,
+                180
+              ],
+              "area": 7500
+            }
+          ],
+          "confidence": 0.9,
+          "model_used": "mock-implementation"
+        },
+        "dimensions": [
+          400,
+          300
+        ]
+      }
+    ],
+    "metadata": {
+      "file_path": "test_invoice.png",
+      "file_size": 5703,
+      "processing_timestamp": "2025-10-10T08:03:52.355715"
+    }
+  }
+}

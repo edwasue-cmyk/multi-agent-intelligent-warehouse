@@ -1,0 +1,109 @@
+{
+  "stage1": {
+    "document_type": "image",
+    "total_pages": 1,
+    "images": [
+      "<PIL.PngImagePlugin.PngImageFile image mode=RGB size=400x300 at 0x7F1302A45D00>"
+    ],
+    "processed_pages": [
+      {
+        "page_number": 1,
+        "image": "<PIL.PngImagePlugin.PngImageFile image mode=RGB size=400x300 at 0x7F1302A45D00>",
+        "elements": {
+          "elements": [
+            {
+              "type": "text_block",
+              "confidence": 0.9,
+              "bbox": [
+                0,
+                0,
+                100,
+                100
+              ],
+              "area": 10000
+            }
+          ],
+          "confidence": 0.9,
+          "model_used": "nv-yolox-page-elements-v1"
+        },
+        "dimensions": [
+          400,
+          300
+        ]
+      }
+    ],
+    "metadata": {
+      "file_path": "test_invoice.png",
+      "file_size": 5703,
+      "processing_timestamp": "2025-10-10T08:04:55.726773"
+    }
+  },
+  "stage2": {
+    "text": "I'm happy to help you with extracting text from the document image. However, I need to clarify a few things.\n\nThe text you provided appears to be a base64-encoded image data, which is not a human-readable format. To extract text from the image, I would need to decode the image data and then apply Optical Character Recognition (OCR) techniques.\n\nUnfortunately, I'm a large language model, I don't have the capability to directly decode and process image data. But I can guide you through the process of extracting text from the image.\n\nHere's what you can do:\n\n1. **Decode the image data**: You can use an online base64 decoder tool or a programming library (e.g., Python's `base64` module) to decode the image data into a binary format.\n2. **Save the image**: Save the decoded image data as a binary file (e.g., a PNG or JPEG file).\n3. **Apply OCR**: Use an OCR library or tool (e.g., Tesseract-OCR, Google Cloud Vision API, or Amazon Textract) to extract text from the saved image file. These libraries can provide you with the extracted text, along with bounding boxes and confidence scores.\n\nIf you'd like, I can provide more guidance on how to use specific OCR libraries or tools. Alternatively, if you can provide the decoded image file or the extracted text with bounding boxes and confidence scores, I'd be happy to help you with any further questions or tasks!",
+    "page_results": [
+      {
+        "page_number": 1,
+        "text": "I'm happy to help you with extracting text from the document image. However, I need to clarify a few things.\n\nThe text you provided appears to be a base64-encoded image data, which is not a human-readable format. To extract text from the image, I would need to decode the image data and then apply Optical Character Recognition (OCR) techniques.\n\nUnfortunately, I'm a large language model, I don't have the capability to directly decode and process image data. But I can guide you through the process of extracting text from the image.\n\nHere's what you can do:\n\n1. **Decode the image data**: You can use an online base64 decoder tool or a programming library (e.g., Python's `base64` module) to decode the image data into a binary format.\n2. **Save the image**: Save the decoded image data as a binary file (e.g., a PNG or JPEG file).\n3. **Apply OCR**: Use an OCR library or tool (e.g., Tesseract-OCR, Google Cloud Vision API, or Amazon Textract) to extract text from the saved image file. These libraries can provide you with the extracted text, along with bounding boxes and confidence scores.\n\nIf you'd like, I can provide more guidance on how to use specific OCR libraries or tools. Alternatively, if you can provide the decoded image file or the extracted text with bounding boxes and confidence scores, I'd be happy to help you with any further questions or tasks!",
+        "words": [],
+        "confidence": 0.9,
+        "image_dimensions": [
+          400,
+          300
+        ],
+        "layout_type": "unknown",
+        "reading_order": [],
+        "document_structure": {},
+        "layout_enhanced": true
+      }
+    ],
+    "confidence": 0.9,
+    "total_pages": 1,
+    "model_used": "NeMoRetriever-OCR-v1",
+    "processing_timestamp": "2025-10-10T08:05:01.368963",
+    "layout_enhanced": true
+  },
+  "stage3": {
+    "structured_data": {
+      "document_type": "invoice",
+      "extracted_fields": {},
+      "line_items": [],
+      "quality_assessment": {
+        "overall_confidence": 0.7,
+        "completeness": 0.8,
+        "accuracy": 0.8
+      },
+      "processing_metadata": {
+        "model_used": "Llama-3.1-70B-Instruct",
+        "timestamp": "2025-10-10T08:05:04.125831",
+        "multimodal": false
+      }
+    },
+    "confidence": 0.7,
+    "model_used": "Llama-3.1-70B-Instruct",
+    "processing_timestamp": "2025-10-10T08:05:04.125846",
+    "multimodal_processed": false
+  },
+  "stage4": {
+    "overall_score": 3.0,
+    "decision": "REVIEW_REQUIRED",
+    "completeness": {
+      "score": 3.0,
+      "reasoning": "Parsed from raw text"
+    },
+    "accuracy": {
+      "score": 3.0,
+      "reasoning": "Parsed from raw text"
+    },
+    "compliance": {
+      "score": 3.0,
+      "reasoning": "Parsed from raw text"
+    },
+    "quality": {
+      "score": 3.0,
+      "reasoning": "Parsed from raw text"
+    },
+    "issues_found": [],
+    "confidence": 0.8,
+    "reasoning": "After evaluating the provided document data, I've compiled a comprehensive assessment in the requested JSON format:\n\n```json\n{\n  \"overall_score\": 3.5,\n  \"decision\": \"REVIEW_REQUIRED\",\n  \"completeness\"..."
+  }
+}
