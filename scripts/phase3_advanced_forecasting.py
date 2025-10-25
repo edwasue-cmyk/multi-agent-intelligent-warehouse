@@ -116,6 +116,17 @@ class AdvancedRAPIDSForecastingAgent:
             logger.error(f"❌ Failed to connect to PostgreSQL: {e}")
             raise
 
+    async def get_all_skus(self) -> List[str]:
+        """Get all SKUs from the inventory"""
+        if not self.pg_conn:
+            await self.initialize_connection()
+        
+        query = "SELECT sku FROM inventory_items ORDER BY sku"
+        rows = await self.pg_conn.fetch(query)
+        skus = [row['sku'] for row in rows]
+        logger.info(f"📦 Retrieved {len(skus)} SKUs from database")
+        return skus
+
     async def extract_historical_data(self, sku: str) -> pd.DataFrame:
         """Extract and preprocess historical demand data"""
         logger.info(f"📊 Extracting historical data for {sku}")
@@ -613,9 +624,10 @@ async def main():
     
     agent = AdvancedRAPIDSForecastingAgent(config)
     
-    # Test with a few SKUs
-    test_skus = ['LAY001', 'LAY002', 'DOR001']
-    await agent.run_advanced_forecasting(skus=test_skus, horizon_days=30)
+    # Process all SKUs in the system
+    all_skus = await agent.get_all_skus()
+    logger.info(f"📦 Found {len(all_skus)} SKUs for advanced forecasting")
+    await agent.run_advanced_forecasting(skus=all_skus, horizon_days=30)
 
 if __name__ == "__main__":
     asyncio.run(main())
