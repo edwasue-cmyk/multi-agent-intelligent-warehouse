@@ -458,7 +458,24 @@ async def chat(req: ChatRequest):
         
         try:
             logger.info(f"Processing chat query: {req.message[:50]}...")
-            mcp_planner = await get_mcp_planner_graph()
+            
+            # Get planner with timeout protection (initialization might hang)
+            try:
+                mcp_planner = await asyncio.wait_for(
+                    get_mcp_planner_graph(),
+                    timeout=5.0  # 5 second timeout for initialization
+                )
+            except asyncio.TimeoutError:
+                logger.error("MCP planner initialization timed out")
+                return ChatResponse(
+                    reply="The system is initializing. Please try again in a moment.",
+                    route="error",
+                    intent="initialization_timeout",
+                    session_id=req.session_id or "default",
+                    context={"error": "Initialization timeout"},
+                    confidence=0.0,
+                    recommendations=["Please try again in a few seconds"],
+                )
             
             # Create task with timeout protection
             query_task = asyncio.create_task(
@@ -477,8 +494,8 @@ async def chat(req: ChatRequest):
                 # Cancel the task
                 query_task.cancel()
                 try:
-                    await query_task
-                except asyncio.CancelledError:
+                    await asyncio.wait_for(query_task, timeout=2.0)  # Wait for cancellation
+                except (asyncio.CancelledError, asyncio.TimeoutError):
                     pass
                 # Re-raise to be caught by outer exception handler
                 raise
