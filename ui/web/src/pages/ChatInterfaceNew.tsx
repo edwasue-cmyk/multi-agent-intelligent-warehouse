@@ -187,7 +187,7 @@ const ChatInterfaceNew: React.FC = () => {
         const fallbackMessage: Message = {
           id: Date.now().toString(),
           type: 'answer',
-          content: response.reply || response.content || 'Response received but could not be displayed',
+          content: response.reply || 'Response received but could not be displayed',
           sender: 'assistant',
           timestamp: new Date(),
           route: response.route || 'general',
@@ -226,7 +226,7 @@ const ChatInterfaceNew: React.FC = () => {
     const assistantMessage: Message = {
       id: Date.now().toString(),
       type: response.clarifying ? 'clarifying_question' : 'answer',
-      content: response.reply || response.content || 'No response received',
+      content: response.reply || 'No response received',
       sender: 'assistant',
       timestamp: new Date(),
       route: response.route,
@@ -266,7 +266,7 @@ const ChatInterfaceNew: React.FC = () => {
       });
     }
 
-    events.push({ stage: 'final_answer', text: response.reply || response.content });
+    events.push({ stage: 'final_answer', text: response.reply || 'No answer' });
 
     // Simulate streaming (non-blocking, just for UI enhancement)
     let eventIndex = 0;
