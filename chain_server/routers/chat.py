@@ -731,11 +731,33 @@ async def chat(req: ChatRequest):
             "tool_execution_results", {}
         )
 
+        # Extract confidence from multiple possible sources with sensible defaults
+        # Priority: result.confidence > structured_response.confidence > agent_responses > default (0.75)
+        confidence = result.get("confidence")
+        if confidence is None or confidence == 0.0:
+            confidence = structured_response.get("confidence")
+        
+        if confidence is None or confidence == 0.0:
+            # Try to get confidence from agent responses
+            agent_responses = result.get("agent_responses", {})
+            confidences = []
+            for agent_name, agent_response in agent_responses.items():
+                if isinstance(agent_response, dict):
+                    agent_conf = agent_response.get("confidence")
+                    if agent_conf and agent_conf > 0:
+                        confidences.append(agent_conf)
+            
+            if confidences:
+                confidence = sum(confidences) / len(confidences)  # Average confidence
+            else:
+                # Default to 0.75 for successful queries (not errors)
+                confidence = 0.75 if result.get("route") != "error" else 0.0
+
         # Format the response to be more user-friendly
         formatted_reply = _format_user_response(
             result["response"],
             structured_response,
-            result.get("confidence", 0.0),
+            confidence,
             result.get("recommendations", []),
         )
 
@@ -818,15 +840,15 @@ async def chat(req: ChatRequest):
 
         return ChatResponse(
             reply=formatted_reply,
-            route=result["route"],
-            intent=result["intent"],
-            session_id=result["session_id"],
+            route=result.get("route", "general"),
+            intent=result.get("intent", "unknown"),
+            session_id=result.get("session_id", req.session_id or "default"),
             context=result.get("context"),
             structured_data=structured_response.get("data"),
             recommendations=result.get(
                 "recommendations", structured_response.get("recommendations")
             ),
-            confidence=result.get("confidence", structured_response.get("confidence")),
+            confidence=confidence,  # Use the confidence we calculated above
             actions_taken=structured_response.get("actions_taken"),
             # Evidence enhancement fields
             evidence_summary=result.get("evidence_summary"),
