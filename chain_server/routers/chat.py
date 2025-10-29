@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 import logging
+import asyncio
 from chain_server.graphs.mcp_integrated_planner_graph import get_mcp_planner_graph
 from chain_server.services.guardrails.guardrails_service import guardrails_service
 from chain_server.services.evidence.evidence_integration import (
@@ -457,154 +458,169 @@ async def chat(req: ChatRequest):
                 session_id=req.session_id or "default",
                 context=req.context,
             )
+            
+            # Determine if enhancements should be skipped for simple queries
+            # Simple queries: short messages, greetings, or basic status checks
+            skip_enhancements = (
+                len(req.message.split()) <= 3 or  # Very short queries
+                req.message.lower().startswith(("hi", "hello", "hey")) or  # Greetings
+                "?" not in req.message or  # Not a question
+                result.get("intent") == "greeting"  # Intent is just greeting
+            )
 
-            # Enhance response with evidence collection
-            try:
-                evidence_service = await get_evidence_integration_service()
+            # Extract entities and intent from result for all enhancements
+            intent = result.get("intent", "general")
+            entities = {}
+            structured_response = result.get("structured_response", {})
+            
+            if structured_response and structured_response.get("data"):
+                data = structured_response["data"]
+                # Extract common entities
+                if "equipment" in data:
+                    equipment_data = data["equipment"]
+                    if isinstance(equipment_data, list) and equipment_data:
+                        first_equipment = equipment_data[0]
+                        if isinstance(first_equipment, dict):
+                            entities.update(
+                                {
+                                    "equipment_id": first_equipment.get("asset_id"),
+                                    "equipment_type": first_equipment.get("type"),
+                                    "zone": first_equipment.get("zone"),
+                                    "status": first_equipment.get("status"),
+                                }
+                            )
 
-                # Extract entities and intent from result
-                intent = result.get("intent", "general")
-                entities = {}
+            # Parallelize independent enhancement operations for better performance
+            # Skip enhancements for simple queries to improve response time
+            if skip_enhancements:
+                logger.info(f"Skipping enhancements for simple query: {req.message[:50]}")
+                # Set default values for simple queries
+                result["quick_actions"] = []
+                result["action_suggestions"] = []
+                result["evidence_count"] = 0
+            else:
+                async def enhance_with_evidence():
+                    """Enhance response with evidence collection."""
+                    try:
+                        evidence_service = await get_evidence_integration_service()
+                        enhanced_response = await evidence_service.enhance_response_with_evidence(
+                            query=req.message,
+                            intent=intent,
+                            entities=entities,
+                            session_id=req.session_id or "default",
+                            user_context=req.context,
+                            base_response=result["response"],
+                        )
+                        return enhanced_response
+                    except Exception as e:
+                        logger.warning(f"Evidence enhancement failed: {e}")
+                        return None
 
-                # Extract entities from structured response if available
-                structured_response = result.get("structured_response", {})
-                if structured_response and structured_response.get("data"):
-                    data = structured_response["data"]
-                    # Extract common entities
-                    if "equipment" in data:
-                        equipment_data = data["equipment"]
-                        if isinstance(equipment_data, list) and equipment_data:
-                            first_equipment = equipment_data[0]
-                            if isinstance(first_equipment, dict):
-                                entities.update(
-                                    {
-                                        "equipment_id": first_equipment.get("asset_id"),
-                                        "equipment_type": first_equipment.get("type"),
-                                        "zone": first_equipment.get("zone"),
-                                        "status": first_equipment.get("status"),
-                                    }
-                                )
+                async def generate_quick_actions():
+                    """Generate smart quick actions."""
+                    try:
+                        quick_actions_service = await get_smart_quick_actions_service()
+                        from chain_server.services.quick_actions.smart_quick_actions import ActionContext
+                        
+                        action_context = ActionContext(
+                            query=req.message,
+                            intent=intent,
+                            entities=entities,
+                            response_data=structured_response.get("data", {}),
+                            session_id=req.session_id or "default",
+                            user_context=req.context or {},
+                            evidence_summary={},  # Will be updated after evidence enhancement
+                        )
+                        
+                        quick_actions = await quick_actions_service.generate_quick_actions(action_context)
+                        return quick_actions
+                    except Exception as e:
+                        logger.warning(f"Quick actions generation failed: {e}")
+                        return []
 
-                # Enhance response with evidence
-                enhanced_response = (
-                    await evidence_service.enhance_response_with_evidence(
-                        query=req.message,
-                        intent=intent,
-                        entities=entities,
-                        session_id=req.session_id or "default",
-                        user_context=req.context,
-                        base_response=result["response"],
+                async def enhance_with_context():
+                    """Enhance response with conversation memory and context."""
+                    try:
+                        context_enhancer = await get_context_enhancer()
+                        memory_entities = entities.copy()
+                        memory_actions = structured_response.get("actions_taken", [])
+                        
+                        context_enhanced = await context_enhancer.enhance_with_context(
+                            session_id=req.session_id or "default",
+                            user_message=req.message,
+                            base_response=result["response"],
+                            intent=intent,
+                            entities=memory_entities,
+                            actions_taken=memory_actions,
+                        )
+                        return context_enhanced
+                    except Exception as e:
+                        logger.warning(f"Context enhancement failed: {e}")
+                        return None
+
+                # Run evidence and quick actions in parallel (context enhancement needs base response)
+                evidence_task = asyncio.create_task(enhance_with_evidence())
+                quick_actions_task = asyncio.create_task(generate_quick_actions())
+                
+                # Wait for evidence first as quick actions can benefit from it
+                enhanced_response = await evidence_task
+                
+                # Update result with evidence if available
+                if enhanced_response:
+                    result["response"] = enhanced_response.response
+                    result["evidence_summary"] = enhanced_response.evidence_summary
+                    result["source_attributions"] = enhanced_response.source_attributions
+                    result["evidence_count"] = enhanced_response.evidence_count
+                    result["key_findings"] = enhanced_response.key_findings
+                    
+                    if enhanced_response.confidence_score > 0:
+                        original_confidence = structured_response.get("confidence", 0.5)
+                        result["confidence"] = max(
+                            original_confidence, enhanced_response.confidence_score
+                        )
+                    
+                    # Merge recommendations
+                    original_recommendations = structured_response.get("recommendations", [])
+                    evidence_recommendations = enhanced_response.recommendations or []
+                    all_recommendations = list(
+                        set(original_recommendations + evidence_recommendations)
                     )
-                )
+                    if all_recommendations:
+                        result["recommendations"] = all_recommendations
 
-                # Update result with enhanced information
-                result["response"] = enhanced_response.response
-                result["evidence_summary"] = enhanced_response.evidence_summary
-                result["source_attributions"] = enhanced_response.source_attributions
-                result["evidence_count"] = enhanced_response.evidence_count
-                result["key_findings"] = enhanced_response.key_findings
+                # Get quick actions (may have completed in parallel)
+                quick_actions = await quick_actions_task
+                
+                if quick_actions:
+                    # Convert actions to dictionary format
+                    actions_dict = []
+                    action_suggestions = []
+                    
+                    for action in quick_actions:
+                        action_dict = {
+                            "action_id": action.action_id,
+                            "title": action.title,
+                            "description": action.description,
+                            "action_type": action.action_type.value,
+                            "priority": action.priority.value,
+                            "icon": action.icon,
+                            "command": action.command,
+                            "parameters": action.parameters,
+                            "requires_confirmation": action.requires_confirmation,
+                            "enabled": action.enabled,
+                        }
+                        actions_dict.append(action_dict)
+                        action_suggestions.append(action.title)
+                    
+                    result["quick_actions"] = actions_dict
+                    result["action_suggestions"] = action_suggestions
 
-                # Update confidence with evidence-based confidence
-                if enhanced_response.confidence_score > 0:
-                    original_confidence = structured_response.get("confidence", 0.5)
-                    result["confidence"] = max(
-                        original_confidence, enhanced_response.confidence_score
-                    )
-
-                # Merge recommendations
-                original_recommendations = structured_response.get(
-                    "recommendations", []
-                )
-                evidence_recommendations = enhanced_response.recommendations or []
-                all_recommendations = list(
-                    set(original_recommendations + evidence_recommendations)
-                )
-                if all_recommendations:
-                    result["recommendations"] = all_recommendations
-
-            except Exception as evidence_error:
-                logger.warning(
-                    f"Evidence enhancement failed, using base response: {evidence_error}"
-                )
-                # Continue with base response if evidence enhancement fails
-
-            # Generate smart quick actions
-            try:
-                quick_actions_service = await get_smart_quick_actions_service()
-
-                # Create action context
-                from chain_server.services.quick_actions.smart_quick_actions import (
-                    ActionContext,
-                )
-
-                action_context = ActionContext(
-                    query=req.message,
-                    intent=result.get("intent", "general"),
-                    entities=entities,
-                    response_data=structured_response.get("data", {}),
-                    session_id=req.session_id or "default",
-                    user_context=req.context or {},
-                    evidence_summary=result.get("evidence_summary", {}),
-                )
-
-                # Generate quick actions
-                quick_actions = await quick_actions_service.generate_quick_actions(
-                    action_context
-                )
-
-                # Convert actions to dictionary format for JSON serialization
-                actions_dict = []
-                action_suggestions = []
-
-                for action in quick_actions:
-                    action_dict = {
-                        "action_id": action.action_id,
-                        "title": action.title,
-                        "description": action.description,
-                        "action_type": action.action_type.value,
-                        "priority": action.priority.value,
-                        "icon": action.icon,
-                        "command": action.command,
-                        "parameters": action.parameters,
-                        "requires_confirmation": action.requires_confirmation,
-                        "enabled": action.enabled,
-                    }
-                    actions_dict.append(action_dict)
-                    action_suggestions.append(action.title)
-
-                result["quick_actions"] = actions_dict
-                result["action_suggestions"] = action_suggestions
-
-            except Exception as actions_error:
-                logger.warning(f"Quick actions generation failed: {actions_error}")
-                # Continue without quick actions if generation fails
-
-            # Enhance response with conversation memory and context
-            try:
-                context_enhancer = await get_context_enhancer()
-
-                # Extract entities and actions for memory storage
-                memory_entities = entities.copy()
-                memory_actions = structured_response.get("actions_taken", [])
-
-                # Enhance response with context
-                context_enhanced = await context_enhancer.enhance_with_context(
-                    session_id=req.session_id or "default",
-                    user_message=req.message,
-                    base_response=result["response"],
-                    intent=result.get("intent", "general"),
-                    entities=memory_entities,
-                    actions_taken=memory_actions,
-                )
-
-                # Update result with context-enhanced response
-                if context_enhanced.get("context_enhanced", False):
+                # Enhance with context (runs after evidence since it may use evidence summary)
+                context_enhanced = await enhance_with_context()
+                if context_enhanced and context_enhanced.get("context_enhanced", False):
                     result["response"] = context_enhanced["response"]
                     result["context_info"] = context_enhanced.get("context_info", {})
-
-            except Exception as context_error:
-                logger.warning(f"Context enhancement failed: {context_error}")
-                # Continue with base response if context enhancement fails
+                    
         except Exception as query_error:
             logger.error(f"Query processing error: {query_error}")
             # Return a more helpful fallback response
