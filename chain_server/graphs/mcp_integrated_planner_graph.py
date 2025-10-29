@@ -1010,9 +1010,20 @@ class MCPPlannerGraph:
             Dictionary containing the response and metadata
         """
         try:
-            # Initialize if needed
+            # Initialize if needed with timeout
             if not self.initialized:
-                await self.initialize()
+                try:
+                    await asyncio.wait_for(self.initialize(), timeout=2.0)
+                except asyncio.TimeoutError:
+                    logger.warning("Initialization timed out, using fallback")
+                    return self._create_fallback_response(message, session_id)
+                except Exception as init_err:
+                    logger.warning(f"Initialization failed: {init_err}, using fallback")
+                    return self._create_fallback_response(message, session_id)
+            
+            if not self.graph:
+                logger.warning("Graph not available, using fallback")
+                return self._create_fallback_response(message, session_id)
 
             # Initialize state
             initial_state = MCPWarehouseState(
@@ -1028,8 +1039,15 @@ class MCPPlannerGraph:
                 available_tools=None,
             )
 
-            # Run the graph asynchronously
-            result = await self.graph.ainvoke(initial_state)
+            # Run the graph asynchronously with timeout
+            try:
+                result = await asyncio.wait_for(
+                    self.graph.ainvoke(initial_state),
+                    timeout=25.0  # 25 second timeout for graph execution
+                )
+            except asyncio.TimeoutError:
+                logger.warning("Graph execution timed out, using fallback")
+                return self._create_fallback_response(message, session_id)
 
             # Ensure structured response is properly included
             context = result.get("context", {})
