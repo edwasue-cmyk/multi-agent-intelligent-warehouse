@@ -53,23 +53,33 @@ class SQLRetriever:
         
     async def initialize(self) -> None:
         """Initialize the database connection pool."""
+        import asyncio
         try:
             if self._pool is None:
-                self._pool = await asyncpg.create_pool(
-                    host=self.config.host,
-                    port=self.config.port,
-                    database=self.config.database,
-                    user=self.config.user,
-                    password=self.config.password,
-                    min_size=self.config.min_size,
-                    max_size=self.config.max_size,
-                    command_timeout=30,
-                    server_settings={
-                        'application_name': 'warehouse_assistant',
-                        'jit': 'off'  # Disable JIT for better connection stability
-                    }
-                )
-                logger.info(f"Database connection pool initialized for {self.config.database}")
+                # Create pool with timeout to prevent hanging
+                try:
+                    self._pool = await asyncio.wait_for(
+                        asyncpg.create_pool(
+                            host=self.config.host,
+                            port=self.config.port,
+                            database=self.config.database,
+                            user=self.config.user,
+                            password=self.config.password,
+                            min_size=self.config.min_size,
+                            max_size=self.config.max_size,
+                            command_timeout=30,
+                            timeout=5.0,  # Connection timeout: 5 seconds
+                            server_settings={
+                                'application_name': 'warehouse_assistant',
+                                'jit': 'off'  # Disable JIT for better connection stability
+                            }
+                        ),
+                        timeout=10.0  # Overall timeout: 10 seconds for pool creation
+                    )
+                    logger.info(f"Database connection pool initialized for {self.config.database}")
+                except asyncio.TimeoutError:
+                    logger.error(f"Database pool creation timed out after 10 seconds")
+                    raise ConnectionError(f"Database connection timeout: Unable to connect to {self.config.host}:{self.config.port}/{self.config.database} within 10 seconds")
         except Exception as e:
             logger.error(f"Failed to initialize database pool: {e}")
             raise

@@ -17,9 +17,18 @@ class UserService:
 
     async def initialize(self):
         """Initialize the database connection."""
+        import asyncio
         if not self._initialized:
-            self.sql_retriever = await get_sql_retriever()
-            self._initialized = True
+            try:
+                # Add timeout to prevent hanging if database is unreachable
+                self.sql_retriever = await asyncio.wait_for(
+                    get_sql_retriever(),
+                    timeout=8.0  # 8 second timeout for retriever initialization
+                )
+                self._initialized = True
+            except asyncio.TimeoutError:
+                logger.error("SQL retriever initialization timed out")
+                raise ConnectionError("Database connection timeout: Unable to initialize database connection within 8 seconds")
 
     async def create_user(self, user_create: UserCreate) -> User:
         """Create a new user."""
