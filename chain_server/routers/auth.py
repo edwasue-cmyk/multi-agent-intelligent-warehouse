@@ -93,11 +93,13 @@ async def login(user_login: UserLogin):
             )
 
         # Get user with hashed password (with timeout)
-        logger.info(f"🔍 Starting user lookup for: {user_login.username}")
-        print(f"[AUTH DEBUG] Starting user lookup for: {user_login.username}", flush=True)
+        # Strip username to handle any whitespace issues
+        username_clean = user_login.username.strip()
+        logger.info(f"🔍 Starting user lookup for: '{username_clean}' (original: '{user_login.username}', len: {len(user_login.username)})")
+        print(f"[AUTH DEBUG] Starting user lookup for: '{username_clean}'", flush=True)
         try:
             user = await asyncio.wait_for(
-                user_service.get_user_for_auth(user_login.username),
+                user_service.get_user_for_auth(username_clean),
                 timeout=2.0  # 2 second timeout for user lookup
             )
             logger.info(f"🔍 User lookup completed, user is {'None' if user is None else 'found'}")
