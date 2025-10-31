@@ -54,10 +54,12 @@ async def login(user_login: UserLogin):
     try:
         # Initialize with timeout to prevent hanging
         try:
+            logger.info(f"Initializing user service for login attempt by: {user_login.username}")
             await asyncio.wait_for(
                 user_service.initialize(),
                 timeout=5.0  # 5 second timeout for initialization (increased from 3s to allow DB connection)
             )
+            logger.info(f"User service initialized successfully, initialized: {user_service._initialized}")
         except asyncio.TimeoutError:
             logger.error("User service initialization timed out")
             raise HTTPException(
@@ -65,7 +67,7 @@ async def login(user_login: UserLogin):
                 detail="Authentication service is unavailable. Please try again.",
             )
         except Exception as init_err:
-            logger.error(f"User service initialization failed: {init_err}")
+            logger.error(f"User service initialization failed: {init_err}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Authentication service error. Please try again.",
@@ -83,22 +85,36 @@ async def login(user_login: UserLogin):
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Authentication service is slow. Please try again.",
             )
+        except Exception as user_lookup_err:
+            logger.error(f"User lookup failed for {user_login.username}: {user_lookup_err}", exc_info=True)
+            # Return more specific error for debugging, but still 401 for security
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Authentication failed: {type(user_lookup_err).__name__}",
+            )
         
         if not user:
+            logger.warning(f"User not found: {user_login.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid username or password",
             )
+        
+        logger.info(f"User found: {user.username}, status: {user.status}, role: {user.role}")
 
         # Check if user is active
         if user.status != UserStatus.ACTIVE:
+            logger.warning(f"Login attempt for inactive user: {user_login.username}, status: {user.status}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User account is not active",
             )
 
         # Verify password
-        if not jwt_handler.verify_password(user_login.password, user.hashed_password):
+        password_valid = jwt_handler.verify_password(user_login.password, user.hashed_password)
+        logger.info(f"Password verification for {user_login.username}: {password_valid}")
+        if not password_valid:
+            logger.warning(f"Password verification failed for user: {user_login.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid username or password",

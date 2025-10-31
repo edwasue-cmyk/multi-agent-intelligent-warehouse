@@ -20,12 +20,14 @@ class UserService:
         import asyncio
         if not self._initialized:
             try:
+                logger.info(f"Initializing user service (first time), _initialized: {self._initialized}")
                 # Add timeout to prevent hanging if database is unreachable
                 self.sql_retriever = await asyncio.wait_for(
                     get_sql_retriever(),
                     timeout=6.0  # 6 second timeout for retriever initialization (reduced from 8s)
                 )
                 self._initialized = True
+                logger.info(f"User service initialized successfully, sql_retriever: {self.sql_retriever is not None}")
             except asyncio.TimeoutError:
                 logger.error("SQL retriever initialization timed out")
                 raise ConnectionError("Database connection timeout: Unable to initialize database connection within 6 seconds")
@@ -165,12 +167,18 @@ class UserService:
     async def get_user_for_auth(self, username: str) -> Optional[UserInDB]:
         """Get user with hashed password for authentication."""
         try:
+            if not self._initialized or not self.sql_retriever:
+                logger.error(f"User service not initialized when getting user for auth: username={username}")
+                await self.initialize()
+            
             query = """
                 SELECT id, username, email, full_name, role, status, hashed_password, created_at, updated_at, last_login
                 FROM users
                 WHERE username = $1
             """
+            logger.debug(f"Fetching user for auth: {username}")
             result = await self.sql_retriever.fetch_one(query, username)
+            logger.debug(f"User fetch result: {result is not None}")
 
             if not result:
                 return None
