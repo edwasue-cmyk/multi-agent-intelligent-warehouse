@@ -87,6 +87,9 @@ tmp/
 temp/
 *.tmp
 
+# Runtime-generated files
+document_statuses.json
+
 # Coverage reports
 htmlcov/
 .coverage
