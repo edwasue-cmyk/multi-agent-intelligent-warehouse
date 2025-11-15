@@ -206,7 +206,9 @@ The system features **complete AI-powered demand forecasting** with multi-model 
 **Training Pipeline:**
 - **Phase 1 & 2** - Data extraction, feature engineering, basic model training (`phase1_phase2_forecasting_agent.py`)
 - **Phase 3** - Advanced models, hyperparameter optimization, ensemble methods (`phase3_advanced_forecasting.py`)
-- **GPU Acceleration Ready** - NVIDIA RAPIDS cuML integration for enterprise-scale forecasting
+- **GPU Acceleration** - NVIDIA RAPIDS cuML integration for enterprise-scale forecasting (10-100x faster)
+  - Automatic GPU detection and CPU fallback
+  - See [RAPIDS Setup Guide](docs/forecasting/RAPIDS_SETUP.md) for installation instructions
 - **Historical Data Generation** - Realistic Frito-Lay product demand patterns with seasonal variations
 
 **API Endpoints:**
@@ -378,7 +380,28 @@ This creates:
 
 **Note:** See [docs/secrets.md](docs/secrets.md) for all development credentials.
 
-### Step 7: Start the API Server
+### Step 7: (Optional) Install RAPIDS for GPU-Accelerated Forecasting
+
+For GPU-accelerated demand forecasting (10-100x faster), install NVIDIA RAPIDS:
+
+```bash
+# Activate virtual environment
+source env/bin/activate
+
+# Install RAPIDS cuML (requires NVIDIA GPU with CUDA 11.2+ or 12.0+)
+./scripts/setup/install_rapids.sh
+```
+
+**Requirements:**
+- NVIDIA GPU with CUDA Compute Capability 7.0+
+- CUDA 11.2+ or 12.0+
+- 16GB+ GPU memory (recommended)
+
+The system will automatically use GPU acceleration when RAPIDS is available, with CPU fallback otherwise.
+
+See [RAPIDS Setup Guide](docs/forecasting/RAPIDS_SETUP.md) for detailed instructions and troubleshooting.
+
+### Step 8: Start the API Server
 
 Start the FastAPI backend server:
 
@@ -409,7 +432,7 @@ The API will be available at:
 See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
 - **Health Check**: http://localhost:8002/api/v1/health
 
-### Step 8: Start the Frontend
+### Step 9: Start the Frontend
 
 In a new terminal window, start the React frontend:
 
