@@ -77,6 +77,20 @@ app.include_router(forecasting_router)
 app.include_router(training_router)
 
 
+@app.get("/")
+async def root():
+    """Root endpoint providing API information and links."""
+    return {
+        "name": "Warehouse Operational Assistant API",
+        "version": "0.1.0",
+        "status": "running",
+        "docs": "/docs",
+        "openapi": "/openapi.json",
+        "health": "/api/v1/health",
+        "health_simple": "/api/v1/health/simple",
+    }
+
+
 # Add metrics endpoint
 @app.get("/api/v1/metrics")
 async def metrics():
