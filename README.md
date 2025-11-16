@@ -197,6 +197,18 @@ The system features **complete AI-powered demand forecasting** with multi-model 
   - See [RAPIDS Setup Guide](docs/forecasting/RAPIDS_SETUP.md) for installation instructions
 - **Historical Data Generation** - Realistic Frito-Lay product demand patterns with seasonal variations
 
+**Model Availability by Phase:**
+
+| Model | Phase 1 & 2 | Phase 3 |
+|-------|-------------|---------|
+| Random Forest | ✅ | ✅ |
+| XGBoost | ✅ | ✅ |
+| Time Series | ✅ | ❌ |
+| Gradient Boosting | ❌ | ✅ |
+| Ridge Regression | ❌ | ✅ |
+| SVR | ❌ | ✅ |
+| Linear Regression | ❌ | ✅ |
+
 **API Endpoints:**
 - `/api/v1/forecasting/dashboard` - Comprehensive forecasting dashboard data (includes forecast summary, model performance, reorder recommendations)
 - `/api/v1/forecasting/real-time` - Real-time demand predictions
