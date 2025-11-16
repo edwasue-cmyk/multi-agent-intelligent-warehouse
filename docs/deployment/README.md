@@ -4,7 +4,9 @@
 
 This guide covers deploying the Warehouse Operational Assistant in various environments, from local development to production Kubernetes clusters.
 
-**Current Status**: The system is fully functional with all critical issues resolved. Recent fixes have addressed MessageBubble syntax errors, ChatInterface runtime errors, and equipment assignments endpoint 404 issues.
+**Current Status**: The system is fully functional with all critical issues resolved. Recent fixes have addressed document processing pipeline, status updates, UI progress tracking, and preprocessing performance.
+
+> **For a quick start guide, see [DEPLOYMENT.md](../../DEPLOYMENT.md) in the project root.**
 
 ## Prerequisites
 
@@ -34,18 +36,18 @@ pip install -r requirements.txt
 3. **Start infrastructure services:**
 ```bash
 # Start database, Redis, Kafka, etc.
-./scripts/dev_up.sh
+./scripts/setup/dev_up.sh
 ```
 
 4. **Start the API server:**
 ```bash
-# Uses RUN_LOCAL.sh script
-./RUN_LOCAL.sh
+# Uses start_server.sh script
+./scripts/start_server.sh
 ```
 
 5. **Start the frontend (optional):**
 ```bash
-cd ui/web
+cd src/ui/web
 npm install
 npm start
 ```
@@ -191,7 +193,7 @@ The `docker-compose.dev.yaml` includes:
 - **prometheus**: Metrics collection (port 9090)
 - **grafana**: Monitoring dashboards (port 3000)
 
-**Note**: The main application runs locally using `RUN_LOCAL.sh` script, not in Docker.
+**Note**: The main application runs locally using `./scripts/start_server.sh` script, not in Docker. For local development, use the scripts in `scripts/setup/` and `scripts/start_server.sh`.
 
 ## Kubernetes Deployment
 
@@ -382,11 +384,15 @@ GRANT ALL PRIVILEGES ON DATABASE warehouse_assistant TO warehouse_user;
 
 2. **Run migrations:**
 ```bash
-# Using the migration CLI (from project root)
-python chain_server/cli/migrate.py up
+# Activate virtual environment
+source env/bin/activate  # or: source .venv/bin/activate
 
-# Or using the simple migration script
-python scripts/simple_migrate.py
+# Run SQL migration files directly
+PGPASSWORD=${POSTGRES_PASSWORD:-changeme} psql -h $DB_HOST -p ${DB_PORT:-5435} -U warehouse -d warehouse -f data/postgres/000_schema.sql
+PGPASSWORD=${POSTGRES_PASSWORD:-changeme} psql -h $DB_HOST -p ${DB_PORT:-5435} -U warehouse -d warehouse -f data/postgres/001_equipment_schema.sql
+PGPASSWORD=${POSTGRES_PASSWORD:-changeme} psql -h $DB_HOST -p ${DB_PORT:-5435} -U warehouse -d warehouse -f data/postgres/002_document_schema.sql
+PGPASSWORD=${POSTGRES_PASSWORD:-changeme} psql -h $DB_HOST -p ${DB_PORT:-5435} -U warehouse -d warehouse -f data/postgres/004_inventory_movements_schema.sql
+PGPASSWORD=${POSTGRES_PASSWORD:-changeme} psql -h $DB_HOST -p ${DB_PORT:-5435} -U warehouse -d warehouse -f scripts/setup/create_model_tracking_tables.sql
 ```
 
 ### TimescaleDB Setup
@@ -693,6 +699,8 @@ docker-compose up -d --build
 
 For deployment support:
 
-- **Documentation**: [https://github.com/T-DevH/warehouse-operational-assistant/tree/main/docs](https://github.com/T-DevH/warehouse-operational-assistant/tree/main/docs)
-- **Issues**: [https://github.com/T-DevH/warehouse-operational-assistant/issues](https://github.com/T-DevH/warehouse-operational-assistant/issues)
+- **Quick Start Guide**: [DEPLOYMENT.md](../../DEPLOYMENT.md) - Fast local development setup
+- **Documentation**: [https://github.com/T-DevH/Multi-Agent-Intelligent-Warehouse/tree/main/docs](https://github.com/T-DevH/Multi-Agent-Intelligent-Warehouse/tree/main/docs)
+- **Issues**: [https://github.com/T-DevH/Multi-Agent-Intelligent-Warehouse/issues](https://github.com/T-DevH/Multi-Agent-Intelligent-Warehouse/issues)
 - **API Documentation**: Available at `http://localhost:8001/docs` when running locally
+- **Main README**: [README.md](../../README.md) - Project overview and architecture

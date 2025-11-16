@@ -228,8 +228,8 @@ pip list | grep -E "fastapi|uvicorn|pydantic"
 
 ## Production Deployment
 
-For production deployment, see:
-- [Production Deployment Guide](docs/deployment/README.md)
+For comprehensive production deployment instructions, see:
+- [Comprehensive Deployment Guide](docs/deployment/README.md) - Docker, Kubernetes, monitoring, security, scaling, backup
 - [Security Best Practices](docs/secrets.md)
 
 **Important:** Change all default passwords before deploying to production!
