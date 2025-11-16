@@ -180,12 +180,12 @@ python scripts/rapids_forecasting_agent.py
 ``` ### 4. Test API Endpoints
 ```bash
 # Test single SKU forecast
-curl -X POST "http://localhost:8002/api/v1/forecast/demand" \
+curl -X POST "http://localhost:8001/api/v1/forecast/demand" \
   -H "Content-Type: application/json" \
   -d '{"sku": "LAY001", "horizon_days": 30}'
 
 # Test batch forecast
-curl -X POST "http://localhost:8002/api/v1/forecast/batch" \
+curl -X POST "http://localhost:8001/api/v1/forecast/batch" \
   -H "Content-Type: application/json" \
   -d '{"skus": ["LAY001", "LAY002", "DOR001"], "horizon_days": 30}'
 ```

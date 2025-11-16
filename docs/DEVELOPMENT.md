@@ -95,12 +95,12 @@ The changelog is automatically generated from commit messages and can be found i
 - [x] Tested version endpoints and functionality
 
 ### Files Created/Modified:
-- `chain_server/services/version.py` - Backend version service
-- `chain_server/services/database.py` - Database connection service
-- `chain_server/routers/health.py` - Enhanced health endpoints
-- `ui/web/src/services/version.ts` - Frontend version service
-- `ui/web/src/components/VersionFooter.tsx` - Version display component
-- `ui/web/src/App.tsx` - Integrated version footer
+- `src/api/services/version.py` - Backend version service
+- `src/api/services/database.py` - Database connection service
+- `src/api/routers/health.py` - Enhanced health endpoints
+- `src/ui/web/src/services/version.ts` - Frontend version service
+- `src/ui/web/src/components/VersionFooter.tsx` - Version display component
+- `src/ui/web/src/App.tsx` - Integrated version footer
 
 ### API Endpoints Added:
 - `GET /api/v1/version` - Basic version information

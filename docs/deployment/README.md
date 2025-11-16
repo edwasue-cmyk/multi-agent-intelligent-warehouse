@@ -22,8 +22,8 @@ This guide covers deploying the Warehouse Operational Assistant in various envir
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/T-DevH/warehouse-operational-assistant.git
-cd warehouse-operational-assistant
+git clone https://github.com/T-DevH/Multi-Agent-Intelligent-Warehouse.git
+cd Multi-Agent-Intelligent-Warehouse
 ```
 
 2. **Set up Python virtual environment:**

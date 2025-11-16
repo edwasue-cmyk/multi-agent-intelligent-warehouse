@@ -8,7 +8,7 @@
 ## Complete Flow
 
 ### Step 1: Identify Low Stock Items
-**Location:** `chain_server/routers/advanced_forecasting.py:197-204`
+**Location:** `src/api/routers/advanced_forecasting.py:197-204`
 
 ```python
 # Get current inventory levels
@@ -23,7 +23,7 @@ ORDER BY quantity ASC
 The system identifies items that are at or near their reorder point (within 150% of reorder point).
 
 ### Step 2: Get Demand Forecast for Each SKU
-**Location:** `chain_server/routers/advanced_forecasting.py:213-218`
+**Location:** `src/api/routers/advanced_forecasting.py:213-218`
 
 For each low-stock item, the system:
 1. Calls `get_real_time_forecast(sku, 30)` - Gets 30-day forecast
@@ -42,7 +42,7 @@ except:
 **Key Point:** The `recent_average_demand` comes from the ML forecasting models (XGBoost, Random Forest, etc.) that analyze historical patterns and predict future demand.
 
 ### Step 3: Calculate Recommended Order Quantity
-**Location:** `chain_server/routers/advanced_forecasting.py:220-223`
+**Location:** `src/api/routers/advanced_forecasting.py:220-223`
 
 ```python
 # Calculate recommended order quantity
@@ -57,7 +57,7 @@ recommended_quantity = max(0, recommended_quantity)
 - Ensures enough inventory for 14 days of forecasted demand
 
 ### Step 4: Determine Urgency Level
-**Location:** `chain_server/routers/advanced_forecasting.py:225-239`
+**Location:** `src/api/routers/advanced_forecasting.py:225-239`
 
 The urgency is calculated based on **days until stockout**:
 
@@ -79,7 +79,7 @@ else:
 This directly uses the forecast to predict when stockout will occur!
 
 ### Step 5: Calculate Confidence Score
-**Location:** `chain_server/routers/advanced_forecasting.py:241-242`
+**Location:** `src/api/routers/advanced_forecasting.py:241-242`
 
 ```python
 confidence_score = min(0.95, max(0.5, 1.0 - (days_remaining / 30)))

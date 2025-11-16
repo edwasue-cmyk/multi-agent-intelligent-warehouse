@@ -231,8 +231,8 @@ ensemble_weights = {
 - `scripts/setup_rapids_phase1.sh` - RAPIDS container setup
 
 ### **Phase 4 & 5: API Integration**
-- `chain_server/routers/advanced_forecasting.py` - Advanced API endpoints
-- `chain_server/app.py` - Router integration
+- `src/api/routers/advanced_forecasting.py` - Advanced API endpoints
+- `src/api/app.py` - Router integration
 
 ### **Documentation**
 - `docs/forecasting/PHASE1_PHASE2_COMPLETE.md` - Phase 1&2 summary

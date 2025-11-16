@@ -53,7 +53,7 @@ The Model Context Protocol (MCP) is a standardized protocol for tool discovery, 
 
 ### Components Implemented
 
-#### 1. MCP Server (`chain_server/services/mcp/server.py`)
+#### 1. MCP Server (`src/api/services/mcp/server.py`)
 
 The MCP server provides tool registration, discovery, and execution capabilities.
 
@@ -89,7 +89,7 @@ server.register_tool(tool)
 await server.start()
 ```
 
-#### 2. MCP Client (`chain_server/services/mcp/client.py`)
+#### 2. MCP Client (`src/api/services/mcp/client.py`)
 
 The MCP client enables communication with MCP servers and tool execution.
 
@@ -120,7 +120,7 @@ result = await client.execute_tool("get_inventory", {
 })
 ```
 
-#### 3. Base Classes (`chain_server/services/mcp/base.py`)
+#### 3. Base Classes (`src/api/services/mcp/base.py`)
 
 Base classes provide the foundation for MCP adapters and tools.
 
@@ -152,7 +152,7 @@ class MyAdapter(MCPAdapter):
         pass
 ```
 
-#### 4. ERP Adapter (`chain_server/services/mcp/adapters/erp_adapter.py`)
+#### 4. ERP Adapter (`src/api/services/mcp/adapters/erp_adapter.py`)
 
 The ERP adapter demonstrates MCP integration with enterprise resource planning systems.
 
@@ -184,7 +184,7 @@ Comprehensive testing framework with unit tests, integration tests, and performa
 
 ### Components Implemented
 
-#### 1. Tool Discovery Service (`chain_server/services/mcp/tool_discovery.py`)
+#### 1. Tool Discovery Service (`src/api/services/mcp/tool_discovery.py`)
 
 Dynamic tool discovery and registration system.
 
@@ -219,7 +219,7 @@ tools = await discovery.search_tools("inventory")
 equipment_tools = await discovery.get_tools_by_category(ToolCategory.EQUIPMENT)
 ```
 
-#### 2. Tool Binding Service (`chain_server/services/mcp/tool_binding.py`)
+#### 2. Tool Binding Service (`src/api/services/mcp/tool_binding.py`)
 
 Dynamic tool binding and execution framework.
 
@@ -258,7 +258,7 @@ plan = await binding.create_execution_plan(
 results = await binding.execute_plan(plan)
 ```
 
-#### 3. Tool Routing Service (`chain_server/services/mcp/tool_routing.py`)
+#### 3. Tool Routing Service (`src/api/services/mcp/tool_routing.py`)
 
 Intelligent tool routing and selection.
 
@@ -297,7 +297,7 @@ decision = await routing.route_tools(
 selected_tools = decision.selected_tools
 ```
 
-#### 4. Tool Validation Service (`chain_server/services/mcp/tool_validation.py`)
+#### 4. Tool Validation Service (`src/api/services/mcp/tool_validation.py`)
 
 Comprehensive validation and error handling.
 
@@ -337,9 +337,9 @@ else:
 
 Updated agents with MCP integration:
 
-- **Equipment Agent** (`chain_server/agents/inventory/mcp_equipment_agent.py`)
-- **Operations Agent** (`chain_server/agents/operations/mcp_operations_agent.py`)
-- **Safety Agent** (`chain_server/agents/safety/mcp_safety_agent.py`)
+- **Equipment Agent** (`src/api/agents/inventory/mcp_equipment_agent.py`)
+- **Operations Agent** (`src/api/agents/operations/mcp_operations_agent.py`)
+- **Safety Agent** (`src/api/agents/safety/mcp_safety_agent.py`)
 
 **Key Features:**
 - Dynamic tool discovery and execution
@@ -360,7 +360,7 @@ Updated agents with MCP integration:
 
 ### Components Implemented
 
-#### 1. WMS Adapter (`chain_server/services/mcp/adapters/wms_adapter.py`)
+#### 1. WMS Adapter (`src/api/services/mcp/adapters/wms_adapter.py`)
 
 MCP-enabled Warehouse Management System adapter.
 
@@ -379,7 +379,7 @@ MCP-enabled Warehouse Management System adapter.
 - Warehouse configuration and optimization
 - Reporting and analytics
 
-#### 2. IoT Adapter (`chain_server/services/mcp/adapters/iot_adapter.py`)
+#### 2. IoT Adapter (`src/api/services/mcp/adapters/iot_adapter.py`)
 
 MCP-enabled Internet of Things adapter.
 
@@ -397,7 +397,7 @@ MCP-enabled Internet of Things adapter.
 - Predictive maintenance and analytics
 - Real-time alerts and notifications
 
-#### 3. RFID/Barcode Adapter (`chain_server/services/mcp/adapters/rfid_barcode_adapter.py`)
+#### 3. RFID/Barcode Adapter (`src/api/services/mcp/adapters/rfid_barcode_adapter.py`)
 
 MCP-enabled RFID and barcode scanning adapter.
 
@@ -415,7 +415,7 @@ MCP-enabled RFID and barcode scanning adapter.
 - Mobile scanning operations
 - Data validation and processing
 
-#### 4. Time Attendance Adapter (`chain_server/services/mcp/adapters/time_attendance_adapter.py`)
+#### 4. Time Attendance Adapter (`src/api/services/mcp/adapters/time_attendance_adapter.py`)
 
 MCP-enabled time and attendance adapter.
 
@@ -433,7 +433,7 @@ MCP-enabled time and attendance adapter.
 - Attendance reporting
 - Integration with HR systems
 
-#### 5. Service Discovery (`chain_server/services/mcp/service_discovery.py`)
+#### 5. Service Discovery (`src/api/services/mcp/service_discovery.py`)
 
 Service discovery and registry system.
 
@@ -444,7 +444,7 @@ Service discovery and registry system.
 - Load balancing and failover
 - Service metadata management
 
-#### 6. Monitoring System (`chain_server/services/mcp/monitoring.py`)
+#### 6. Monitoring System (`src/api/services/mcp/monitoring.py`)
 
 Comprehensive monitoring, logging, and management.
 

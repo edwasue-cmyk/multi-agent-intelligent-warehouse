@@ -17,14 +17,14 @@ The Warehouse Operational Assistant provides a comprehensive REST API for wareho
 - **End-to-End Workflow**: Complete query processing pipeline with MCP tool results
 
 ### MCP Components
-- `chain_server/graphs/mcp_integrated_planner_graph.py` - MCP-enabled planner graph
-- `chain_server/agents/*/mcp_*_agent.py` - MCP-enabled specialized agents
-- `chain_server/services/mcp/` - Complete MCP framework implementation
+- `src/api/graphs/mcp_integrated_planner_graph.py` - MCP-enabled planner graph
+- `src/api/agents/*/mcp_*_agent.py` - MCP-enabled specialized agents
+- `src/api/services/mcp/` - Complete MCP framework implementation
 - Dynamic tool discovery, binding, routing, and validation services
 
 ## Base URL
 
-- **Development**: `http://localhost:8002`
+- **Development**: `http://localhost:8001`
 - **Production**: `https://api.warehouse-assistant.com`
 
 ## Recent Fixes & Updates
@@ -629,5 +629,5 @@ The complete OpenAPI specification is available at:
 For API support and questions:
 
 - **Documentation**: [https://docs.warehouse-assistant.com](https://docs.warehouse-assistant.com)
-- **Issues**: [https://github.com/T-DevH/warehouse-operational-assistant/issues](https://github.com/T-DevH/warehouse-operational-assistant/issues)
+- **Issues**: [https://github.com/T-DevH/Multi-Agent-Intelligent-Warehouse/issues](https://github.com/T-DevH/Multi-Agent-Intelligent-Warehouse/issues)
 - **Email**: support@warehouse-assistant.com

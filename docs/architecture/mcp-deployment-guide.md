@@ -54,8 +54,8 @@ This guide provides comprehensive instructions for deploying the Model Context P
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/T-DevH/warehouse-operational-assistant.git
-cd warehouse-operational-assistant
+git clone https://github.com/T-DevH/Multi-Agent-Intelligent-Warehouse.git
+cd Multi-Agent-Intelligent-Warehouse
 ```
 
 ### 2. Create Virtual Environment
@@ -407,7 +407,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/api/v1/health/simple || exit 1
 
 # Start command
-CMD ["python", "-m", "chain_server.app"]
+CMD ["python", "-m", "src.api.app"]
 ```
 
 #### Dockerfile.adapter
@@ -442,7 +442,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8001/health || exit 1
 
 # Start command
-CMD ["python", "-m", "chain_server.adapters.${ADAPTER_TYPE}_adapter"]
+CMD ["python", "-m", "src.api.services.mcp.adapters.${ADAPTER_TYPE}_adapter"]
 ```
 
 ### 3. Deploy with Docker Compose

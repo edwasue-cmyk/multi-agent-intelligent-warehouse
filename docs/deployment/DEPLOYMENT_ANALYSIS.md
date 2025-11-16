@@ -24,7 +24,7 @@
 1. ❌ Line 37: `./scripts/dev_up.sh` → Should be `./scripts/setup/dev_up.sh`
 2. ❌ Line 43: `./RUN_LOCAL.sh` → Should be `./scripts/start_server.sh` (file doesn't exist)
 3. ❌ Line 48: `cd ui/web` → Should be `cd src/ui/web`
-4. ❌ Line 386: `python chain_server/cli/migrate.py up` → File doesn't exist
+4. ❌ Line 386: `python src/api/cli/migrate.py up` → File doesn't exist
 5. ❌ Line 389: `python scripts/simple_migrate.py` → File doesn't exist
 6. ⚠️ Some environment variable defaults may need verification
 

@@ -8,17 +8,17 @@ The Warehouse Operational Assistant implements a comprehensive database migratio
 
 ### Components
 
-1. **Migration Service** (`chain_server/services/migration.py`)
+1. **Migration Service** (`src/api/services/migration.py`)
    - Core migration logic and database operations
    - Dependency resolution and execution order
    - Rollback management and validation
 
-2. **Migration CLI** (`chain_server/cli/migrate.py`)
+2. **Migration CLI** (`src/api/cli/migrate.py`)
    - Command-line interface for migration operations
    - Status checking and health monitoring
    - Dry-run and rollback capabilities
 
-3. **Migration API** (`chain_server/routers/migration.py`)
+3. **Migration API** (`src/api/routers/migration.py`)
    - REST API endpoints for migration management
    - Integration with monitoring and health checks
    - Programmatic migration control
@@ -130,28 +130,28 @@ The migration system provides a comprehensive CLI tool:
 
 ```bash
 # Show migration status
-python chain_server/cli/migrate.py status
+python src/api/cli/migrate.py status
 
 # Run pending migrations
-python chain_server/cli/migrate.py up
+python src/api/cli/migrate.py up
 
 # Run migrations with dry run
-python chain_server/cli/migrate.py up --dry-run
+python src/api/cli/migrate.py up --dry-run
 
 # Run migrations to specific version
-python chain_server/cli/migrate.py up --target 002
+python src/api/cli/migrate.py up --target 002
 
 # Rollback a migration
-python chain_server/cli/migrate.py down 002
+python src/api/cli/migrate.py down 002
 
 # Show migration history
-python chain_server/cli/migrate.py history
+python src/api/cli/migrate.py history
 
 # Check system health
-python chain_server/cli/migrate.py health
+python src/api/cli/migrate.py health
 
 # Show system information
-python chain_server/cli/migrate.py info
+python src/api/cli/migrate.py info
 ```
 
 ### API Endpoints

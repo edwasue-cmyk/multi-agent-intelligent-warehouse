@@ -21,18 +21,18 @@ We will implement a comprehensive database migration system with the following c
 
 ### Core Components
 
-1. **Migration Service** (`chain_server/services/migration.py`)
+1. **Migration Service** (`src/api/services/migration.py`)
    - Centralized migration management
    - Dependency resolution and execution order
    - Rollback support with validation
    - Error handling and retry mechanisms
 
-2. **Migration CLI** (`chain_server/cli/migrate.py`)
+2. **Migration CLI** (`src/api/cli/migrate.py`)
    - Command-line interface for migration operations
    - Status checking and health monitoring
    - Dry-run capabilities for testing
 
-3. **Migration API** (`chain_server/routers/migration.py`)
+3. **Migration API** (`src/api/routers/migration.py`)
    - REST endpoints for programmatic migration control
    - Integration with monitoring and health checks
 

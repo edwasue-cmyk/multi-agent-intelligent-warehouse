@@ -8,26 +8,27 @@ The Warehouse Operational Assistant implements the Model Context Protocol (MCP) 
 
 ### Core Components
 
-1. **MCP Server** (`chain_server/services/mcp/server.py`)
+1. **MCP Server** (`src/api/services/mcp/server.py`)
    - Tool registration and discovery
    - Tool execution and management
    - Protocol compliance with MCP specification
    - Error handling and validation
 
-2. **MCP Client** (`chain_server/services/mcp/client.py`)
+2. **MCP Client** (`src/api/services/mcp/client.py`)
    - Tool discovery and execution
    - Resource access
    - Prompt management
    - Multi-server communication
 
-3. **MCP Adapters** (`chain_server/services/mcp/adapters/`)
+3. **MCP Adapters** (`src/api/services/mcp/adapters/`)
    - ERP Adapter (`erp_adapter.py`)
    - WMS Adapter (planned)
    - IoT Adapter (planned)
    - RFID Adapter (planned)
    - Time Attendance Adapter (planned)
+   - Forecasting Adapter (`forecasting_adapter.py`)
 
-4. **Base Classes** (`chain_server/services/mcp/base.py`)
+4. **Base Classes** (`src/api/services/mcp/base.py`)
    - `MCPAdapter` - Base class for all adapters
    - `MCPToolBase` - Base class for tools
    - `MCPManager` - System coordination
@@ -92,7 +93,7 @@ graph TB
 The MCP Server provides the core functionality for tool management:
 
 ```python
-from chain_server.services.mcp import MCPServer, MCPTool, MCPToolType
+from src.api.services.mcp import MCPServer, MCPTool, MCPToolType
 
 # Create server
 server = MCPServer(name="warehouse-assistant", version="1.0.0")
@@ -120,7 +121,7 @@ result = await server.execute_tool("get_equipment_status", {"id": "EQ001"})
 The MCP Client enables communication with external MCP servers:
 
 ```python
-from chain_server.services.mcp import MCPClient, MCPConnectionType
+from src.api.services.mcp import MCPClient, MCPConnectionType
 
 # Create client
 client = MCPClient(client_name="warehouse-client", version="1.0.0")
@@ -147,8 +148,8 @@ prompt = await client.get_prompt("customer_query", {"query": "find customer"})
 Adapters provide MCP integration for external systems:
 
 ```python
-from chain_server.services.mcp import MCPAdapter, AdapterConfig, AdapterType
-from chain_server.services.mcp.adapters import MCPERPAdapter
+from src.api.services.mcp import MCPAdapter, AdapterConfig, AdapterType
+from src.api.services.mcp.adapters import MCPERPAdapter
 
 # Create ERP adapter
 config = AdapterConfig(
@@ -273,7 +274,7 @@ import logging
 
 # Configure MCP logging
 logging.basicConfig(level=logging.INFO)
-mcp_logger = logging.getLogger('chain_server.services.mcp')
+mcp_logger = logging.getLogger('src.api.services.mcp')
 
 # Log tool execution
 mcp_logger.info(f"Executing tool: {tool_name} with args: {arguments}")
@@ -401,8 +402,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY chain_server/services/mcp/ ./mcp/
-COPY chain_server/services/mcp/adapters/ ./mcp/adapters/
+COPY src/api/services/mcp/ ./mcp/
+COPY src/api/services/mcp/adapters/ ./mcp/adapters/
 
 EXPOSE 8000
 CMD ["python", "-m", "mcp.server"]
