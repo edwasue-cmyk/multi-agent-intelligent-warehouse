@@ -261,64 +261,81 @@ const DocumentExtraction: React.FC = () => {
         const statusResponse = await documentAPI.getDocumentStatus(documentId);
         const status = statusResponse;
         
-        setProcessingDocuments(prev => prev.map(doc => {
-          if (doc.id === documentId) {
-            // Create a mapping from backend stage names to frontend stage names
-            const stageMapping: { [key: string]: string } = {
-              'preprocessing': 'Preprocessing',
-              'ocr_extraction': 'OCR Extraction',
-              'llm_processing': 'LLM Processing',
-              'validation': 'Validation',
-              'routing': 'Routing'
-            };
-            
-            console.log('Backend status:', status);
-            console.log('Backend stages:', status.stages);
-            
-            const updatedDoc = {
-              ...doc,
-              status: status.status || doc.status,  // Update document status
-              progress: status.progress || 0,
-              stages: doc.stages.map((stage) => {
-                // Find the corresponding backend stage by matching the stage name
-                const backendStage = status.stages?.find((bs: any) => 
-                  stageMapping[bs.stage_name] === stage.name
-                );
-                console.log(`Mapping stage "${stage.name}" to backend stage:`, backendStage);
-                return {
-                  ...stage,
-                  completed: backendStage?.status === 'completed',
-                  current: backendStage?.status === 'processing'
-                };
-              })
-            };
-            
-            console.log(`Updated document ${documentId}: status=${updatedDoc.status}, progress=${updatedDoc.progress}%`);
-            
-            // If processing is complete, move to completed documents
-            if (status.status === 'completed') {
-              setCompletedDocuments(prevCompleted => {
-                // Check if document already exists in completed documents
-                const exists = prevCompleted.some(doc => doc.id === documentId);
-                if (exists) {
-                  return prevCompleted; // Don't add duplicate
-                }
-                
-                return [...prevCompleted, {
-                  ...updatedDoc,
-                  status: 'completed',
-                  progress: 100,
-                  // Quality score and processing time will be loaded from API when viewing results
-                  routingDecision: 'Auto-Approved'
-                }];
-              });
-              return null; // Remove from processing
+        setProcessingDocuments(prev => {
+          const updated = prev.map(doc => {
+            if (doc.id === documentId) {
+              // Create a mapping from backend stage names to frontend stage names
+              const stageMapping: { [key: string]: string } = {
+                'preprocessing': 'Preprocessing',
+                'ocr_extraction': 'OCR Extraction',
+                'llm_processing': 'LLM Processing',
+                'validation': 'Validation',
+                'routing': 'Routing'
+              };
+              
+              console.log('Backend status:', status);
+              console.log('Backend stages:', status.stages);
+              
+              const updatedDoc = {
+                ...doc,
+                status: status.status || doc.status,  // Update document status
+                progress: status.progress || 0,
+                stages: doc.stages.map((stage) => {
+                  // Find the corresponding backend stage by matching the stage name
+                  const backendStage = status.stages?.find((bs: any) => 
+                    stageMapping[bs.stage_name] === stage.name
+                  );
+                  console.log(`Mapping stage "${stage.name}" to backend stage:`, backendStage);
+                  return {
+                    ...stage,
+                    completed: backendStage?.status === 'completed',
+                    current: backendStage?.status === 'processing'
+                  };
+                })
+              };
+              
+              console.log(`Updated document ${documentId}: status=${updatedDoc.status}, progress=${updatedDoc.progress}%`);
+              
+              // If processing is complete, move to completed documents
+              if (status.status === 'completed') {
+                // Use setTimeout to avoid state update during render
+                setTimeout(() => {
+                  setCompletedDocuments(prevCompleted => {
+                    // Check if document already exists in completed documents
+                    const exists = prevCompleted.some(d => d.id === documentId);
+                    if (exists) {
+                      // Update existing document with latest status
+                      return prevCompleted.map(d => 
+                        d.id === documentId 
+                          ? { ...d, ...updatedDoc, status: 'completed', progress: 100 }
+                          : d
+                      );
+                    }
+                    
+                    // Add new completed document with all required fields
+                    return [...prevCompleted, {
+                      ...updatedDoc,
+                      id: documentId,
+                      filename: updatedDoc.filename || doc.filename || 'Unknown',
+                      status: 'completed',
+                      progress: 100,
+                      routingDecision: 'Auto-Approved',
+                      // Preserve stages for display
+                      stages: updatedDoc.stages || doc.stages || []
+                    }];
+                  });
+                }, 0);
+                return null; // Remove from processing
+              }
+              
+              return updatedDoc;
             }
-            
-            return updatedDoc;
-          }
-          return doc;
-        }).filter(doc => doc !== null) as DocumentItem[]);
+            return doc;
+          });
+          
+          // Filter out null values (completed documents)
+          return updated.filter(doc => doc !== null) as DocumentItem[];
+        });
         
         // Continue monitoring if not completed
         if (status.status !== 'completed' && status.status !== 'failed') {
