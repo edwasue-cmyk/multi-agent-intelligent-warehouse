@@ -1373,12 +1373,13 @@ class DocumentActionTools:
                                     auto_approved_count += 1
                             else:
                                 logger.debug(f"Document {doc_id} completed but no quality score found. Validation keys: {list(results.get('validation', {}).keys()) if isinstance(results.get('validation'), dict) else 'N/A'}")
-                    else:
-                        logger.debug(f"Document {doc_id} status: {doc_status_value} (not COMPLETED)")
-                    
-                    # Count failed documents
-                    elif doc_status.get("status") == ProcessingStage.FAILED:
+                        else:
+                            logger.debug(f"Document {doc_id} completed but no processing_results found")
+                    elif doc_status_value == ProcessingStage.FAILED:
+                        # Count failed documents
                         failed_count += 1
+                    else:
+                        logger.debug(f"Document {doc_id} status: {doc_status_value} (not COMPLETED or FAILED)")
             
             # Calculate averages
             average_quality = (
