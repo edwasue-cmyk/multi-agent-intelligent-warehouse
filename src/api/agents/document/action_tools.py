@@ -1289,6 +1289,8 @@ class DocumentActionTools:
             quality_scores = []
             daily_processing = {}  # Track documents by day
             
+            logger.info(f"Calculating analytics from {len(self.document_statuses)} documents")
+            
             for doc_id, doc_status in self.document_statuses.items():
                 upload_time = doc_status.get("upload_time", datetime.min)
                 
@@ -1303,7 +1305,8 @@ class DocumentActionTools:
                     daily_processing[day_key] = daily_processing.get(day_key, 0) + 1
                     
                     # Count completed documents
-                    if doc_status.get("status") == ProcessingStage.COMPLETED:
+                    doc_status_value = doc_status.get("status")
+                    if doc_status_value == ProcessingStage.COMPLETED:
                         completed_documents += 1
                         
                         # Get quality score from processing results
@@ -1368,6 +1371,10 @@ class DocumentActionTools:
                                 # Count auto-approved (quality >= 4.0)
                                 if quality >= 4.0:
                                     auto_approved_count += 1
+                            else:
+                                logger.debug(f"Document {doc_id} completed but no quality score found. Validation keys: {list(results.get('validation', {}).keys()) if isinstance(results.get('validation'), dict) else 'N/A'}")
+                    else:
+                        logger.debug(f"Document {doc_id} status: {doc_status_value} (not COMPLETED)")
                     
                     # Count failed documents
                     elif doc_status.get("status") == ProcessingStage.FAILED:
@@ -1377,6 +1384,8 @@ class DocumentActionTools:
             average_quality = (
                 total_quality / len(quality_scores) if quality_scores else 0.0
             )
+            
+            logger.info(f"Analytics calculation: {completed_documents} completed, {len(quality_scores)} with quality scores, avg quality: {average_quality:.2f}")
             
             # Calculate success rate
             total_processed = completed_documents + failed_count
