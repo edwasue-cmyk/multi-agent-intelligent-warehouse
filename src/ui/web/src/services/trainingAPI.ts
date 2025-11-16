@@ -45,6 +45,7 @@ export interface TrainingHistory {
     end_time: string;
     status: string;
     duration_minutes: number;
+    duration_seconds?: number;  // Optional: more accurate duration in seconds
     models_trained: number;
     accuracy_improvement: number;
   }>;

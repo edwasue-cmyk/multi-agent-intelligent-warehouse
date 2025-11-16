@@ -438,13 +438,13 @@ def _create_simple_fallback_response(message: str, session_id: str) -> ChatRespo
             session_id=session_id,
             confidence=0.5,
         )
-    elif any(word in message_lower for word in ["forecast", "demand", "prediction"]):
+    elif any(word in message_lower for word in ["forecast", "demand", "prediction", "reorder recommendation", "model performance"]):
         return ChatResponse(
-            reply=f"I received your forecasting query: '{message}'. The forecasting system is initializing. Please wait a moment.",
+            reply=f"I received your forecasting query: '{message}'. Routing to the Forecasting Agent...",
             route="forecasting",
             intent="forecasting_query",
             session_id=session_id,
-            confidence=0.5,
+            confidence=0.6,
         )
     else:
         return ChatResponse(

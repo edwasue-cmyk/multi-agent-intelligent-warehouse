@@ -252,10 +252,40 @@ class MCPIntentClassifier:
             logger.error(f"Error in MCP intent classification: {e}")
             return self.classify_intent(message)
 
+    FORECASTING_KEYWORDS = [
+        "forecast",
+        "forecasting",
+        "demand forecast",
+        "demand prediction",
+        "predict demand",
+        "sales forecast",
+        "inventory forecast",
+        "reorder recommendation",
+        "model performance",
+        "forecast accuracy",
+        "mape",
+        "model metrics",
+        "business intelligence",
+        "forecast dashboard",
+        "sku forecast",
+        "demand planning",
+        "predict",
+        "prediction",
+        "trend",
+        "projection",
+    ]
+
     @classmethod
     def classify_intent(cls, message: str) -> str:
         """Enhanced intent classification with better logic and ambiguity handling."""
         message_lower = message.lower()
+        
+        # Check for forecasting-related keywords (high priority)
+        forecasting_score = sum(
+            1 for keyword in cls.FORECASTING_KEYWORDS if keyword in message_lower
+        )
+        if forecasting_score > 0:
+            return "forecasting"
 
         # Check for specific safety-related queries first (highest priority)
         safety_score = sum(
@@ -454,6 +484,7 @@ class MCPPlannerGraph:
         workflow.add_node("equipment", self._mcp_equipment_agent)
         workflow.add_node("operations", self._mcp_operations_agent)
         workflow.add_node("safety", self._mcp_safety_agent)
+        workflow.add_node("forecasting", self._mcp_forecasting_agent)
         workflow.add_node("document", self._mcp_document_agent)
         workflow.add_node("general", self._mcp_general_agent)
         workflow.add_node("ambiguous", self._handle_ambiguous_query)
@@ -470,6 +501,7 @@ class MCPPlannerGraph:
                 "equipment": "equipment",
                 "operations": "operations",
                 "safety": "safety",
+                "forecasting": "forecasting",
                 "document": "document",
                 "general": "general",
                 "ambiguous": "ambiguous",
@@ -480,6 +512,7 @@ class MCPPlannerGraph:
         workflow.add_edge("equipment", "synthesize")
         workflow.add_edge("operations", "synthesize")
         workflow.add_edge("safety", "synthesize")
+        workflow.add_edge("forecasting", "synthesize")
         workflow.add_edge("document", "synthesize")
         workflow.add_edge("general", "synthesize")
         workflow.add_edge("ambiguous", "synthesize")
@@ -798,6 +831,68 @@ class MCPPlannerGraph:
             logger.error(f"Error in MCP safety agent: {e}")
             state["agent_responses"]["safety"] = {
                 "natural_language": f"Error processing safety request: {str(e)}",
+                "data": {"error": str(e)},
+                "recommendations": [],
+                "confidence": 0.0,
+                "response_type": "error",
+                "mcp_tools_used": [],
+                "tool_execution_results": {},
+            }
+
+        return state
+
+    async def _mcp_forecasting_agent(self, state: MCPWarehouseState) -> MCPWarehouseState:
+        """Handle forecasting queries using MCP-enabled Forecasting Agent."""
+        try:
+            from src.api.agents.forecasting.forecasting_agent import (
+                get_forecasting_agent,
+            )
+
+            # Get the latest user message
+            if not state["messages"]:
+                state["agent_responses"]["forecasting"] = "No message to process"
+                return state
+
+            latest_message = state["messages"][-1]
+            if isinstance(latest_message, HumanMessage):
+                message_text = latest_message.content
+            else:
+                message_text = str(latest_message.content)
+
+            # Get session ID from context
+            session_id = state.get("session_id", "default")
+
+            # Get MCP forecasting agent
+            forecasting_agent = await get_forecasting_agent()
+
+            # Process with MCP forecasting agent
+            response = await forecasting_agent.process_query(
+                query=message_text,
+                session_id=session_id,
+                context=state.get("context", {}),
+                mcp_results=state.get("mcp_results"),
+            )
+
+            # Store the response
+            state["agent_responses"]["forecasting"] = {
+                "natural_language": response.natural_language,
+                "data": response.data,
+                "recommendations": response.recommendations,
+                "confidence": response.confidence,
+                "response_type": response.response_type,
+                "mcp_tools_used": response.mcp_tools_used or [],
+                "tool_execution_results": response.tool_execution_results or {},
+                "actions_taken": response.actions_taken or [],
+            }
+
+            logger.info(
+                f"MCP Forecasting agent processed request with confidence: {response.confidence}"
+            )
+
+        except Exception as e:
+            logger.error(f"Error in MCP forecasting agent: {e}")
+            state["agent_responses"]["forecasting"] = {
+                "natural_language": f"Error processing forecasting request: {str(e)}",
                 "data": {"error": str(e)},
                 "recommendations": [],
                 "confidence": 0.0,

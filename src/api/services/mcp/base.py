@@ -31,6 +31,7 @@ class AdapterType(Enum):
     EQUIPMENT = "equipment"
     OPERATIONS = "operations"
     SAFETY = "safety"
+    FORECASTING = "forecasting"
     CUSTOM = "custom"
 
 

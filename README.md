@@ -83,6 +83,7 @@ The system emphasizes modular design, clear separation of concerns, and enterpri
 - **Equipment & Asset Operations Agent** - Equipment management, maintenance, and telemetry
 - **Operations Coordination Agent** - Task planning and workflow management
 - **Safety & Compliance Agent** - Safety monitoring and incident response
+- **Forecasting Agent** - Demand forecasting, reorder recommendations, and model performance monitoring
 - **MCP Integration** - Model Context Protocol with dynamic tool discovery
 
 ### Document Processing Pipeline
@@ -170,7 +171,7 @@ The system emphasizes modular design, clear separation of concerns, and enterpri
 
 The system features **complete MCP integration** with dynamic tool discovery and execution capabilities:
 
-- **MCP-Enabled Agents**: Equipment, Operations, and Safety agents with dynamic tool discovery
+- **MCP-Enabled Agents**: Equipment, Operations, Safety, and Forecasting agents with dynamic tool discovery
 - **MCP Planner Graph**: Intelligent routing with MCP-enhanced intent classification
 - **Dynamic Tool Discovery**: Real-time tool registration and discovery across all agent types
 - **Tool Execution Planning**: Intelligent planning for tool execution based on context
@@ -639,6 +640,39 @@ The Warehouse Operational Assistant uses a sophisticated multi-agent architectur
 - `lockout_tagout_request` - Create LOTO procedures
 - `near_miss_capture` - Capture near-miss reports
 - `retrieve_sds` - Safety Data Sheet retrieval
+
+### Forecasting Agent
+
+**Mission**: Provide AI-powered demand forecasting, reorder recommendations, and model performance monitoring for inventory management.
+
+**Key Capabilities:**
+- **Demand Forecasting** - Generate accurate demand forecasts for SKUs using multiple ML models
+- **Reorder Recommendations** - Automated reorder suggestions with urgency levels
+- **Model Performance Monitoring** - Track accuracy, MAPE, drift scores, and training history
+- **Business Intelligence** - Comprehensive analytics and trend analysis
+- **Real-time Predictions** - Live forecasts with confidence intervals and uncertainty bounds
+
+**Action Tools:**
+- `get_forecast` - Get demand forecast for a specific SKU
+- `get_batch_forecast` - Get demand forecasts for multiple SKUs
+- `get_reorder_recommendations` - Get automated reorder recommendations with urgency levels
+- `get_model_performance` - Get model performance metrics (accuracy, MAPE, drift scores)
+- `get_forecast_dashboard` - Get comprehensive forecasting dashboard data
+- `get_business_intelligence` - Get business intelligence summary and analytics
+
+**Forecasting Models:**
+- Random Forest (82% accuracy, 15.8% MAPE)
+- XGBoost (79.5% accuracy, 15.0% MAPE)
+- Gradient Boosting (78% accuracy, 14.2% MAPE)
+- Linear Regression (76.4% accuracy, 15.0% MAPE)
+- Ridge Regression (75% accuracy, 16.3% MAPE)
+- Support Vector Regression (70% accuracy, 20.1% MAPE)
+
+**Integration:**
+- Uses the standalone forecasting service as tools via API
+- Fully integrated with MCP framework for tool discovery
+- Supports both direct service access and API fallback
+- Real-time caching with Redis for performance optimization
 
 ###  **MCP Integration**
 
@@ -1130,6 +1164,7 @@ Agent Actions:
  - **Equipment & Asset Operations** — equipment availability, maintenance scheduling, asset tracking, equipment reservations, purchase requisitions, reorder point management, reslotting recommendations, discrepancy investigations.
  - **Operations Coordination** — workforce scheduling, task assignment, equipment allocation, KPIs, pick wave generation, path optimization, shift management, dock scheduling, equipment dispatch.
  - **Safety & Compliance** — incident logging, policy lookup, safety checklists, alert broadcasting, LOTO procedures, corrective actions, SDS retrieval, near-miss reporting.
+ - **Forecasting** — demand forecasting, reorder recommendations, model performance monitoring, business intelligence, and trend analysis.
 - **Hybrid Retrieval**
  - **Structured**: PostgreSQL/TimescaleDB (IoT time-series).
  - **Vector**: Milvus (semantic search over SOPs/manuals).
@@ -1814,6 +1849,7 @@ GH Actions CI; IaC (K8s, Helm, Terraform); blue-green deploys; production deploy
 - **Equipment & Asset Operations Agent**: Equipment availability, maintenance scheduling, asset tracking, action tools (8 comprehensive equipment management tools)
 - **Operations Coordination Agent**: Workforce scheduling, task management, KPIs, action tools (8 comprehensive operations management tools)
 - **Safety & Compliance Agent**: Incident reporting, policy lookup, compliance, alert broadcasting, LOTO procedures, corrective actions, SDS retrieval, near-miss reporting
+- **Forecasting Agent**: Demand forecasting, reorder recommendations, model performance monitoring, business intelligence, action tools (6 comprehensive forecasting tools)
 - **💾 Memory Manager**: Conversation persistence, user profiles, session context
 - **NVIDIA NIM Integration**: Llama 3.1 70B + NV-EmbedQA-E5-v5 (1024-dim) embeddings
 - **Hybrid Retrieval**: PostgreSQL/TimescaleDB + Milvus vector search
@@ -2690,6 +2726,7 @@ result = await processor.process_query(query)
 - **Equipment & Asset Operations Agent (EAO)** with 8 action tools
 - **Operations Coordination Agent** with 8 action tools 
 - **Safety & Compliance Agent** with 7 action tools
+- **Forecasting Agent** with 6 action tools
 - **Comprehensive action tools** for complete warehouse operations management
 
 #### **System Integration**

@@ -29,6 +29,7 @@ training_status = {
 }
 
 # Training history storage (in production, this would be a database)
+# Initialize with sample data - durations calculated from start/end times
 training_history = [
     {
         "id": "training_20241024_180909",
@@ -37,6 +38,7 @@ training_history = [
         "end_time": "2025-10-24T18:11:19.015710",
         "status": "completed",
         "duration_minutes": 2,
+        "duration_seconds": 129,  # 2 minutes 9 seconds (exact: 129.75871)
         "models_trained": 6,
         "accuracy_improvement": 0.05
     },
@@ -47,6 +49,7 @@ training_history = [
         "end_time": "2024-10-24T14:45:18",
         "status": "completed",
         "duration_minutes": 15,
+        "duration_seconds": 896,  # 14 minutes 56 seconds (exact: 896)
         "models_trained": 6,
         "accuracy_improvement": 0.05
     }
@@ -81,7 +84,13 @@ async def add_training_to_history(training_type: str, start_time: str, end_time:
     # Calculate duration
     start_dt = datetime.fromisoformat(start_time)
     end_dt = datetime.fromisoformat(end_time)
-    duration_minutes = int((end_dt - start_dt).total_seconds() / 60)
+    duration_seconds = (end_dt - start_dt).total_seconds()
+    # Round to nearest minute (round up if >= 30 seconds, round down if < 30 seconds)
+    # But always show at least 1 minute for completed trainings that took any time
+    if duration_seconds > 0:
+        duration_minutes = max(1, int(round(duration_seconds / 60)))
+    else:
+        duration_minutes = 0
     
     # Count models trained from logs
     models_trained = 6  # Default for advanced training
@@ -99,6 +108,7 @@ async def add_training_to_history(training_type: str, start_time: str, end_time:
         "end_time": end_time,
         "status": status,
         "duration_minutes": duration_minutes,
+        "duration_seconds": int(duration_seconds),  # Also store seconds for more accurate display
         "models_trained": models_trained,
         "accuracy_improvement": 0.05 if status == "completed" else 0.0
     }

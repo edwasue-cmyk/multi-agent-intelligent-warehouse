@@ -692,16 +692,6 @@ class AdvancedForecastingService:
         logger.info("📊 Generating enhanced business intelligence...")
         
         try:
-            # Load forecast data
-            import json
-            import os
-            
-            forecast_file = "all_sku_forecasts.json"
-            forecasts = {}
-            if os.path.exists(forecast_file):
-                with open(forecast_file, 'r') as f:
-                    forecasts = json.load(f)
-            
             # 1. Inventory Analytics
             inventory_query = """
             SELECT 
@@ -774,34 +764,74 @@ class AdvancedForecastingService:
             """
             bottom_performers = await self.pg_conn.fetch(bottom_performers_query)
             
-            # 5. Forecast Analytics
+            # 5. Forecast Analytics - Generate real-time forecasts for all SKUs
             forecast_analytics = {}
-            if forecasts:
-                total_predicted_demand = 0
-                trending_up = 0
-                trending_down = 0
-                stable_trends = 0
+            try:
+                # Get all SKUs from inventory
+                sku_query = """
+                    SELECT DISTINCT sku 
+                    FROM inventory_items 
+                    ORDER BY sku
+                    LIMIT 100
+                """
+                sku_results = await self.pg_conn.fetch(sku_query)
                 
-                for sku, forecast_data in forecasts.items():
-                    predictions = forecast_data['predictions']
-                    avg_demand = sum(predictions) / len(predictions)
-                    total_predicted_demand += avg_demand
+                if sku_results:
+                    logger.info(f"📊 Generating real-time forecasts for {len(sku_results)} SKUs for trend analysis...")
+                    total_predicted_demand = 0
+                    trending_up = 0
+                    trending_down = 0
+                    stable_trends = 0
+                    successful_forecasts = 0
                     
-                    # Determine trend
-                    if predictions[0] < predictions[-1] * 1.05:  # 5% threshold
-                        trending_up += 1
-                    elif predictions[0] > predictions[-1] * 1.05:
-                        trending_down += 1
+                    for row in sku_results:
+                        sku = row['sku']
+                        try:
+                            # Get real-time forecast (uses cache if available)
+                            forecast = await self.get_real_time_forecast(sku, horizon_days=30)
+                            predictions = forecast.get('predictions', [])
+                            
+                            if predictions and len(predictions) > 0:
+                                successful_forecasts += 1
+                                avg_demand = sum(predictions) / len(predictions)
+                                total_predicted_demand += avg_demand
+                                
+                                # Determine trend (compare first vs last prediction)
+                                if len(predictions) >= 2:
+                                    first_pred = predictions[0]
+                                    last_pred = predictions[-1]
+                                    # 5% threshold for trend detection
+                                    if first_pred < last_pred * 0.95:  # Decreasing by 5%+
+                                        trending_down += 1
+                                    elif first_pred > last_pred * 1.05:  # Increasing by 5%+
+                                        trending_up += 1
+                                    else:
+                                        stable_trends += 1
+                                else:
+                                    stable_trends += 1
+                        except Exception as e:
+                            logger.warning(f"Failed to generate forecast for SKU {sku} in trend analysis: {e}")
+                            continue
+                    
+                    if successful_forecasts > 0:
+                        # Get average accuracy from model performance
+                        model_performance = await self.get_model_performance_metrics()
+                        avg_accuracy = np.mean([m.accuracy_score for m in model_performance]) * 100 if model_performance else 0
+                        
+                        forecast_analytics = {
+                            "total_predicted_demand": round(total_predicted_demand, 1),
+                            "trending_up": trending_up,
+                            "trending_down": trending_down,
+                            "stable_trends": stable_trends,
+                            "avg_forecast_accuracy": round(avg_accuracy, 1),
+                            "skus_forecasted": successful_forecasts
+                        }
+                        logger.info(f"✅ Generated forecast analytics: {trending_up} up, {trending_down} down, {stable_trends} stable")
                     else:
-                        stable_trends += 1
-                
-                forecast_analytics = {
-                    "total_predicted_demand": round(total_predicted_demand, 1),
-                    "trending_up": trending_up,
-                    "trending_down": trending_down,
-                    "stable_trends": stable_trends,
-                    "avg_forecast_accuracy": round(np.mean([f.get('model_metrics', {}).get('best_model', {}).get('accuracy', 85) for f in forecasts.values()]), 1)
-                }
+                        logger.warning("No successful forecasts generated for trend analysis")
+            except Exception as e:
+                logger.error(f"Error generating forecast analytics: {e}")
+                # forecast_analytics remains empty dict if there's an error
             
             # 6. Seasonal Analysis
             seasonal_query = """
@@ -839,19 +869,24 @@ class AdvancedForecastingService:
             model_performance = await self.get_model_performance_metrics()
             model_analytics = {
                 "total_models": len(model_performance),
-                "avg_accuracy": round(np.mean([m.accuracy_score for m in model_performance]), 1),
+                "avg_accuracy": round(np.mean([m.accuracy_score for m in model_performance]) * 100, 1),  # Convert to percentage
                 "best_model": max(model_performance, key=lambda x: x.accuracy_score).model_name if model_performance else "N/A",
                 "worst_model": min(model_performance, key=lambda x: x.accuracy_score).model_name if model_performance else "N/A",
-                "models_above_80": len([m for m in model_performance if m.accuracy_score > 80]),
-                "models_below_70": len([m for m in model_performance if m.accuracy_score < 70])
+                "models_above_80": len([m for m in model_performance if m.accuracy_score > 0.80]),  # Fixed: accuracy_score is 0-1, not 0-100
+                "models_below_70": len([m for m in model_performance if m.accuracy_score < 0.70])  # Fixed: accuracy_score is 0-1, not 0-100
             }
             
             # 9. Business KPIs
+            # Calculate forecast coverage from forecast_analytics if available
+            forecast_coverage = 0
+            if forecast_analytics and 'skus_forecasted' in forecast_analytics:
+                forecast_coverage = round((forecast_analytics['skus_forecasted'] / inventory_analytics['total_skus']) * 100, 1)
+            
             kpis = {
                 "inventory_turnover": round(inventory_analytics['total_quantity'] / max(sum([r['total_demand'] for r in top_performers]), 1), 2),
                 "stockout_risk": round((inventory_analytics['low_stock_items'] / inventory_analytics['total_skus']) * 100, 1),
                 "overstock_percentage": round((inventory_analytics['overstock_items'] / inventory_analytics['total_skus']) * 100, 1),
-                "forecast_coverage": round((len(forecasts) / inventory_analytics['total_skus']) * 100, 1),
+                "forecast_coverage": forecast_coverage,
                 "demand_volatility": round(np.std([r['total_demand'] for r in top_performers]) / np.mean([r['total_demand'] for r in top_performers]), 2) if top_performers else 0
             }
             

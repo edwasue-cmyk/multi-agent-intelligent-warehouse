@@ -44,6 +44,7 @@ class ToolCategory(Enum):
     SAFETY = "safety"
     EQUIPMENT = "equipment"
     OPERATIONS = "operations"
+    FORECASTING = "forecasting"
 
 
 @dataclass

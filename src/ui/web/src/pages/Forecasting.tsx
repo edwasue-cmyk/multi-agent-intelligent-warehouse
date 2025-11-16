@@ -1235,7 +1235,25 @@ const ForecastingPage: React.FC = () => {
                         <TableCell>
                           {new Date(session.start_time).toLocaleString()}
                         </TableCell>
-                        <TableCell>{session.duration_minutes} min</TableCell>
+                        <TableCell>
+                          {(() => {
+                            // Use duration_seconds if available for more accurate display
+                            if (session.duration_seconds !== undefined) {
+                              const seconds = session.duration_seconds;
+                              if (seconds < 60) {
+                                return `${seconds} sec`;
+                              } else {
+                                const mins = Math.floor(seconds / 60);
+                                const secs = seconds % 60;
+                                return secs > 0 ? `${mins}m ${secs}s` : `${mins} min`;
+                              }
+                            }
+                            // Fallback to duration_minutes
+                            return session.duration_minutes > 0 
+                              ? `${session.duration_minutes} min` 
+                              : '< 1 min';
+                          })()}
+                        </TableCell>
                         <TableCell>
                           <Chip 
                             label={session.status} 
