@@ -71,14 +71,14 @@ const Documentation: React.FC = () => {
       step: 4,
       title: "Start Services",
       description: "Launch the application stack",
-      code: "docker-compose up -d && python -m uvicorn chain_server.app:app --reload"
+      code: "./scripts/setup/dev_up.sh && ./scripts/start_server.sh"
     }
   ];
 
   const architectureComponents = [
     {
       name: "Multi-Agent System",
-      description: "Planner/Router + Specialized Agents (Equipment, Operations, Safety)",
+      description: "Planner/Router + 5 Specialized Agents (Equipment, Operations, Safety, Forecasting, Document)",
       status: "✅ Production Ready",
       icon: <ArchitectureIcon />
     },
@@ -120,9 +120,21 @@ const Documentation: React.FC = () => {
     },
     {
       name: "Document Processing",
-      description: "6-stage NVIDIA NeMo pipeline with Llama Nemotron Nano VL 8B",
+      description: "6-stage NVIDIA NeMo pipeline with Llama Nemotron Nano VL 8B vision model",
       status: "✅ Production Ready",
       icon: <ArticleIcon />
+    },
+    {
+      name: "Demand Forecasting",
+      description: "AI-powered forecasting with 6 ML models and NVIDIA RAPIDS GPU acceleration",
+      status: "✅ Production Ready",
+      icon: <SpeedIcon />
+    },
+    {
+      name: "NeMo Guardrails",
+      description: "Content safety, security, and compliance protection for LLM inputs/outputs",
+      status: "✅ Production Ready",
+      icon: <SecurityIcon />
     },
     {
       name: "Security & RBAC",
@@ -145,8 +157,11 @@ const Documentation: React.FC = () => {
       category: "Agent Operations",
       endpoints: [
         { method: "GET", path: "/api/v1/equipment/assignments", description: "Equipment assignments" },
+        { method: "GET", path: "/api/v1/equipment/telemetry", description: "Equipment telemetry data" },
         { method: "POST", path: "/api/v1/operations/waves", description: "Create pick waves" },
-        { method: "POST", path: "/api/v1/safety/incidents", description: "Log safety incidents" }
+        { method: "POST", path: "/api/v1/safety/incidents", description: "Log safety incidents" },
+        { method: "GET", path: "/api/v1/forecasting/dashboard", description: "Forecasting dashboard and analytics" },
+        { method: "GET", path: "/api/v1/forecasting/reorder-recommendations", description: "AI-powered reorder recommendations" }
       ]
     },
     {
@@ -192,6 +207,16 @@ const Documentation: React.FC = () => {
       agent: "Safety & Compliance",
       count: 7,
       tools: ["log_incident", "start_checklist", "broadcast_alert", "lockout_tagout_request", "create_corrective_action", "retrieve_sds", "near_miss_capture"]
+    },
+    {
+      agent: "Forecasting Agent",
+      count: 6,
+      tools: ["generate_forecast", "get_reorder_recommendations", "get_model_performance", "train_models", "get_forecast_summary", "get_business_intelligence"]
+    },
+    {
+      agent: "Document Processing",
+      count: 5,
+      tools: ["upload_document", "get_document_status", "get_document_results", "get_document_analytics", "process_document_background"]
     }
   ];
 
@@ -212,8 +237,10 @@ const Documentation: React.FC = () => {
           <Chip label="Production Ready" color="success" />
           <Chip label="NVIDIA NIMs" color="primary" />
           <Chip label="MCP Framework" color="secondary" />
-          <Chip label="Multi-Agent" color="info" />
+          <Chip label="5 Agents" color="info" />
           <Chip label="Hybrid RAG" color="warning" />
+          <Chip label="NeMo Guardrails" color="error" />
+          <Chip label="GPU Accelerated" color="success" />
         </Box>
       </Box>
 
@@ -918,17 +945,19 @@ const Documentation: React.FC = () => {
               <AlertTitle>✅ What's Complete</AlertTitle>
               <Typography variant="body2">
                 • Multi-agent orchestration with LangGraph + MCP integration<br/>
-                • NVIDIA NIMs integration (Llama 3.1 70B + NV-EmbedQA-E5-v5)<br/>
-                • 23 production-ready action tools across 3 specialized agents<br/>
-                • <strong>NEW:</strong> Fully optimized chat interface with clean responses<br/>
-                • <strong>NEW:</strong> Comprehensive parameter validation system<br/>
-                • <strong>NEW:</strong> Real MCP tool execution with database data<br/>
-                • <strong>NEW:</strong> Response formatting engine (technical details removed)<br/>
+                • <strong>5 Specialized Agents:</strong> Equipment, Operations, Safety, Forecasting, Document<br/>
+                • <strong>34+ production-ready action tools</strong> across all agents<br/>
+                • NVIDIA NIMs integration (Llama 3.1 70B + NV-EmbedQA-E5-v5 + Vision models)<br/>
+                • <strong>Document Processing:</strong> 6-stage NVIDIA NeMo pipeline with vision models<br/>
+                • <strong>Demand Forecasting:</strong> 6 ML models with NVIDIA RAPIDS GPU acceleration<br/>
+                • <strong>NeMo Guardrails:</strong> Content safety and compliance protection<br/>
                 • Advanced reasoning engine with 5 reasoning types<br/>
                 • Hybrid RAG system with PostgreSQL/TimescaleDB + Milvus<br/>
-                • Complete security stack with JWT/OAuth2 + RBAC<br/>
+                • Real-time equipment telemetry and monitoring<br/>
+                • Automated reorder recommendations with AI-powered insights<br/>
+                • Complete security stack with JWT/OAuth2 + RBAC (5 user roles)<br/>
                 • Comprehensive monitoring with Prometheus/Grafana<br/>
-                • React frontend with Material-UI and real-time chat interface
+                • React frontend with Material-UI and real-time interfaces
               </Typography>
             </Alert>
           </Box>
@@ -944,7 +973,7 @@ const Documentation: React.FC = () => {
                     <ListItem>
                       <ListItemText 
                         primary="Complete MCP Adapter Migration" 
-                        secondary="Migrate WMS, IoT, RFID/Barcode, and Time Attendance adapters to MCP framework for dynamic tool discovery"
+                        secondary="Migrate remaining WMS, IoT, RFID/Barcode, and Time Attendance adapters to MCP framework"
                       />
                     </ListItem>
                     <ListItem>
@@ -955,20 +984,20 @@ const Documentation: React.FC = () => {
                     </ListItem>
                     <ListItem>
                       <ListItemText 
-                        primary="Real Workforce Integration" 
-                        secondary="Replace simulated workforce data with actual workforce management systems"
+                        primary="Enhanced Document Processing" 
+                        secondary="Add support for more document types and improve extraction accuracy"
                       />
                     </ListItem>
                     <ListItem>
                       <ListItemText 
-                        primary="Production Kubernetes Deployment" 
-                          secondary="Complete Helm charts and production-grade Kubernetes configurations"
+                        primary="Advanced Forecasting Features" 
+                        secondary="Add seasonal adjustments, promotional impact modeling, and multi-SKU optimization"
                       />
                     </ListItem>
                     <ListItem>
                       <ListItemText 
-                        primary="Telemetry Data Integration" 
-                        secondary="Fix time window issues and integrate real equipment telemetry streams"
+                        primary="Real-Time Event Streaming" 
+                        secondary="Kafka integration for real-time data processing and event-driven architecture"
                       />
                     </ListItem>
                   </List>
@@ -1087,25 +1116,37 @@ const Documentation: React.FC = () => {
                     <ListItem>
                       <ListItemText 
                         primary="Planner/Router Agent" 
-                        secondary="Intent classification, context management, response synthesis"
+                        secondary="Intent classification, context management, response synthesis, MCP tool routing"
                       />
                     </ListItem>
                     <ListItem>
                       <ListItemText 
                         primary="Equipment & Asset Operations Agent" 
-                        secondary="8 tools for inventory, equipment, and asset management"
+                        secondary="8 tools for inventory, equipment, asset management, and telemetry monitoring"
                       />
                     </ListItem>
                     <ListItem>
                       <ListItemText 
                         primary="Operations Coordination Agent" 
-                        secondary="8 tools for workforce, waves, scheduling, and KPIs"
+                        secondary="8 tools for workforce, waves, scheduling, equipment dispatch, and KPIs"
                       />
                     </ListItem>
                     <ListItem>
                       <ListItemText 
                         primary="Safety & Compliance Agent" 
-                        secondary="7 tools for incidents, checklists, alerts, and compliance"
+                        secondary="7 tools for incidents, checklists, alerts, compliance, and safety management"
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemText 
+                        primary="Forecasting Agent" 
+                        secondary="6 tools for demand forecasting, reorder recommendations, model training, and analytics"
+                      />
+                    </ListItem>
+                    <ListItem>
+                      <ListItemText 
+                        primary="Document Processing Agent" 
+                        secondary="5 tools for document upload, OCR, structured extraction, validation, and routing"
                       />
                     </ListItem>
                   </List>
@@ -1383,13 +1424,13 @@ const Documentation: React.FC = () => {
       {/* Footer */}
       <Box sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: 'divider' }}>
         <Typography variant="body2" color="text.secondary" align="center">
-          Warehouse Operational Assistant - Built with NVIDIA NIMs, MCP Framework, and Modern Web Technologies
+          Multi-Agent-Intelligent-Warehouse - Built with NVIDIA NIMs, MCP Framework, NeMo Guardrails, and Modern Web Technologies
         </Typography>
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 2 }}>
-          <Button 
+            <Button 
             variant="outlined" 
             startIcon={<GitHubIcon />}
-            href="https://github.com/T-DevH/warehouse-operational-assistant"
+            href="https://github.com/T-DevH/Multi-Agent-Intelligent-Warehouse"
             target="_blank"
             rel="noopener noreferrer"
           >
