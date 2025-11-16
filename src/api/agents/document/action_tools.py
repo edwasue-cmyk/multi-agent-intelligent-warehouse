@@ -757,6 +757,21 @@ class DocumentActionTools:
                     # LLM Processing Results
                     if "llm_processing" in results and results["llm_processing"]:
                         llm_data = results["llm_processing"]
+                        structured_data = llm_data.get("structured_data", {})
+                        
+                        # If extracted_fields is empty, try to parse from OCR text
+                        if not structured_data.get("extracted_fields") and ocr_data.get("text"):
+                            logger.info("LLM returned empty extracted_fields, attempting fallback parsing from OCR text")
+                            from src.api.agents.document.processing.small_llm_processor import SmallLLMProcessor
+                            llm_processor = SmallLLMProcessor()
+                            parsed_fields = await llm_processor._parse_fields_from_text(
+                                ocr_data.get("text", ""),
+                                structured_data.get("document_type", "invoice")
+                            )
+                            if parsed_fields:
+                                structured_data["extracted_fields"] = parsed_fields
+                                logger.info(f"Fallback parsing extracted {len(parsed_fields)} fields from OCR text")
+                        
                         extraction_results.append(
                             ExtractionResult(
                                 stage="llm_processing",
@@ -764,7 +779,7 @@ class DocumentActionTools:
                                     "entities": llm_data.get("raw_entities", []),
                                     "raw_response": llm_data.get("raw_response", ""),
                                 },
-                                processed_data=llm_data.get("structured_data", {}),
+                                processed_data=structured_data,
                                 confidence_score=llm_data.get("confidence", 0.0),
                                 processing_time_ms=llm_data.get(
                                     "processing_time_ms", 0

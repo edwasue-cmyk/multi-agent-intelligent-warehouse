@@ -583,6 +583,13 @@ async def process_document_background(
         )
 
         # Store results in the document tools
+        # Include OCR text in LLM result for fallback parsing
+        if "structured_data" in llm_result and ocr_result.get("text"):
+            # Ensure OCR text is available for fallback parsing if LLM extraction fails
+            if not llm_result["structured_data"].get("extracted_fields"):
+                logger.info(f"LLM returned empty extracted_fields, OCR text available for fallback: {len(ocr_result.get('text', ''))} chars")
+            llm_result["ocr_text"] = ocr_result.get("text", "")
+        
         tools = await get_document_tools()
         await tools._store_processing_results(
             document_id=document_id,
