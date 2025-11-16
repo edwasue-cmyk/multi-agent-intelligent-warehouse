@@ -517,11 +517,8 @@ class DocumentActionTools:
         }
 
     async def _get_processing_status(self, document_id: str) -> Dict[str, Any]:
-        """Get processing status with progressive updates."""
+        """Get processing status - use actual status from document_statuses, not simulation."""
         logger.info(f"Getting processing status for document: {document_id}")
-        logger.info(
-            f"Available document statuses: {list(self.document_statuses.keys())}"
-        )
 
         if document_id not in self.document_statuses:
             logger.warning(f"Document {document_id} not found in status tracking")
@@ -534,73 +531,32 @@ class DocumentActionTools:
             }
 
         status_info = self.document_statuses[document_id]
-        upload_time = status_info["upload_time"]
-        elapsed_time = (datetime.now() - upload_time).total_seconds()
-
-        # Progressive stage simulation based on elapsed time
-        stages = status_info["stages"]
-        total_stages = len(stages)
-
-        # Calculate current stage based on elapsed time (each stage takes ~12 seconds)
-        stage_duration = 12  # seconds per stage
-        current_stage_index = min(int(elapsed_time / stage_duration), total_stages - 1)
-
-        # Update stages based on elapsed time
-        for i, stage in enumerate(stages):
-            if i < current_stage_index:
-                stage["status"] = "completed"
-            elif i == current_stage_index:
-                stage["status"] = "processing"
-                if stage["started_at"] is None:
-                    stage["started_at"] = datetime.now()
-            else:
-                stage["status"] = "pending"
-
-        # Calculate progress percentage
-        progress = min((current_stage_index + 1) / total_stages * 100, 100)
-
-        # Determine overall status
-        if current_stage_index >= total_stages - 1:
-            overall_status = ProcessingStage.COMPLETED
-            current_stage_name = "Completed"
-        else:
-            # Map stage index to ProcessingStage enum
-            stage_mapping = {
-                0: ProcessingStage.PREPROCESSING,
-                1: ProcessingStage.OCR_EXTRACTION,
-                2: ProcessingStage.LLM_PROCESSING,
-                3: ProcessingStage.VALIDATION,
-                4: ProcessingStage.ROUTING,
-            }
-            overall_status = stage_mapping.get(
-                current_stage_index, ProcessingStage.PREPROCESSING
-            )
-            # Map backend stage names to frontend display names
-            stage_display_names = {
-                "preprocessing": "Preprocessing",
-                "ocr_extraction": "OCR Extraction",
-                "llm_processing": "LLM Processing",
-                "validation": "Validation",
-                "routing": "Routing",
-            }
-            current_stage_name = stage_display_names.get(
-                stages[current_stage_index]["name"], stages[current_stage_index]["name"]
-            )
-
-        # Update the stored status
-        status_info["status"] = overall_status
-        status_info["current_stage"] = current_stage_name
-        status_info["progress"] = progress
-
-        # Save updated status to persistent storage
-        self._save_status_data()
+        
+        # Use actual status from document_statuses, not time-based simulation
+        # The background task updates status after each stage
+        overall_status = status_info.get("status", ProcessingStage.UPLOADED)
+        current_stage_name = status_info.get("current_stage", "Unknown")
+        progress = status_info.get("progress", 0)
+        stages = status_info.get("stages", [])
+        
+        # If status is COMPLETED, verify that processing_results actually exist
+        # This prevents race conditions where status shows COMPLETED but results aren't stored yet
+        if overall_status == ProcessingStage.COMPLETED:
+            if "processing_results" not in status_info:
+                logger.warning(f"Document {document_id} status is COMPLETED but no processing_results found. Setting to PROCESSING.")
+                overall_status = ProcessingStage.PROCESSING
+                status_info["status"] = ProcessingStage.PROCESSING
+                current_stage_name = "Finalizing"
+                progress = 95
+                self._save_status_data()
 
         return {
             "status": overall_status,
             "current_stage": current_stage_name,
             "progress": progress,
             "stages": stages,
-            "estimated_completion": status_info["estimated_completion"],
+            "estimated_completion": status_info.get("estimated_completion"),
+            "error_message": status_info.get("error_message"),
         }
 
     async def _store_processing_results(
@@ -942,6 +898,7 @@ class DocumentActionTools:
                 doc_status = self.document_statuses[document_id]
                 current_status = doc_status.get("status", "")
                 
+                # Check if processing is still in progress
                 if current_status in [ProcessingStage.UPLOADED, ProcessingStage.PROCESSING]:
                     logger.info(f"Document {document_id} is still being processed by NeMo pipeline. Status: {current_status}")
                     # Return a message indicating processing is in progress
@@ -954,6 +911,34 @@ class DocumentActionTools:
                         "is_mock": True,
                         "reason": "processing_in_progress",
                         "message": "Document is still being processed by NVIDIA NeMo pipeline. Please check again in a moment."
+                    }
+                elif current_status == ProcessingStage.COMPLETED:
+                    # Status says COMPLETED but no processing_results - this shouldn't happen
+                    # but if it does, wait a bit and check again (race condition)
+                    logger.warning(f"Document {document_id} status is COMPLETED but no processing_results found. This may be a race condition.")
+                    return {
+                        "extraction_results": [],
+                        "confidence_scores": {},
+                        "stages": [],
+                        "quality_score": None,
+                        "routing_decision": None,
+                        "is_mock": True,
+                        "reason": "results_not_ready",
+                        "message": "Processing completed but results are not ready yet. Please check again in a moment."
+                    }
+                elif current_status == ProcessingStage.FAILED:
+                    # Processing failed
+                    error_msg = doc_status.get("error_message", "Unknown error")
+                    logger.warning(f"Document {document_id} processing failed: {error_msg}")
+                    return {
+                        "extraction_results": [],
+                        "confidence_scores": {},
+                        "stages": [],
+                        "quality_score": None,
+                        "routing_decision": None,
+                        "is_mock": True,
+                        "reason": "processing_failed",
+                        "message": f"Document processing failed: {error_msg}"
                     }
                 else:
                     logger.warning(f"Document {document_id} has no processing results and status is {current_status}. NeMo pipeline may have failed.")

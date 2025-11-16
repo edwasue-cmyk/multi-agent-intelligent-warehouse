@@ -30,6 +30,7 @@ from src.api.agents.document.models.document_models import (
     DocumentValidationRequest,
     DocumentValidationResponse,
     DocumentProcessingError,
+    ProcessingStage,
 )
 from src.api.agents.document.mcp_document_agent import get_mcp_document_agent
 from src.api.agents.document.action_tools import DocumentActionTools
@@ -549,38 +550,123 @@ async def process_document_background(
         judge = LargeLLMJudge()
         router = IntelligentRouter()
 
+        # Get tools instance for status updates
+        tools = await get_document_tools()
+        
+        # Update status to PROCESSING
+        if document_id in tools.document_statuses:
+            tools.document_statuses[document_id]["status"] = ProcessingStage.PROCESSING
+            tools.document_statuses[document_id]["current_stage"] = "Preprocessing"
+            tools.document_statuses[document_id]["progress"] = 10
+            tools._save_status_data()
+        
         # Stage 1: Document Preprocessing
         logger.info(f"Stage 1: Document preprocessing for {document_id}")
-        preprocessing_result = await preprocessor.process_document(file_path)
+        try:
+            preprocessing_result = await preprocessor.process_document(file_path)
+            # Update status after preprocessing
+            if document_id in tools.document_statuses:
+                tools.document_statuses[document_id]["current_stage"] = "OCR Extraction"
+                tools.document_statuses[document_id]["progress"] = 20
+                if "stages" in tools.document_statuses[document_id]:
+                    for stage in tools.document_statuses[document_id]["stages"]:
+                        if stage["name"] == "preprocessing":
+                            stage["status"] = "completed"
+                            stage["completed_at"] = datetime.now().isoformat()
+                tools._save_status_data()
+        except Exception as e:
+            logger.error(f"Preprocessing failed for {document_id}: {e}")
+            await tools._update_document_status(document_id, "failed", f"Preprocessing failed: {str(e)}")
+            raise
 
         # Stage 2: OCR Extraction
         logger.info(f"Stage 2: OCR extraction for {document_id}")
-        ocr_result = await ocr_processor.extract_text(
-            preprocessing_result.get("images", []),
-            preprocessing_result.get("metadata", {}),
-        )
+        try:
+            ocr_result = await ocr_processor.extract_text(
+                preprocessing_result.get("images", []),
+                preprocessing_result.get("metadata", {}),
+            )
+            # Update status after OCR
+            if document_id in tools.document_statuses:
+                tools.document_statuses[document_id]["current_stage"] = "LLM Processing"
+                tools.document_statuses[document_id]["progress"] = 40
+                if "stages" in tools.document_statuses[document_id]:
+                    for stage in tools.document_statuses[document_id]["stages"]:
+                        if stage["name"] == "ocr_extraction":
+                            stage["status"] = "completed"
+                            stage["completed_at"] = datetime.now().isoformat()
+                tools._save_status_data()
+        except Exception as e:
+            logger.error(f"OCR extraction failed for {document_id}: {e}")
+            await tools._update_document_status(document_id, "failed", f"OCR extraction failed: {str(e)}")
+            raise
 
         # Stage 3: Small LLM Processing
         logger.info(f"Stage 3: Small LLM processing for {document_id}")
-        llm_result = await llm_processor.process_document(
-            preprocessing_result.get("images", []),
-            ocr_result.get("text", ""),
-            document_type,
-        )
+        try:
+            llm_result = await llm_processor.process_document(
+                preprocessing_result.get("images", []),
+                ocr_result.get("text", ""),
+                document_type,
+            )
+            # Update status after LLM processing
+            if document_id in tools.document_statuses:
+                tools.document_statuses[document_id]["current_stage"] = "Validation"
+                tools.document_statuses[document_id]["progress"] = 60
+                if "stages" in tools.document_statuses[document_id]:
+                    for stage in tools.document_statuses[document_id]["stages"]:
+                        if stage["name"] == "llm_processing":
+                            stage["status"] = "completed"
+                            stage["completed_at"] = datetime.now().isoformat()
+                tools._save_status_data()
+        except Exception as e:
+            logger.error(f"LLM processing failed for {document_id}: {e}")
+            await tools._update_document_status(document_id, "failed", f"LLM processing failed: {str(e)}")
+            raise
 
         # Stage 4: Large LLM Judge & Validation
         logger.info(f"Stage 4: Large LLM judge validation for {document_id}")
-        validation_result = await judge.evaluate_document(
-            llm_result.get("structured_data", {}),
-            llm_result.get("entities", {}),
-            document_type,
-        )
+        try:
+            validation_result = await judge.evaluate_document(
+                llm_result.get("structured_data", {}),
+                llm_result.get("entities", {}),
+                document_type,
+            )
+            # Update status after validation
+            if document_id in tools.document_statuses:
+                tools.document_statuses[document_id]["current_stage"] = "Routing"
+                tools.document_statuses[document_id]["progress"] = 80
+                if "stages" in tools.document_statuses[document_id]:
+                    for stage in tools.document_statuses[document_id]["stages"]:
+                        if stage["name"] == "validation":
+                            stage["status"] = "completed"
+                            stage["completed_at"] = datetime.now().isoformat()
+                tools._save_status_data()
+        except Exception as e:
+            logger.error(f"Validation failed for {document_id}: {e}")
+            await tools._update_document_status(document_id, "failed", f"Validation failed: {str(e)}")
+            raise
 
         # Stage 5: Intelligent Routing
         logger.info(f"Stage 5: Intelligent routing for {document_id}")
-        routing_result = await router.route_document(
-            llm_result, validation_result, document_type
-        )
+        try:
+            routing_result = await router.route_document(
+                llm_result, validation_result, document_type
+            )
+            # Update status after routing
+            if document_id in tools.document_statuses:
+                tools.document_statuses[document_id]["current_stage"] = "Finalizing"
+                tools.document_statuses[document_id]["progress"] = 90
+                if "stages" in tools.document_statuses[document_id]:
+                    for stage in tools.document_statuses[document_id]["stages"]:
+                        if stage["name"] == "routing":
+                            stage["status"] = "completed"
+                            stage["completed_at"] = datetime.now().isoformat()
+                tools._save_status_data()
+        except Exception as e:
+            logger.error(f"Routing failed for {document_id}: {e}")
+            await tools._update_document_status(document_id, "failed", f"Routing failed: {str(e)}")
+            raise
 
         # Store results in the document tools
         # Include OCR text in LLM result for fallback parsing
@@ -590,7 +676,7 @@ async def process_document_background(
                 logger.info(f"LLM returned empty extracted_fields, OCR text available for fallback: {len(ocr_result.get('text', ''))} chars")
             llm_result["ocr_text"] = ocr_result.get("text", "")
         
-        tools = await get_document_tools()
+        # Store processing results (this will also set status to COMPLETED)
         await tools._store_processing_results(
             document_id=document_id,
             preprocessing_result=preprocessing_result,
