@@ -36,3 +36,6 @@ python-multipart
 scikit-learn>=1.0.0
 pandas>=1.2.4
 xgboost>=1.6.0
+# Document Processing
+Pillow>=10.0.0
+PyMuPDF>=1.23.0  # fitz module for PDF processing

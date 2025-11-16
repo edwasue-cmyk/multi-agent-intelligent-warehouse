@@ -94,6 +94,7 @@ interface DocumentResults {
   quality_score: number;
   routing_decision: string;
   processing_stages: string[];
+  is_mock_data?: boolean;  // Indicates if results are mock/default data
 }
 
 interface AnalyticsData {
@@ -331,6 +332,13 @@ const DocumentExtraction: React.FC = () => {
     try {
       const response = await documentAPI.getDocumentResults(document.id);
       
+      // Check if this is mock data
+      const isMockData = response.processing_summary?.is_mock_data === true;
+      
+      if (isMockData) {
+        console.warn('⚠️ Document results contain mock/default data. The document may not have been fully processed or the original file is no longer available.');
+      }
+      
       // Transform the API response to match frontend expectations
       const transformedResults: DocumentResults = {
         document_id: response.document_id,
@@ -338,7 +346,8 @@ const DocumentExtraction: React.FC = () => {
         confidence_scores: {},
         quality_score: response.quality_score?.overall_score || response.processing_summary?.quality_score || 0,
         routing_decision: response.routing_decision?.routing_action || 'unknown',
-        processing_stages: response.extraction_results?.map((result: any) => result.stage) || []
+        processing_stages: response.extraction_results?.map((result: any) => result.stage) || [],
+        is_mock_data: isMockData,  // Track if this is mock data
       };
       
       // Update document with actual quality score and processing time from API
@@ -904,6 +913,15 @@ const DocumentExtraction: React.FC = () => {
         <DialogContent>
           {documentResults ? (
             <Box>
+              {/* Mock Data Warning */}
+              {documentResults.is_mock_data && (
+                <Alert severity="warning" sx={{ mb: 3 }}>
+                  <Typography variant="body2">
+                    <strong>⚠️ Mock Data Warning:</strong> This document is showing default/mock data because the original file is no longer available or processing results were not stored. 
+                    The displayed information may not reflect the actual uploaded document.
+                  </Typography>
+                </Alert>
+              )}
               {/* Document Overview */}
               <Card sx={{ mb: 3, bgcolor: 'primary.50' }}>
                 <CardContent>

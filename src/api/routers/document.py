@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 import uuid
 from datetime import datetime
 import os
-import tempfile
+from pathlib import Path
 import asyncio
 
 from src.api.agents.document.models.document_models import (
@@ -104,15 +104,22 @@ async def upload_document(
                 detail=f"Unsupported file type: {file_extension}. Allowed types: {', '.join(allowed_extensions)}",
             )
 
-        # Create temporary file path
+        # Create persistent upload directory
         document_id = str(uuid.uuid4())
-        temp_dir = tempfile.mkdtemp(prefix="document_uploads_")
-        temp_file_path = os.path.join(temp_dir, f"{document_id}_{file.filename}")
+        uploads_dir = Path("data/uploads")
+        uploads_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Store file in persistent location
+        # Sanitize filename to prevent path traversal
+        safe_filename = os.path.basename(file.filename).replace("..", "").replace("/", "_").replace("\\", "_")
+        persistent_file_path = uploads_dir / f"{document_id}_{safe_filename}"
 
-        # Save uploaded file
-        with open(temp_file_path, "wb") as buffer:
+        # Save uploaded file to persistent location
+        with open(str(persistent_file_path), "wb") as buffer:
             content = await file.read()
             buffer.write(content)
+        
+        logger.info(f"Document saved to persistent storage: {persistent_file_path}")
 
         # Parse metadata
         parsed_metadata = {}
@@ -126,7 +133,7 @@ async def upload_document(
 
         # Start document processing
         result = await tools.upload_document(
-            file_path=temp_file_path,
+            file_path=str(persistent_file_path),
             document_type=document_type,
             user_id=user_id,
             metadata=parsed_metadata,
@@ -140,7 +147,7 @@ async def upload_document(
             background_tasks.add_task(
                 process_document_background,
                 document_id,
-                temp_file_path,
+                str(persistent_file_path),
                 document_type,
                 user_id,
                 parsed_metadata,
@@ -235,10 +242,22 @@ async def get_document_results(
         result = await tools.extract_document_data(document_id)
 
         if result["success"]:
+            # Get actual filename from document status if available
+            doc_status = await tools.get_document_status(document_id)
+            filename = f"document_{document_id}.pdf"  # Default
+            document_type = "invoice"  # Default
+            
+            if doc_status.get("success"):
+                # Try to get filename from status tracking
+                if hasattr(tools, 'document_statuses') and document_id in tools.document_statuses:
+                    status_info = tools.document_statuses[document_id]
+                    filename = status_info.get("filename", filename)
+                    document_type = status_info.get("document_type", document_type)
+            
             return DocumentResultsResponse(
                 document_id=document_id,
-                filename=f"document_{document_id}.pdf",  # Mock filename
-                document_type="invoice",  # Mock type
+                filename=filename,
+                document_type=document_type,
                 extraction_results=result["extracted_data"],
                 quality_score=result.get("quality_score"),
                 routing_decision=result.get("routing_decision"),
@@ -247,6 +266,7 @@ async def get_document_results(
                     "total_processing_time": result.get("processing_time_ms", 0),
                     "stages_completed": result.get("stages", []),
                     "confidence_scores": result.get("confidence_scores", {}),
+                    "is_mock_data": result.get("is_mock", False),  # Indicate if this is mock data
                 },
             )
         else:
@@ -577,11 +597,10 @@ async def process_document_background(
             f"NVIDIA NeMo processing pipeline completed for document: {document_id}"
         )
 
-        # Clean up temporary file
-        try:
-            os.remove(file_path)
-        except OSError:
-            logger.warning(f"Could not remove temporary file: {file_path}")
+        # Only delete file after successful processing and results storage
+        # Keep file for potential re-processing or debugging
+        # Files can be cleaned up later via a cleanup job if needed
+        logger.info(f"Document file preserved at: {file_path} (for re-processing if needed)")
 
     except Exception as e:
         logger.error(

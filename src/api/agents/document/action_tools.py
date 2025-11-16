@@ -136,22 +136,40 @@ class DocumentActionTools:
             logger.error(f"Failed to load status data: {e}")
             self.document_statuses = {}
 
+    def _serialize_for_json(self, obj):
+        """Recursively serialize objects for JSON, handling PIL Images and other non-serializable types."""
+        from PIL import Image
+        import base64
+        import io
+        
+        if isinstance(obj, Image.Image):
+            # Convert PIL Image to base64 string
+            buffer = io.BytesIO()
+            obj.save(buffer, format='PNG')
+            img_str = base64.b64encode(buffer.getvalue()).decode('utf-8')
+            return {"_type": "PIL_Image", "data": img_str, "format": "PNG"}
+        elif isinstance(obj, dict):
+            return {key: self._serialize_for_json(value) for key, value in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [self._serialize_for_json(item) for item in obj]
+        elif hasattr(obj, "isoformat"):  # datetime objects
+            return obj.isoformat()
+        elif hasattr(obj, "__dict__"):  # Custom objects
+            return self._serialize_for_json(obj.__dict__)
+        else:
+            try:
+                json.dumps(obj)  # Test if it's JSON serializable
+                return obj
+            except (TypeError, ValueError):
+                return str(obj)  # Fallback to string representation
+    
     def _save_status_data(self):
         """Save document status data to persistent storage."""
         try:
-            # Convert datetime objects to strings for JSON serialization
+            # Convert datetime objects and PIL Images to JSON-serializable format
             data_to_save = {}
             for doc_id, status_info in self.document_statuses.items():
-                data_to_save[doc_id] = status_info.copy()
-                if "upload_time" in data_to_save[doc_id]:
-                    upload_time = data_to_save[doc_id]["upload_time"]
-                    if hasattr(upload_time, "isoformat"):
-                        data_to_save[doc_id]["upload_time"] = upload_time.isoformat()
-                for stage in data_to_save[doc_id].get("stages", []):
-                    if stage.get("started_at"):
-                        started_at = stage["started_at"]
-                        if hasattr(started_at, "isoformat"):
-                            stage["started_at"] = started_at.isoformat()
+                data_to_save[doc_id] = self._serialize_for_json(status_info)
 
             with open(self.status_file, "w") as f:
                 json.dump(data_to_save, f, indent=2)
@@ -159,7 +177,7 @@ class DocumentActionTools:
                 f"Saved {len(self.document_statuses)} document statuses to persistent storage"
             )
         except Exception as e:
-            logger.error(f"Failed to save status data: {e}")
+            logger.error(f"Failed to save status data: {e}", exc_info=True)
 
     async def upload_document(
         self,
@@ -588,14 +606,22 @@ class DocumentActionTools:
         try:
             logger.info(f"Storing processing results for document: {document_id}")
 
+            # Serialize results to remove PIL Images and other non-JSON-serializable objects
+            # Convert PIL Images to metadata (file paths, dimensions) instead of storing the image objects
+            serialized_preprocessing = self._serialize_processing_result(preprocessing_result)
+            serialized_ocr = self._serialize_processing_result(ocr_result)
+            serialized_llm = self._serialize_processing_result(llm_result)
+            serialized_validation = self._serialize_processing_result(validation_result)
+            serialized_routing = self._serialize_processing_result(routing_result)
+
             # Store results in document_statuses
             if document_id in self.document_statuses:
                 self.document_statuses[document_id]["processing_results"] = {
-                    "preprocessing": preprocessing_result,
-                    "ocr": ocr_result,
-                    "llm_processing": llm_result,
-                    "validation": validation_result,
-                    "routing": routing_result,
+                    "preprocessing": serialized_preprocessing,
+                    "ocr": serialized_ocr,
+                    "llm_processing": serialized_llm,
+                    "validation": serialized_validation,
+                    "routing": serialized_routing,
                     "stored_at": datetime.now().isoformat(),
                 }
                 self.document_statuses[document_id][
@@ -621,6 +647,44 @@ class DocumentActionTools:
                 f"Failed to store processing results for {document_id}: {e}",
                 exc_info=True,
             )
+    
+    def _serialize_processing_result(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        """Serialize processing result, converting PIL Images to metadata."""
+        from PIL import Image
+        
+        if not isinstance(result, dict):
+            return result
+        
+        serialized = {}
+        for key, value in result.items():
+            if isinstance(value, Image.Image):
+                # Convert PIL Image to metadata (dimensions, format) instead of storing the image
+                serialized[key] = {
+                    "_type": "PIL_Image_Reference",
+                    "size": value.size,
+                    "mode": value.mode,
+                    "format": getattr(value, "format", "PNG"),
+                    "note": "Image object converted to metadata for JSON serialization"
+                }
+            elif isinstance(value, list):
+                # Handle lists that might contain PIL Images
+                serialized[key] = [
+                    {
+                        "_type": "PIL_Image_Reference",
+                        "size": item.size,
+                        "mode": item.mode,
+                        "format": getattr(item, "format", "PNG"),
+                        "note": "Image object converted to metadata for JSON serialization"
+                    } if isinstance(item, Image.Image) else item
+                    for item in value
+                ]
+            elif isinstance(value, dict):
+                # Recursively serialize nested dictionaries
+                serialized[key] = self._serialize_processing_result(value)
+            else:
+                serialized[key] = value
+        
+        return serialized
 
     async def _update_document_status(
         self, document_id: str, status: str, error_message: str = None
@@ -839,9 +903,38 @@ class DocumentActionTools:
                         "routing_decision": routing_decision,
                     }
 
-            # Try to process the document locally if no results found
-            logger.info(f"No processing results found for {document_id}, attempting local processing")
-            return await self._process_document_locally(document_id)
+            # No processing results found - check if NeMo pipeline is still running
+            if document_id in self.document_statuses:
+                doc_status = self.document_statuses[document_id]
+                current_status = doc_status.get("status", "")
+                
+                if current_status in [ProcessingStage.UPLOADED, ProcessingStage.PROCESSING]:
+                    logger.info(f"Document {document_id} is still being processed by NeMo pipeline. Status: {current_status}")
+                    # Return a message indicating processing is in progress
+                    return {
+                        "extraction_results": [],
+                        "confidence_scores": {},
+                        "stages": [],
+                        "quality_score": None,
+                        "routing_decision": None,
+                        "is_mock": True,
+                        "reason": "processing_in_progress",
+                        "message": "Document is still being processed by NVIDIA NeMo pipeline. Please check again in a moment."
+                    }
+                else:
+                    logger.warning(f"Document {document_id} has no processing results and status is {current_status}. NeMo pipeline may have failed.")
+                    # Return mock data with clear indication that NeMo pipeline didn't complete
+                    mock_data = self._get_mock_extraction_data()
+                    mock_data["is_mock"] = True
+                    mock_data["reason"] = "nemo_pipeline_incomplete"
+                    mock_data["message"] = "NVIDIA NeMo pipeline did not complete processing. Please check server logs for errors."
+                    return mock_data
+            else:
+                logger.error(f"Document {document_id} not found in status tracking")
+                mock_data = self._get_mock_extraction_data()
+                mock_data["is_mock"] = True
+                mock_data["reason"] = "document_not_found"
+                return mock_data
 
         except Exception as e:
             logger.error(
@@ -852,26 +945,41 @@ class DocumentActionTools:
     async def _process_document_locally(self, document_id: str) -> Dict[str, Any]:
         """Process document locally using the local processor."""
         try:
-            from .processing.local_processor import local_processor
-            
             # Get document info from status
             if document_id not in self.document_statuses:
                 logger.error(f"Document {document_id} not found in status tracking")
-                return self._get_mock_extraction_data()
+                return {**self._get_mock_extraction_data(), "is_mock": True}
             
             doc_status = self.document_statuses[document_id]
             file_path = doc_status.get("file_path")
             
             if not file_path or not os.path.exists(file_path):
-                logger.error(f"File not found for document {document_id}: {file_path}")
-                return self._get_mock_extraction_data()
+                logger.warning(f"File not found for document {document_id}: {file_path}")
+                logger.info(f"Attempting to use document filename: {doc_status.get('filename', 'N/A')}")
+                # Return mock data but mark it as such
+                return {**self._get_mock_extraction_data(), "is_mock": True, "reason": "file_not_found"}
             
-            # Process the document locally
-            result = await local_processor.process_document(file_path, "invoice")
-            
-            if not result["success"]:
-                logger.error(f"Local processing failed for {document_id}: {result.get('error')}")
-                return self._get_mock_extraction_data()
+            # Try to process the document locally
+            try:
+                from .processing.local_processor import local_processor
+                result = await local_processor.process_document(file_path, doc_status.get("document_type", "invoice"))
+                
+                if not result["success"]:
+                    logger.error(f"Local processing failed for {document_id}: {result.get('error')}")
+                    return {**self._get_mock_extraction_data(), "is_mock": True, "reason": "processing_failed"}
+            except ImportError as e:
+                logger.warning(f"Local processor not available (missing dependencies): {e}")
+                missing_module = str(e).replace("No module named ", "").strip("'\"")
+                if "fitz" in missing_module.lower() or "pymupdf" in missing_module.lower():
+                    logger.info("Install PyMuPDF for PDF processing: pip install PyMuPDF")
+                elif "PIL" in missing_module or "Pillow" in missing_module:
+                    logger.info("Install Pillow (PIL) for image processing: pip install Pillow")
+                else:
+                    logger.info(f"Install missing dependency: pip install {missing_module}")
+                return {**self._get_mock_extraction_data(), "is_mock": True, "reason": "dependencies_missing"}
+            except Exception as e:
+                logger.error(f"Local processing error for {document_id}: {e}")
+                return {**self._get_mock_extraction_data(), "is_mock": True, "reason": "processing_error"}
             
             # Convert local processing result to expected format
             from .models.document_models import ExtractionResult, QualityScore, RoutingDecision, QualityDecision
@@ -938,11 +1046,12 @@ class DocumentActionTools:
                 "stages": [result.stage for result in extraction_results],
                 "quality_score": quality_score,
                 "routing_decision": routing_decision,
+                "is_mock": False,  # Mark as real data
             }
             
         except Exception as e:
             logger.error(f"Failed to process document locally: {e}", exc_info=True)
-            return self._get_mock_extraction_data()
+            return {**self._get_mock_extraction_data(), "is_mock": True, "reason": "exception"}
 
     def _get_mock_extraction_data(self) -> Dict[str, Any]:
         """Fallback mock extraction data that matches the expected API response format."""
