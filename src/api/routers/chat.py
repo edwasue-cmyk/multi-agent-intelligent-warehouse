@@ -929,6 +929,19 @@ async def chat(req: ChatRequest):
 
         # Extract structured response if available
         structured_response = result.get("structured_response", {}) if result else {}
+        
+        # Log structured_response for debugging
+        if structured_response:
+            logger.info(f"📊 structured_response keys: {list(structured_response.keys())}")
+            if "data" in structured_response:
+                data = structured_response.get("data")
+                logger.info(f"📊 structured_response['data'] type: {type(data)}, value: {data}")
+                if isinstance(data, dict):
+                    logger.info(f"📊 structured_response['data'] keys: {list(data.keys()) if data else 'empty dict'}")
+                elif isinstance(data, list):
+                    logger.info(f"📊 structured_response['data'] length: {len(data) if data else 0}")
+            else:
+                logger.warning("📊 structured_response does not contain 'data' field")
 
         # Extract MCP tool execution results
         mcp_tools_used = result.get("mcp_tools_used", []) if result else []
@@ -1338,19 +1351,56 @@ async def chat(req: ChatRequest):
         try:
             logger.info(f"📤 Creating response with reasoning_chain: {reasoning_chain is not None}, reasoning_steps: {reasoning_steps is not None}")
             # Clean all complex fields to avoid circular references
-            # Only keep simple, serializable data
+            # Allow nested structures for structured_data (it's meant to contain structured information)
+            # but prevent circular references by limiting depth
+            def clean_structured_data_recursive(obj, depth=0, max_depth=5, visited=None):
+                """Recursively clean structured data, allowing nested structures but preventing circular references."""
+                if visited is None:
+                    visited = set()
+                
+                if depth > max_depth:
+                    return str(obj)
+                
+                # Prevent circular references
+                obj_id = id(obj)
+                if obj_id in visited:
+                    return "[Circular Reference]"
+                visited.add(obj_id)
+                
+                try:
+                    if isinstance(obj, (str, int, float, bool, type(None))):
+                        return obj
+                    elif isinstance(obj, dict):
+                        cleaned = {}
+                        for k, v in obj.items():
+                            # Skip potentially problematic keys
+                            if k in ['reasoning_chain', 'reasoning_steps', '__dict__', '__class__']:
+                                continue
+                            cleaned[k] = clean_structured_data_recursive(v, depth + 1, max_depth, visited.copy())
+                        return cleaned
+                    elif isinstance(obj, (list, tuple)):
+                        return [clean_structured_data_recursive(item, depth + 1, max_depth, visited.copy()) for item in obj]
+                    else:
+                        # For other types, convert to string
+                        return str(obj)
+                except Exception as e:
+                    logger.warning(f"Error cleaning structured data at depth {depth}: {e}")
+                    return str(obj)
+            
             cleaned_structured_data = None
             if structured_response and structured_response.get("data"):
                 data = structured_response.get("data")
-                if isinstance(data, dict):
-                    cleaned_structured_data = {}
-                    for k, v in data.items():
-                        if isinstance(v, (str, int, float, bool, type(None))):
-                            cleaned_structured_data[k] = v
-                        elif isinstance(v, list):
-                            # Only keep lists of primitives
-                            if all(isinstance(item, (str, int, float, bool, type(None))) for item in v):
-                                cleaned_structured_data[k] = v
+                try:
+                    cleaned_structured_data = clean_structured_data_recursive(data, max_depth=5)
+                    logger.info(f"📊 Cleaned structured_data: {type(cleaned_structured_data)}, keys: {list(cleaned_structured_data.keys()) if isinstance(cleaned_structured_data, dict) else 'not a dict'}")
+                except Exception as e:
+                    logger.error(f"Error cleaning structured_data: {e}")
+                    # Fallback to simple cleaning
+                    if isinstance(data, dict):
+                        cleaned_structured_data = {k: v for k, v in data.items() 
+                                                  if isinstance(v, (str, int, float, bool, type(None), list, dict))}
+                    else:
+                        cleaned_structured_data = data
             
             # Clean evidence_summary and key_findings
             cleaned_evidence_summary = None
