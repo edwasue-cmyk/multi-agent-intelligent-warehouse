@@ -11,6 +11,7 @@ import asyncpg
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple, Optional
+from pathlib import Path
 import json
 import numpy as np
 import pandas as pd
@@ -159,10 +160,12 @@ class RAPIDSForecastingAgent:
             df[f'demand_lag_{lag}'] = df['daily_demand'].shift(lag)
         
         # Rolling statistics
-        for window in [7, 14, 30]:
-            df[f'demand_rolling_mean_{window}'] = df['daily_demand'].rolling(window=window).mean()
-            df[f'demand_rolling_std_{window}'] = df['daily_demand'].rolling(window=window).std()
-            df[f'demand_rolling_max_{window}'] = df['daily_demand'].rolling(window=window).max()
+        rolling_windows = [7, 14, 30]
+        rolling_stats = ['mean', 'std', 'max']
+        for window in rolling_windows:
+            rolling_series = df['daily_demand'].rolling(window=window)
+            for stat in rolling_stats:
+                df[f'demand_rolling_{stat}_{window}'] = getattr(rolling_series, stat)()
         
         # Trend features
         df['demand_trend_7'] = df['daily_demand'].rolling(window=7).apply(
@@ -192,14 +195,10 @@ class RAPIDSForecastingAgent:
         df['brand_tier'] = df['brand'].map(brand_mapping)
         
         # Encode categorical variables
-        df['brand_encoded'] = pd.Categorical(df['brand']).codes
-        df['brand_tier_encoded'] = pd.Categorical(df['brand_tier']).codes
-        
-        # Encode time-based categorical variables for XGBoost compatibility
-        df['day_of_week_encoded'] = pd.Categorical(df['day_of_week']).codes
-        df['month_encoded'] = pd.Categorical(df['month']).codes
-        df['quarter_encoded'] = pd.Categorical(df['quarter']).codes
-        df['year_encoded'] = pd.Categorical(df['year']).codes
+        categorical_columns = ['brand', 'brand_tier', 'day_of_week', 'month', 'quarter', 'year']
+        for col in categorical_columns:
+            if col in df.columns:
+                df[f'{col}_encoded'] = pd.Categorical(df[col]).codes
         
         # Remove rows with NaN values from lag features
         df = df.dropna()
@@ -209,6 +208,37 @@ class RAPIDSForecastingAgent:
         
         return df
 
+    def _train_and_evaluate_model(
+        self, 
+        model, 
+        model_name: str, 
+        X_train: pd.DataFrame, 
+        y_train: pd.Series, 
+        X_val: pd.DataFrame, 
+        y_val: pd.Series
+    ) -> Tuple[any, Dict[str, float]]:
+        """
+        Train a model and evaluate it on validation set.
+        
+        Args:
+            model: Model instance to train
+            model_name: Name of the model for logging
+            X_train: Training features
+            y_train: Training target
+            X_val: Validation features
+            y_val: Validation target
+            
+        Returns:
+            Tuple of (trained_model, metrics_dict)
+        """
+        model.fit(X_train, y_train)
+        predictions = model.predict(X_val)
+        metrics = {
+            'mse': mean_squared_error(y_val, predictions),
+            'mae': mean_absolute_error(y_val, predictions)
+        }
+        return model, metrics
+    
     def train_models(self, df: pd.DataFrame) -> Tuple[Dict[str, any], Dict[str, Dict]]:
         """Train multiple models (CPU fallback)"""
         logger.info("🤖 Training forecasting models...")
@@ -225,35 +255,29 @@ class RAPIDSForecastingAgent:
         metrics = {}
         
         # 1. Random Forest
-        rf_model = RandomForestRegressor(
-            n_estimators=100,
-            max_depth=10,
-            random_state=42
+        rf_model, rf_metrics = self._train_and_evaluate_model(
+            RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42),
+            'random_forest',
+            X_train, y_train, X_val, y_val
         )
-        rf_model.fit(X_train, y_train)
-        rf_pred = rf_model.predict(X_val)
         models['random_forest'] = rf_model
-        metrics['random_forest'] = {
-            'mse': mean_squared_error(y_val, rf_pred),
-            'mae': mean_absolute_error(y_val, rf_pred)
-        }
+        metrics['random_forest'] = rf_metrics
         
         # 2. XGBoost
-        xgb_model = xgb.XGBRegressor(
-            n_estimators=100,
-            max_depth=6,
-            learning_rate=0.1,
-            subsample=0.8,
-            colsample_bytree=0.8,
-            random_state=42
+        xgb_model, xgb_metrics = self._train_and_evaluate_model(
+            xgb.XGBRegressor(
+                n_estimators=100,
+                max_depth=6,
+                learning_rate=0.1,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                random_state=42
+            ),
+            'xgboost',
+            X_train, y_train, X_val, y_val
         )
-        xgb_model.fit(X_train, y_train)
-        xgb_pred = xgb_model.predict(X_val)
         models['xgboost'] = xgb_model
-        metrics['xgboost'] = {
-            'mse': mean_squared_error(y_val, xgb_pred),
-            'mae': mean_absolute_error(y_val, xgb_pred)
-        }
+        metrics['xgboost'] = xgb_metrics
         
         # 3. Time Series Model
         ts_model = self._train_time_series_model(df)
@@ -336,6 +360,50 @@ class RAPIDSForecastingAgent:
             horizon_days=horizon_days
         )
 
+    def _create_forecast_summary(self, forecasts: Dict[str, ForecastResult]) -> Dict[str, Dict]:
+        """
+        Create summary dictionary from forecast results.
+        
+        Args:
+            forecasts: Dictionary of SKU to ForecastResult
+            
+        Returns:
+            Summary dictionary
+        """
+        results_summary = {}
+        for sku, forecast in forecasts.items():
+            results_summary[sku] = {
+                'predictions': forecast.predictions,
+                'confidence_intervals': forecast.confidence_intervals,
+                'feature_importance': forecast.feature_importance,
+                'forecast_date': forecast.forecast_date.isoformat(),
+                'horizon_days': forecast.horizon_days
+            }
+        return results_summary
+    
+    def _save_forecast_results(
+        self, 
+        results_summary: Dict, 
+        output_file: str, 
+        sample_file: Path
+    ) -> None:
+        """
+        Save forecast results to multiple locations.
+        
+        Args:
+            results_summary: Summary dictionary to save
+            output_file: Path to runtime output file
+            sample_file: Path to sample/reference file
+        """
+        # Save to root for runtime use
+        with open(output_file, 'w') as f:
+            json.dump(results_summary, f, indent=2, default=str)
+        
+        # Also save to data/sample/forecasts/ for reference
+        sample_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(sample_file, 'w') as f:
+            json.dump(results_summary, f, indent=2, default=str)
+    
     def _time_series_forecast(self, ts_model: Dict, horizon_days: int) -> List[float]:
         """Generate time series forecast"""
         predictions = []
@@ -413,30 +481,14 @@ class RAPIDSForecastingAgent:
             forecasts = await self.batch_forecast(skus, horizon_days)
             
             # Save results
-            results_summary = {}
-            for sku, forecast in forecasts.items():
-                results_summary[sku] = {
-                    'predictions': forecast.predictions,
-                    'confidence_intervals': forecast.confidence_intervals,
-                    'feature_importance': forecast.feature_importance,
-                    'forecast_date': forecast.forecast_date.isoformat(),
-                    'horizon_days': forecast.horizon_days
-                }
+            results_summary = self._create_forecast_summary(forecasts)
             
             # Save to both root (for runtime) and data/sample/forecasts/ (for reference)
             from pathlib import Path
-            
-            # Save to root for runtime use
             output_file = 'phase1_phase2_forecasts.json'
-            with open(output_file, 'w') as f:
-                json.dump(results_summary, f, indent=2, default=str)
+            sample_file = Path("data/sample/forecasts") / "phase1_phase2_forecasts.json"
             
-            # Also save to data/sample/forecasts/ for reference
-            sample_dir = Path("data/sample/forecasts")
-            sample_dir.mkdir(parents=True, exist_ok=True)
-            sample_file = sample_dir / "phase1_phase2_forecasts.json"
-            with open(sample_file, 'w') as f:
-                json.dump(results_summary, f, indent=2, default=str)
+            self._save_forecast_results(results_summary, output_file, sample_file)
             
             logger.info("🎉 Phase 1 & 2 completed successfully!")
             logger.info(f"📊 Generated forecasts for {len(forecasts)} SKUs")
