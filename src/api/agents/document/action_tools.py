@@ -98,6 +98,40 @@ class DocumentActionTools:
             "message": f"Failed to {operation}",
         }
 
+    def _check_document_exists(self, document_id: str) -> tuple[bool, Optional[Dict[str, Any]]]:
+        """
+        Check if document exists in status tracking.
+        
+        Args:
+            document_id: Document ID to check
+            
+        Returns:
+            Tuple of (exists: bool, doc_status: Optional[Dict])
+        """
+        if document_id not in self.document_statuses:
+            return False, None
+        return True, self.document_statuses[document_id]
+
+    def _get_document_status_or_error(self, document_id: str, operation: str = "operation") -> tuple:
+        """
+        Get document status or return error response if not found.
+        
+        Args:
+            document_id: Document ID to check
+            operation: Operation name for error message
+            
+        Returns:
+            Tuple of (success: bool, doc_status: Optional[Dict], error_response: Optional[Dict])
+        """
+        exists, doc_status = self._check_document_exists(document_id)
+        if not exists:
+            logger.error(f"Document {_sanitize_log_data(document_id)} not found in status tracking")
+            return False, None, {
+                "success": False,
+                "message": f"Document {document_id} not found",
+            }
+        return True, doc_status, None
+
     def _create_mock_data_response(self, reason: Optional[str] = None, message: Optional[str] = None) -> Dict[str, Any]:
         """Create standardized mock data response with optional reason and message."""
         response = {**self._get_mock_extraction_data(), "is_mock": True}
@@ -392,6 +426,30 @@ class DocumentActionTools:
             except (TypeError, ValueError):
                 return str(obj)  # Fallback to string representation
     
+    def _calculate_time_threshold(self, time_range: str) -> datetime:
+        """
+        Calculate time threshold based on time range string.
+        
+        Args:
+            time_range: Time range string ("today", "week", "month", or other)
+            
+        Returns:
+            datetime threshold for filtering
+        """
+        from datetime import timedelta
+        
+        now = datetime.now()
+        today_start = datetime(now.year, now.month, now.day)
+        
+        if time_range == "today":
+            return today_start
+        elif time_range == "week":
+            return now - timedelta(days=7)
+        elif time_range == "month":
+            return now - timedelta(days=30)
+        else:
+            return datetime.min  # All time
+
     def _save_status_data(self):
         """Save document status data to persistent storage."""
         try:
@@ -509,13 +567,10 @@ class DocumentActionTools:
             logger.info(f"Extracting data from document: {_sanitize_log_data(document_id)}")
             
             # Verify document exists in status tracking
-            if document_id not in self.document_statuses:
-                logger.error(f"Document {document_id} not found in status tracking")
-                return {
-                    "success": False,
-                    "message": f"Document {document_id} not found",
-                    "extracted_data": {},
-                }
+            success, doc_status, error_response = self._get_document_status_or_error(document_id, "extract document data")
+            if not success:
+                error_response["extracted_data"] = {}
+                return error_response
 
             # In real implementation, this would query extraction results
             # Always fetch fresh data for this specific document_id
@@ -696,7 +751,8 @@ class DocumentActionTools:
         """Get processing status - use actual status from document_statuses, not simulation."""
         logger.info(f"Getting processing status for document: {_sanitize_log_data(document_id)}")
 
-        if document_id not in self.document_statuses:
+        exists, doc_status = self._check_document_exists(document_id)
+        if not exists:
             logger.warning(f"Document {_sanitize_log_data(document_id)} not found in status tracking")
             return {
                 "status": ProcessingStage.FAILED,
@@ -767,7 +823,8 @@ class DocumentActionTools:
             serialized_routing = self._serialize_processing_result(routing_result)
 
             # Store results in document_statuses
-            if document_id in self.document_statuses:
+            exists, doc_status = self._check_document_exists(document_id)
+            if exists:
                 self.document_statuses[document_id]["processing_results"] = {
                     "preprocessing": serialized_preprocessing,
                     "ocr": serialized_ocr,
@@ -851,7 +908,8 @@ class DocumentActionTools:
     ) -> None:
         """Update document status (used for error handling)."""
         try:
-            if document_id in self.document_statuses:
+            exists, doc_status = self._check_document_exists(document_id)
+            if exists:
                 self.document_statuses[document_id]["status"] = ProcessingStage.FAILED
                 self.document_statuses[document_id]["progress"] = 0
                 self.document_statuses[document_id]["current_stage"] = "Failed"
@@ -881,8 +939,8 @@ class DocumentActionTools:
 
         try:
             # Check if we have actual processing results
-            if document_id in self.document_statuses:
-                doc_status = self.document_statuses[document_id]
+            exists, doc_status = self._check_document_exists(document_id)
+            if exists:
 
                 # If we have actual processing results, return them
                 if "processing_results" in doc_status:
@@ -1019,8 +1077,8 @@ class DocumentActionTools:
                     }
 
             # No processing results found - check if NeMo pipeline is still running
-            if document_id in self.document_statuses:
-                doc_status = self.document_statuses[document_id]
+            exists, doc_status = self._check_document_exists(document_id)
+            if exists:
                 current_status = doc_status.get("status", "")
                 
                 # Check if processing is still in progress
@@ -1064,7 +1122,7 @@ class DocumentActionTools:
                         "NVIDIA NeMo pipeline did not complete processing. Please check server logs for errors."
                     )
             else:
-                logger.error(f"Document {document_id} not found in status tracking")
+                logger.error(f"Document {_sanitize_log_data(document_id)} not found in status tracking")
                 return self._create_mock_data_response("document_not_found")
 
         except Exception as e:
@@ -1077,11 +1135,9 @@ class DocumentActionTools:
         """Process document locally using the local processor."""
         try:
             # Get document info from status
-            if document_id not in self.document_statuses:
-                logger.error(f"Document {document_id} not found in status tracking")
+            success, doc_status, error_response = self._get_document_status_or_error(document_id, "process document locally")
+            if not success:
                 return self._create_mock_data_response()
-            
-            doc_status = self.document_statuses[document_id]
             file_path = doc_status.get("file_path")
             
             if not file_path or not os.path.exists(file_path):
@@ -1372,19 +1428,7 @@ class DocumentActionTools:
             total_documents = len(self.document_statuses)
             
             # Filter documents by time range
-            now = datetime.now()
-            today_start = datetime(now.year, now.month, now.day)
-            
-            if time_range == "today":
-                time_threshold = today_start
-            elif time_range == "week":
-                from datetime import timedelta
-                time_threshold = now - timedelta(days=7)
-            elif time_range == "month":
-                from datetime import timedelta
-                time_threshold = now - timedelta(days=30)
-            else:
-                time_threshold = datetime.min  # All time
+            time_threshold = self._calculate_time_threshold(time_range)
             
             # Calculate metrics from actual documents
             processed_today = 0
