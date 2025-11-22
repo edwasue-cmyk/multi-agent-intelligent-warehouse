@@ -358,11 +358,15 @@ def _clean_response_text(response: str) -> str:
         response = re.sub(r"structured_response: \{[^}]+\}", "", response)
         
         # Remove reasoning_chain patterns (can span multiple lines)
-        response = re.sub(r",\s*'reasoning_chain':\s*ReasoningChain\([^)]+\)", "", response, flags=re.DOTALL)
-        response = re.sub(r",\s*'reasoning_chain':\s*\{[^}]+\}", "", response, flags=re.DOTALL)
-        response = re.sub(r",\s*'reasoning_chain':\s*None", "", response, flags=re.IGNORECASE)
-        response = re.sub(r",\s*'reasoning_steps':\s*\[[^\]]+\]", "", response, flags=re.DOTALL)
-        response = re.sub(r",\s*'reasoning_steps':\s*None", "", response, flags=re.IGNORECASE)
+        reasoning_patterns = [
+            (r",\s*'reasoning_chain':\s*ReasoningChain\([^)]+\)", re.DOTALL),
+            (r",\s*'reasoning_chain':\s*\{[^}]+\}", re.DOTALL),
+            (r",\s*'reasoning_chain':\s*None", re.IGNORECASE),
+            (r",\s*'reasoning_steps':\s*\[[^\]]+\]", re.DOTALL),
+            (r",\s*'reasoning_steps':\s*None", re.IGNORECASE),
+        ]
+        for pattern, flags in reasoning_patterns:
+            response = re.sub(pattern, "", response, flags=flags)
         
         # Remove any remaining object representations like "ReasoningChain(...)"
         response = re.sub(r"ReasoningChain\([^)]+\)", "", response, flags=re.DOTALL)
@@ -371,24 +375,29 @@ def _clean_response_text(response: str) -> str:
         # More aggressive pattern matching for structured data that leaked into text
         response = re.sub(r",\s*,\s*'[^']+':\s*[^,}]+", "", response)
         response = re.sub(r",\s*'response_type':\s*'[^']+'", "", response)
-        response = re.sub(r",\s*'reasoning_chain':\s*None", "", response, flags=re.IGNORECASE)
-        response = re.sub(r",\s*'reasoning_steps':\s*None", "", response, flags=re.IGNORECASE)
+        # Note: reasoning_chain and reasoning_steps None patterns already removed above
         
         # Remove patterns like "}, , 'reasoning_chain': None, 'reasoning_steps': None}"
-        response = re.sub(r"\}\s*,\s*,\s*'reasoning_chain':\s*None\s*,\s*'reasoning_steps':\s*None\s*\}", "", response, flags=re.IGNORECASE)
+        # Apply multiple times to catch nested occurrences
+        reasoning_end_patterns = [
+            (r"\}\s*,\s*,\s*'reasoning_chain':\s*None\s*,\s*'reasoning_steps':\s*None\s*\}", re.IGNORECASE),
+            (r",\s*,\s*'response_type':\s*'[^']+',\s*,\s*'reasoning_chain':\s*None\s*,\s*'reasoning_steps':\s*None\s*\}", re.IGNORECASE),
+        ]
+        # Apply each pattern multiple times to catch nested occurrences
+        for pattern, flags in reasoning_end_patterns:
+            for _ in range(3):  # Apply up to 3 times to catch nested patterns
+                response = re.sub(pattern, "", response, flags=flags)
+        
         response = re.sub(r"\}\s*,\s*,\s*'[^']+':\s*[^,}]+", "", response)
-        
-        # Remove entire patterns like: ", , 'response_type': 'equipment_utilization', , 'reasoning_chain': None, 'reasoning_steps': None}, , 'reasoning_chain': None, 'reasoning_steps': None}"
-        response = re.sub(r",\s*,\s*'response_type':\s*'[^']+',\s*,\s*'reasoning_chain':\s*None\s*,\s*'reasoning_steps':\s*None\s*\}", "", response, flags=re.IGNORECASE)
-        response = re.sub(r"\}\s*,\s*,\s*'reasoning_chain':\s*None\s*,\s*'reasoning_steps':\s*None\s*\}", "", response, flags=re.IGNORECASE)
-        
-        # Remove patterns with multiple occurrences: "}, , 'reasoning_chain': None, 'reasoning_steps': None}, , 'reasoning_chain': None, 'reasoning_steps': None}"
-        response = re.sub(r"\}\s*,\s*,\s*'reasoning_chain':\s*None\s*,\s*'reasoning_steps':\s*None\s*\}", "", response, flags=re.IGNORECASE | re.MULTILINE)
-        response = re.sub(r"\}\s*,\s*,\s*'reasoning_chain':\s*None\s*,\s*'reasoning_steps':\s*None\s*\}", "", response, flags=re.IGNORECASE | re.MULTILINE)
         
         # Remove any remaining dictionary-like patterns that leaked (more aggressive)
         # Match patterns like: ", 'field': value" where value can be None, string, dict, or list
-        response = re.sub(r",\s*'[a-z_]+':\s*(?:None|'[^']*'|\{[^}]*\}|\[[^\]]*\])\s*,?\s*", "", response, flags=re.IGNORECASE)
+        dict_patterns = [
+            (r",\s*'[a-z_]+':\s*(?:None|'[^']*'|\{[^}]*\}|\[[^\]]*\])\s*,?\s*", ""),
+            (r"[, ]\s*'[a-z_]+':\s*(?:None|'[^']*'|True|False|\d+\.?\d*|\{[^}]*\}|\[[^\]]*\])\s*", " "),
+        ]
+        for pattern, replacement in dict_patterns:
+            response = re.sub(pattern, replacement, response, flags=re.IGNORECASE)
         
         # Remove any remaining closing braces and commas at the end
         response = re.sub(r"\}\s*,?\s*$", "", response)
@@ -396,11 +405,8 @@ def _clean_response_text(response: str) -> str:
         
         # Remove any Python dict-like structures that might have leaked (very aggressive)
         # This catches patterns like: "{'key': 'value', 'key2': None}"
+        # Note: Similar pattern already applied above, but this one is more aggressive with *
         response = re.sub(r"\{'[^}]*'\}", "", response)
-        
-        # Remove any remaining key-value pairs that look like Python dict syntax
-        # Pattern: ", 'key': value" or " 'key': value"
-        response = re.sub(r"[, ]\s*'[a-z_]+':\s*(?:None|'[^']*'|True|False|\d+\.?\d*|\{[^}]*\}|\[[^\]]*\])\s*", " ", response, flags=re.IGNORECASE)
         
         # Clean up any double commas or trailing commas/spaces
         response = re.sub(r",\s*,+", ",", response)  # Remove multiple commas
@@ -428,9 +434,6 @@ def _clean_response_text(response: str) -> str:
         ]
         for pattern, replacement in field_patterns:
             response = re.sub(pattern, replacement, response)
-
-        # Remove patterns like "actions_taken: [, ],"
-        response = re.sub(r"actions_taken: \[[^\]]*\],", "", response)
 
         # Remove patterns like "'mcp_tools_used': [], 'tool_execution_results': {}"
         mcp_patterns = [
@@ -460,14 +463,6 @@ def _clean_response_text(response: str) -> str:
         response = re.sub(
             r"Following up on the previous Action: [^.]*\.\.\.", "", response
         )
-
-        # Remove patterns like "}, 'mcp_tools_used': [], 'tool_execution_results': {}}"
-        mcp_patterns = [
-            r"}, 'mcp_tools_used': \[\], 'tool_execution_results': \{\}\}",
-            r"', 'mcp_tools_used': \[\], 'tool_execution_results': \{\}\}",
-        ]
-        for pattern in mcp_patterns:
-            response = re.sub(pattern, "", response)
 
         # Remove patterns like "', , , , , , , , , ]},"
         comma_patterns = [
