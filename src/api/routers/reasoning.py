@@ -68,6 +68,90 @@ def _sanitize_log_data(data: Union[str, Any], max_length: int = 500) -> str:
 router = APIRouter(prefix="/api/v1/reasoning", tags=["reasoning"])
 
 
+def _convert_reasoning_types(reasoning_types: Optional[List[str]]) -> List[ReasoningType]:
+    """
+    Convert string reasoning types to ReasoningType enum list.
+    
+    Args:
+        reasoning_types: List of string reasoning type names, or None
+        
+    Returns:
+        List of ReasoningType enums
+    """
+    if not reasoning_types:
+        return list(ReasoningType)
+    
+    converted_types = []
+    for rt in reasoning_types:
+        try:
+            converted_types.append(ReasoningType(rt))
+        except ValueError:
+            logger.warning(f"Invalid reasoning type: {_sanitize_log_data(rt)}")
+    
+    return converted_types if converted_types else list(ReasoningType)
+
+
+def _convert_reasoning_step_to_dict(step: Any, include_full_data: bool = False) -> Dict[str, Any]:
+    """
+    Convert a ReasoningStep to a dictionary.
+    
+    Args:
+        step: ReasoningStep object
+        include_full_data: If True, include input_data and output_data
+        
+    Returns:
+        Dictionary representation of the step
+    """
+    step_dict = {
+        "step_id": step.step_id,
+        "step_type": step.step_type,
+        "description": step.description,
+        "reasoning": step.reasoning,
+        "confidence": step.confidence,
+        "timestamp": step.timestamp.isoformat(),
+    }
+    
+    if include_full_data:
+        step_dict["input_data"] = step.input_data
+        step_dict["output_data"] = step.output_data
+        step_dict["dependencies"] = step.dependencies or []
+    
+    return step_dict
+
+
+def _handle_reasoning_error(operation: str, error: Exception) -> HTTPException:
+    """
+    Handle errors in reasoning endpoints with consistent logging and error response.
+    
+    Args:
+        operation: Description of the operation that failed
+        error: Exception that occurred
+        
+    Returns:
+        HTTPException with appropriate error message
+    """
+    logger.error(f"{operation} failed: {_sanitize_log_data(str(error))}")
+    return HTTPException(status_code=500, detail=f"{operation} failed: {str(error)}")
+
+
+def _get_confidence_level(confidence: float) -> str:
+    """
+    Get confidence level string based on confidence score.
+    
+    Args:
+        confidence: Confidence score (0.0 to 1.0)
+        
+    Returns:
+        Confidence level string: "High", "Medium", or "Low"
+    """
+    if confidence > 0.8:
+        return "High"
+    elif confidence > 0.6:
+        return "Medium"
+    else:
+        return "Low"
+
+
 class ReasoningRequest(BaseModel):
     """Request for reasoning analysis."""
 
@@ -120,16 +204,7 @@ async def analyze_with_reasoning(request: ReasoningRequest):
         reasoning_engine = await get_reasoning_engine()
 
         # Convert string reasoning types to enum
-        reasoning_types = []
-        if request.reasoning_types:
-            for rt in request.reasoning_types:
-                try:
-                    reasoning_types.append(ReasoningType(rt))
-                except ValueError:
-                    logger.warning(f"Invalid reasoning type: {_sanitize_log_data(rt)}")
-        else:
-            # Use all reasoning types if none specified
-            reasoning_types = list(ReasoningType)
+        reasoning_types = _convert_reasoning_types(request.reasoning_types)
 
         # Process with reasoning
         reasoning_chain = await reasoning_engine.process_with_reasoning(
@@ -140,21 +215,10 @@ async def analyze_with_reasoning(request: ReasoningRequest):
         )
 
         # Convert to response format
-        steps = []
-        for step in reasoning_chain.steps:
-            steps.append(
-                {
-                    "step_id": step.step_id,
-                    "step_type": step.step_type,
-                    "description": step.description,
-                    "reasoning": step.reasoning,
-                    "input_data": step.input_data,
-                    "output_data": step.output_data,
-                    "confidence": step.confidence,
-                    "timestamp": step.timestamp.isoformat(),
-                    "dependencies": step.dependencies or [],
-                }
-            )
+        steps = [
+            _convert_reasoning_step_to_dict(step, include_full_data=True)
+            for step in reasoning_chain.steps
+        ]
 
         return ReasoningResponse(
             chain_id=reasoning_chain.chain_id,
@@ -168,10 +232,7 @@ async def analyze_with_reasoning(request: ReasoningRequest):
         )
 
     except Exception as e:
-        logger.error(f"Reasoning analysis failed: {_sanitize_log_data(str(e))}")
-        raise HTTPException(
-            status_code=500, detail=f"Reasoning analysis failed: {str(e)}"
-        )
+        raise _handle_reasoning_error("Reasoning analysis", e)
 
 
 @router.get("/insights/{session_id}", response_model=ReasoningInsightsResponse)
@@ -192,10 +253,7 @@ async def get_reasoning_insights(session_id: str):
         )
 
     except Exception as e:
-        logger.error(f"Failed to get reasoning insights: {_sanitize_log_data(str(e))}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to get reasoning insights: {str(e)}"
-        )
+        raise _handle_reasoning_error("Failed to get reasoning insights", e)
 
 
 @router.get("/types")
@@ -245,16 +303,7 @@ async def chat_with_reasoning(request: ReasoningRequest):
         reasoning_engine = await get_reasoning_engine()
 
         # Convert string reasoning types to enum
-        reasoning_types = []
-        if request.reasoning_types:
-            for rt in request.reasoning_types:
-                try:
-                    reasoning_types.append(ReasoningType(rt))
-                except ValueError:
-                    logger.warning(f"Invalid reasoning type: {_sanitize_log_data(rt)}")
-        else:
-            # Use all reasoning types if none specified
-            reasoning_types = list(ReasoningType)
+        reasoning_types = _convert_reasoning_types(request.reasoning_types)
 
         # Process with reasoning
         reasoning_chain = await reasoning_engine.process_with_reasoning(
@@ -265,13 +314,7 @@ async def chat_with_reasoning(request: ReasoningRequest):
         )
 
         # Generate enhanced response with reasoning
-        # Determine confidence level (extracted from nested conditional for readability)
-        if reasoning_chain.overall_confidence > 0.8:
-            confidence_level = "High"
-        elif reasoning_chain.overall_confidence > 0.6:
-            confidence_level = "Medium"
-        else:
-            confidence_level = "Low"
+        confidence_level = _get_confidence_level(reasoning_chain.overall_confidence)
         
         enhanced_response = {
             "query": request.query,
@@ -281,7 +324,10 @@ async def chat_with_reasoning(request: ReasoningRequest):
                 "overall_confidence": reasoning_chain.overall_confidence,
                 "execution_time": reasoning_chain.execution_time,
             },
-            "reasoning_steps": [],
+            "reasoning_steps": [
+                _convert_reasoning_step_to_dict(step, include_full_data=False)
+                for step in reasoning_chain.steps
+            ],
             "final_conclusion": reasoning_chain.final_conclusion,
             "insights": {
                 "total_steps": len(reasoning_chain.steps),
@@ -290,23 +336,7 @@ async def chat_with_reasoning(request: ReasoningRequest):
             },
         }
 
-        # Add reasoning steps
-        for step in reasoning_chain.steps:
-            enhanced_response["reasoning_steps"].append(
-                {
-                    "step_id": step.step_id,
-                    "step_type": step.step_type,
-                    "description": step.description,
-                    "reasoning": step.reasoning,
-                    "confidence": step.confidence,
-                    "timestamp": step.timestamp.isoformat(),
-                }
-            )
-
         return enhanced_response
 
     except Exception as e:
-        logger.error(f"Chat with reasoning failed: {_sanitize_log_data(str(e))}")
-        raise HTTPException(
-            status_code=500, detail=f"Chat with reasoning failed: {str(e)}"
-        )
+        raise _handle_reasoning_error("Chat with reasoning", e)
