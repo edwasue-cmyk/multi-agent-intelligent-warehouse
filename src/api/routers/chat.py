@@ -474,8 +474,11 @@ def _clean_response_text(response: str) -> str:
         response = response.strip()  # Remove leading/trailing whitespace
         
         # Final cleanup: remove any remaining isolated commas or braces
-        response = re.sub(r"^\s*[,}]\s*", "", response)
-        response = re.sub(r"\s*[,}]\s*$", "", response)
+        # Use bounded quantifiers to prevent ReDoS in regex patterns
+        # Pattern 1: start anchor + whitespace (0-10) + comma/brace + whitespace (0-10)
+        # Pattern 2: whitespace (0-10) + comma/brace + whitespace (0-10) + end anchor
+        response = re.sub(r"^\s{0,10}[,}]\s{0,10}", "", response)
+        response = re.sub(r"\s{0,10}[,}]\s{0,10}$", "", response)
 
         # Remove patterns like "actions_taken: [, ],"
         response = re.sub(r"actions_taken: \[[^\]]*\],", "", response)
