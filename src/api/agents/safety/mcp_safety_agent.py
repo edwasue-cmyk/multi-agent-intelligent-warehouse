@@ -40,8 +40,8 @@ class MCPSafetyQuery:
     entities: Dict[str, Any]
     context: Dict[str, Any]
     user_query: str
-    mcp_tools: List[str] = None  # Available MCP tools for this query
-    tool_execution_plan: List[Dict[str, Any]] = None  # Planned tool executions
+    mcp_tools: Optional[List[str]] = None  # Available MCP tools for this query
+    tool_execution_plan: Optional[List[Dict[str, Any]]] = None  # Planned tool executions
 
 
 @dataclass
@@ -54,8 +54,8 @@ class MCPSafetyResponse:
     recommendations: List[str]
     confidence: float
     actions_taken: List[Dict[str, Any]]
-    mcp_tools_used: List[str] = None
-    tool_execution_results: Dict[str, Any] = None
+    mcp_tools_used: Optional[List[str]] = None
+    tool_execution_results: Optional[Dict[str, Any]] = None
     reasoning_chain: Optional[ReasoningChain] = None  # Advanced reasoning chain
     reasoning_steps: Optional[List[Dict[str, Any]]] = None  # Individual reasoning steps
 
@@ -363,6 +363,36 @@ Return only valid JSON.""",
             logger.error(f"Error discovering relevant tools: {e}")
             return []
 
+    def _add_tools_to_execution_plan(
+        self,
+        execution_plan: List[Dict[str, Any]],
+        tools: List[DiscoveredTool],
+        categories: List[ToolCategory],
+        limit: int,
+        query: MCPSafetyQuery,
+    ) -> None:
+        """
+        Add tools to execution plan based on categories and limit.
+        
+        Args:
+            execution_plan: Execution plan list to append to
+            tools: List of available tools
+            categories: List of tool categories to filter
+            limit: Maximum number of tools to add
+            query: Query object for argument preparation
+        """
+        filtered_tools = [t for t in tools if t.category in categories]
+        for tool in filtered_tools[:limit]:
+            execution_plan.append(
+                {
+                    "tool_id": tool.tool_id,
+                    "tool_name": tool.name,
+                    "arguments": self._prepare_tool_arguments(tool, query),
+                    "priority": 1,
+                    "required": True,
+                }
+            )
+
     async def _create_tool_execution_plan(
         self, query: MCPSafetyQuery, tools: List[DiscoveredTool]
     ) -> List[Dict[str, Any]]:
@@ -371,81 +401,21 @@ Return only valid JSON.""",
             execution_plan = []
 
             # Create execution steps based on query intent
-            if query.intent == "incident_reporting":
-                # Look for safety tools
-                safety_tools = [t for t in tools if t.category == ToolCategory.SAFETY]
-                for tool in safety_tools[:3]:  # Limit to 3 tools
-                    execution_plan.append(
-                        {
-                            "tool_id": tool.tool_id,
-                            "tool_name": tool.name,
-                            "arguments": self._prepare_tool_arguments(tool, query),
-                            "priority": 1,
-                            "required": True,
-                        }
-                    )
-
-            elif query.intent == "compliance_check":
-                # Look for safety and data access tools
-                compliance_tools = [
-                    t
-                    for t in tools
-                    if t.category in [ToolCategory.SAFETY, ToolCategory.DATA_ACCESS]
-                ]
-                for tool in compliance_tools[:2]:
-                    execution_plan.append(
-                        {
-                            "tool_id": tool.tool_id,
-                            "tool_name": tool.name,
-                            "arguments": self._prepare_tool_arguments(tool, query),
-                            "priority": 1,
-                            "required": True,
-                        }
-                    )
-
-            elif query.intent == "safety_audit":
-                # Look for safety tools
-                audit_tools = [t for t in tools if t.category == ToolCategory.SAFETY]
-                for tool in audit_tools[:3]:
-                    execution_plan.append(
-                        {
-                            "tool_id": tool.tool_id,
-                            "tool_name": tool.name,
-                            "arguments": self._prepare_tool_arguments(tool, query),
-                            "priority": 1,
-                            "required": True,
-                        }
-                    )
-
-            elif query.intent == "hazard_identification":
-                # Look for safety tools
-                hazard_tools = [t for t in tools if t.category == ToolCategory.SAFETY]
-                for tool in hazard_tools[:2]:
-                    execution_plan.append(
-                        {
-                            "tool_id": tool.tool_id,
-                            "tool_name": tool.name,
-                            "arguments": self._prepare_tool_arguments(tool, query),
-                            "priority": 1,
-                            "required": True,
-                        }
-                    )
-
-            elif query.intent == "policy_lookup":
-                # Look for data access tools
-                policy_tools = [
-                    t for t in tools if t.category == ToolCategory.DATA_ACCESS
-                ]
-                for tool in policy_tools[:2]:
-                    execution_plan.append(
-                        {
-                            "tool_id": tool.tool_id,
-                            "tool_name": tool.name,
-                            "arguments": self._prepare_tool_arguments(tool, query),
-                            "priority": 1,
-                            "required": True,
-                        }
-                    )
+            intent_config = {
+                "incident_reporting": ([ToolCategory.SAFETY], 3),
+                "compliance_check": ([ToolCategory.SAFETY, ToolCategory.DATA_ACCESS], 2),
+                "safety_audit": ([ToolCategory.SAFETY], 3),
+                "hazard_identification": ([ToolCategory.SAFETY], 2),
+                "policy_lookup": ([ToolCategory.DATA_ACCESS], 2),
+                "training_tracking": ([ToolCategory.SAFETY], 2),
+            }
+            
+            categories, limit = intent_config.get(
+                query.intent, ([ToolCategory.SAFETY], 2)
+            )
+            self._add_tools_to_execution_plan(
+                execution_plan, tools, categories, limit, query
+            )
 
             # Sort by priority
             execution_plan.sort(key=lambda x: x["priority"])
