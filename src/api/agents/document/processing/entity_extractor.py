@@ -154,7 +154,9 @@ class EntityExtractor:
             return "financial"
         elif any(keyword in field_name_lower for keyword in ["tax", "fee", "charge"]):
             return "financial"
-        elif re.match(r"^\$?[\d,]+\.?\d*$", value.strip()):
+        # Use bounded quantifiers and explicit decimal pattern to prevent ReDoS
+        # Pattern: optional $, digits/commas (1-30 chars), optional decimal point with digits (0-10 chars)
+        elif re.match(r"^\$?[\d,]{1,30}(\.\d{0,10})?$", value.strip()):
             return "financial"
 
         # Temporal entities
