@@ -271,7 +271,10 @@ Key Information:
         
         for line in lines:
             # Look for lines with quantities and prices
-            if re.search(r'\d+\s+[A-Za-z]', line) and re.search(r'\$?\d+\.?\d*', line):
+            # Use bounded quantifiers to prevent ReDoS in regex patterns
+            # Pattern 1: quantity (1-10 digits) + whitespace (1-5 spaces) + letter
+            # Pattern 2: optional $ + price digits (1-30) + optional decimal (0-10 digits)
+            if re.search(r'\d{1,10}\s{1,5}[A-Za-z]', line) and re.search(r'\$?\d{1,30}(\.\d{0,10})?', line):
                 parts = line.split()
                 if len(parts) >= 3:
                     try:
