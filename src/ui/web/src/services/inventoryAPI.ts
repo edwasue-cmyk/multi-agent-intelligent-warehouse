@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { validatePathParam } from './api';
 
 // Use relative URL to leverage proxy middleware
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api/v1';
@@ -36,65 +37,9 @@ class InventoryAPI {
     }
   }
 
-  /**
-   * Validates and sanitizes path parameters to prevent SSRF attacks.
-   * See CVE-2025-27152: https://github.com/axios/axios/security/advisories/GHSA-4w2v-q235-vp99
-   */
-  private validatePathParam(param: string, paramName: string = 'parameter'): string {
-    if (!param || typeof param !== 'string') {
-      throw new Error(`Invalid ${paramName}: must be a non-empty string`);
-    }
-    
-    // Reject absolute URLs (SSRF prevention)
-    if (param.startsWith('http://') || param.startsWith('https://') || param.startsWith('//')) {
-      throw new Error(`Invalid ${paramName}: absolute URLs are not allowed`);
-    }
-    
-    // Reject path traversal sequences
-    if (param.includes('../') || param.includes('..\\') || param.includes('..%2F') || param.includes('..%5C')) {
-      throw new Error(`Invalid ${paramName}: path traversal sequences are not allowed`);
-    }
-    
-    // Reject control characters and newlines
-    // Use character code checking instead of regex to avoid linting issues
-    // Checks for: control chars (0x00-0x1F), DEL (0x7F), extended control (0x80-0x9F), LF (0x0A), CR (0x0D)
-    for (let i = 0; i < param.length; i++) {
-      const code = param.charCodeAt(i);
-      // Check for control characters, DEL, extended control, newline, carriage return
-      if ((code >= 0x00 && code <= 0x1F) || code === 0x7F || (code >= 0x80 && code <= 0x9F) || code === 0x0A || code === 0x0D) {
-        throw new Error(`Invalid ${paramName}: control characters are not allowed`);
-      }
-    }
-    
-    // Reject leading/trailing slashes
-    // Use string methods instead of regex to prevent ReDoS vulnerabilities
-    // This approach is O(n) with no backtracking risk, safe for any input length
-    let sanitized = param.trim();
-    
-    // Remove leading slashes - O(n) operation, no backtracking
-    let startIdx = 0;
-    while (startIdx < sanitized.length && sanitized[startIdx] === '/') {
-      startIdx++;
-    }
-    sanitized = sanitized.substring(startIdx);
-    
-    // Remove trailing slashes - O(n) operation, no backtracking
-    let endIdx = sanitized.length;
-    while (endIdx > 0 && sanitized[endIdx - 1] === '/') {
-      endIdx--;
-    }
-    sanitized = sanitized.substring(0, endIdx);
-    
-    if (!sanitized) {
-      throw new Error(`Invalid ${paramName}: cannot be empty after sanitization`);
-    }
-    
-    return sanitized;
-  }
-
   async getItemBySku(sku: string): Promise<InventoryItem> {
     try {
-      const safeSku = this.validatePathParam(sku, 'sku');
+      const safeSku = validatePathParam(sku, 'sku');
       const response = await axios.get(`${this.baseURL}/items/${safeSku}`);
       return response.data;
     } catch (error) {
@@ -115,7 +60,7 @@ class InventoryAPI {
 
   async updateItem(sku: string, update: InventoryUpdate): Promise<InventoryItem> {
     try {
-      const safeSku = this.validatePathParam(sku, 'sku');
+      const safeSku = validatePathParam(sku, 'sku');
       const response = await axios.put(`${this.baseURL}/items/${safeSku}`, update);
       return response.data;
     } catch (error) {

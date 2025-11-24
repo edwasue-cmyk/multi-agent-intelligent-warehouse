@@ -277,7 +277,30 @@ python scripts/setup/create_default_users.py
 - Never use default passwords in production
 - The setup script generates unique bcrypt hashes with random salts - no credentials are exposed in source code
 
-### Step 7: Install RAPIDS for GPU-Accelerated Forecasting
+### Step 7: Generate Demo Data (Optional)
+
+For testing and demos, generate sample data:
+
+```bash
+source env/bin/activate
+
+# Quick demo data (recommended for quick testing)
+python scripts/data/quick_demo_data.py
+
+# OR comprehensive synthetic data (for extensive testing)
+python scripts/data/generate_synthetic_data.py
+```
+
+**⚠️ Important for Forecasting:** If you want to use the Forecasting page, you must also generate historical demand data:
+
+```bash
+# Generate historical demand data (required for forecasting features)
+python scripts/data/generate_historical_demand.py
+```
+
+This generates 180 days of historical inventory movements needed for demand forecasting. See [Data Generation Scripts](scripts/README.md#-data-generation-scripts) for details.
+
+### Step 8: Install RAPIDS for GPU-Accelerated Forecasting
 
 For GPU-accelerated demand forecasting (10-100x faster), install NVIDIA RAPIDS:
 
@@ -293,7 +316,7 @@ source env/bin/activate
 
 See [RAPIDS Setup Guide](docs/forecasting/RAPIDS_SETUP.md) for detailed instructions.
 
-### Step 8: Start the API Server
+### Step 9: Start the API Server
 
 ```bash
 # Using the startup script (recommended)

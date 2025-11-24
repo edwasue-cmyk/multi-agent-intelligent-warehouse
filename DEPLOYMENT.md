@@ -217,7 +217,16 @@ docker-compose -f deploy/compose/docker-compose.yaml up -d
    docker-compose -f deploy/compose/docker-compose.yaml exec api python scripts/setup/create_default_users.py
    ```
 
-5. **Start application:**
+5. **Generate demo data (optional):**
+   ```bash
+   # Quick demo data
+   docker-compose -f deploy/compose/docker-compose.yaml exec api python scripts/data/quick_demo_data.py
+   
+   # Historical demand data (required for Forecasting page)
+   docker-compose -f deploy/compose/docker-compose.yaml exec api python scripts/data/generate_historical_demand.py
+   ```
+
+6. **Start application:**
    ```bash
    docker-compose -f deploy/compose/docker-compose.yaml up -d
    ```

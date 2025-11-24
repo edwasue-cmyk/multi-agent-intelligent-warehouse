@@ -34,10 +34,16 @@ PGPASSWORD=${POSTGRES_PASSWORD:-changeme} psql -h localhost -p 5435 -U warehouse
 # 5. Create default users
 python scripts/setup/create_default_users.py
 
-# 6. Start API server
+# 6. Generate demo data (optional but recommended)
+python scripts/data/quick_demo_data.py
+
+# 7. Generate historical demand data for forecasting (optional, required for Forecasting page)
+python scripts/data/generate_historical_demand.py
+
+# 8. Start API server
 ./scripts/start_server.sh
 
-# 7. Start frontend (in another terminal)
+# 9. Start frontend (in another terminal)
 cd src/ui/web
 npm install
 npm start

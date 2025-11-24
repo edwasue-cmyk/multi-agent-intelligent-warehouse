@@ -28,7 +28,7 @@ if (API_BASE_URL.startsWith('http://') || API_BASE_URL.startsWith('https://')) {
  * const safeId = validatePathParam(userId, 'user_id');
  * api.get(`/users/${safeId}`);
  */
-function validatePathParam(param: string, paramName: string = 'parameter'): string {
+export function validatePathParam(param: string, paramName: string = 'parameter'): string {
   if (!param || typeof param !== 'string') {
     throw new Error(`Invalid ${paramName}: must be a non-empty string`);
   }
