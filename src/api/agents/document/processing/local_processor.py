@@ -127,6 +127,8 @@ class LocalDocumentProcessor:
     
     def _generate_sample_invoice_text(self) -> str:
         """Generate sample invoice text for testing."""
+        # Security: Using random module is appropriate here - generating test invoice data only
+        # For security-sensitive values (tokens, keys, passwords), use secrets module instead
         import random
         invoice_num = f"INV-{datetime.now().year}-{random.randint(1000, 9999)}"
         vendor = random.choice(["ABC Supply Co.", "XYZ Manufacturing", "Global Logistics Inc.", "Tech Solutions Ltd."])

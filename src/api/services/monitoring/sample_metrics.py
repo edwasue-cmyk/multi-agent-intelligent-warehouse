@@ -1,8 +1,15 @@
 """
 Sample metrics data generator for testing and demonstration purposes.
+
+Security Note: This module uses Python's random module (PRNG) for generating
+synthetic test metrics data. This is appropriate for data generation purposes.
+For security-sensitive operations (tokens, keys, passwords, session IDs), the
+secrets module (CSPRNG) should be used instead.
 """
 
 import asyncio
+# Security: Using random module is appropriate here - generating synthetic test metrics only
+# For security-sensitive values (tokens, keys, passwords), use secrets module instead
 import random
 import time
 from typing import Dict, Any

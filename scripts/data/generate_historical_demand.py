@@ -4,10 +4,17 @@ Frito-Lay Historical Demand Data Generator
 
 Generates realistic historical inventory movement data for all Frito-Lay products
 with seasonal patterns, promotional spikes, and brand-specific characteristics.
+
+Security Note: This script uses Python's random module (PRNG) for generating
+synthetic test data (demand patterns, quantities, timestamps). This is appropriate
+for data generation purposes. For security-sensitive operations (tokens, keys,
+passwords, session IDs), the secrets module (CSPRNG) should be used instead.
 """
 
 import asyncio
 import asyncpg
+# Security: Using random module is appropriate here - generating synthetic test data only
+# For security-sensitive values (tokens, keys, passwords), use secrets module instead
 import random
 import numpy as np
 import os

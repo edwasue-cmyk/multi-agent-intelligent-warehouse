@@ -119,6 +119,8 @@ class AllSKUForecastingEngine:
                 holiday_factor = 1.2
             
             # Random noise
+            # Security: Using np.random is appropriate here - generating forecast noise only
+            # For security-sensitive values (tokens, keys, passwords), use secrets module instead
             noise = np.random.normal(0, 0.1)
             
             # Calculate final demand
@@ -170,6 +172,8 @@ class AllSKUForecastingEngine:
         df['demand_monthly_seasonal'] = df.groupby('month')['demand'].transform('mean') - df['demand'].mean()
         
         # Promotional features
+        # Security: Using np.random is appropriate here - generating forecast variations only
+        # For security-sensitive values (tokens, keys, passwords), use secrets module instead
         df['promotional_boost'] = np.random.uniform(0.8, 1.2, len(df))
         
         # Interaction features

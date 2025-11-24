@@ -1209,6 +1209,8 @@ class DocumentActionTools:
             RoutingDecision,
             QualityDecision,
         )
+        # Security: Using random module is appropriate here - generating test invoice numbers only
+        # For security-sensitive values (tokens, keys, passwords), use secrets module instead
         import random
         import datetime
 

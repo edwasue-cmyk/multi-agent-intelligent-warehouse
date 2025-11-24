@@ -4,11 +4,18 @@ GPU Acceleration Demo for Warehouse Operations
 
 Demonstrates the potential performance improvements of GPU-accelerated
 vector search for warehouse operational assistant.
+
+Security Note: This script uses numpy.random (PRNG) for generating
+synthetic performance metrics and demo data. This is appropriate for
+demonstration purposes. For security-sensitive operations (tokens, keys,
+passwords, session IDs), the secrets module (CSPRNG) should be used instead.
 """
 
 import asyncio
 import time
 import logging
+# Security: Using np.random is appropriate here - generating demo performance metrics only
+# For security-sensitive values (tokens, keys, passwords), use secrets module instead
 import numpy as np
 from typing import List, Dict, Any
 import json
@@ -69,6 +76,7 @@ class GPUDemo:
         logger.info("Simulating CPU-only performance...")
         
         # Simulate CPU processing times based on typical benchmarks
+        # Security: Using np.random is appropriate here - generating demo performance metrics only
         single_query_times = np.random.normal(0.045, 0.012, len(self.test_queries))  # ~45ms average
         batch_query_time = np.random.normal(0.450, 0.050, 1)[0]  # ~450ms for batch
         

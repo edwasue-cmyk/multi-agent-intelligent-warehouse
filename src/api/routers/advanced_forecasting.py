@@ -210,6 +210,8 @@ class AdvancedForecastingService:
             
             # Generate forecast
             base_forecast = recent_demand * seasonal_factor
+            # Security: Using np.random is appropriate here - generating forecast variations only
+            # For security-sensitive values (tokens, keys, passwords), use secrets module instead
             predictions = [base_forecast * (1 + np.random.normal(0, 0.1)) for _ in range(horizon_days)]
             
             # Calculate confidence intervals

@@ -563,6 +563,8 @@ class ServiceDiscovery:
         if load_balance and len(healthy_services) > 1:
             # Simple round-robin load balancing
             # In production, this would use more sophisticated algorithms
+            # Security: Using random module is appropriate here - load balancing selection only
+            # For security-sensitive values (tokens, keys, passwords), use secrets module instead
             import random
 
             service = random.choice(healthy_services)

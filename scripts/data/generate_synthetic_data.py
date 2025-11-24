@@ -8,9 +8,17 @@ Generates comprehensive synthetic data across all databases:
 - Redis: Session data and caching
 
 This creates a realistic warehouse environment for demos and testing.
+
+Security Note: This script uses Python's random module (PRNG) for generating
+synthetic test data (inventory, tasks, incidents, telemetry, cache data). This is
+appropriate for data generation purposes. For security-sensitive operations
+(tokens, keys, passwords, session IDs), the secrets module (CSPRNG) should be
+used instead.
 """
 
 import asyncio
+# Security: Using random module is appropriate here - generating synthetic test data only
+# For security-sensitive values (tokens, keys, passwords), use secrets module instead
 import random
 import json
 import logging

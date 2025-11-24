@@ -188,6 +188,8 @@ class EmbeddingIndexingService:
         self, text_content: List[str]
     ) -> List[List[float]]:
         """Generate mock embeddings for development."""
+        # Security: Using random module is appropriate here - generating mock embeddings for testing only
+        # For security-sensitive values (tokens, keys, passwords), use secrets module instead
         import random
 
         embeddings = []
