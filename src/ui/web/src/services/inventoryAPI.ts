@@ -56,9 +56,14 @@ class InventoryAPI {
     }
     
     // Reject control characters and newlines
-    // Use Unicode escape sequences to avoid control character literals in regex
-    if (/[\u0000-\u001F\u007F-\u009F\u000A\u000D]/.test(param)) {
-      throw new Error(`Invalid ${paramName}: control characters are not allowed`);
+    // Use character code checking instead of regex to avoid linting issues
+    // Checks for: control chars (0x00-0x1F), DEL (0x7F), extended control (0x80-0x9F), LF (0x0A), CR (0x0D)
+    for (let i = 0; i < param.length; i++) {
+      const code = param.charCodeAt(i);
+      // Check for control characters, DEL, extended control, newline, carriage return
+      if ((code >= 0x00 && code <= 0x1F) || code === 0x7F || (code >= 0x80 && code <= 0x9F) || code === 0x0A || code === 0x0D) {
+        throw new Error(`Invalid ${paramName}: control characters are not allowed`);
+      }
     }
     
     // Reject leading/trailing slashes
