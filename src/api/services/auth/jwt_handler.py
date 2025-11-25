@@ -4,10 +4,79 @@ import jwt
 import bcrypt
 import os
 import logging
+import secrets
 
 logger = logging.getLogger(__name__)
 
 # JWT Configuration
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+REFRESH_TOKEN_EXPIRE_DAYS = 7
+
+# Security: Minimum key length requirements per algorithm (in bytes)
+# HS256 requires minimum 256 bits (32 bytes) per RFC 7518 Section 3.2
+# We enforce 32 bytes minimum, recommend 64+ bytes for better security
+MIN_KEY_LENGTH_HS256 = 32  # 256 bits minimum
+RECOMMENDED_KEY_LENGTH_HS256 = 64  # 512 bits recommended
+
+
+def validate_jwt_secret_key(secret_key: str, algorithm: str, environment: str) -> bool:
+    """
+    Validate JWT secret key strength to prevent weak encryption vulnerabilities.
+    
+    This addresses CVE-2025-45768 (PyJWT weak encryption) by enforcing minimum
+    key length requirements per RFC 7518 and NIST SP800-117 standards.
+    
+    Args:
+        secret_key: The JWT secret key to validate
+        algorithm: The JWT algorithm (e.g., 'HS256')
+        environment: Environment name ('production' or 'development')
+    
+    Returns:
+        True if key is valid, False otherwise
+    
+    Raises:
+        ValueError: If key is too weak (in production) or invalid
+    """
+    if not secret_key:
+        return False
+    
+    # Calculate key length in bytes (UTF-8 encoding)
+    key_bytes = len(secret_key.encode('utf-8'))
+    
+    # Validate based on algorithm
+    if algorithm == "HS256":
+        min_length = MIN_KEY_LENGTH_HS256
+        recommended_length = RECOMMENDED_KEY_LENGTH_HS256
+        
+        if key_bytes < min_length:
+            error_msg = (
+                f"JWT_SECRET_KEY is too weak for {algorithm}. "
+                f"Minimum length: {min_length} bytes (256 bits), "
+                f"Current length: {key_bytes} bytes. "
+                f"This violates RFC 7518 Section 3.2 and NIST SP800-117 standards."
+            )
+            if environment == "production":
+                logger.error(f"❌ SECURITY ERROR: {error_msg}")
+                raise ValueError(error_msg)
+            else:
+                logger.warning(f"⚠️  WARNING: {error_msg}")
+                logger.warning("⚠️  This key is too weak and should not be used in production!")
+                return False
+        
+        if key_bytes < recommended_length:
+            logger.warning(
+                f"⚠️  JWT_SECRET_KEY length ({key_bytes} bytes) is below recommended "
+                f"length ({recommended_length} bytes) for {algorithm}. "
+                f"Consider using a longer key for better security."
+            )
+        else:
+            logger.info(f"✅ JWT_SECRET_KEY validated: {key_bytes} bytes (meets security requirements)")
+    
+    return True
+
+
+# Load and validate JWT secret key
 SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
 
@@ -17,6 +86,7 @@ if not SECRET_KEY or SECRET_KEY == "your-secret-key-change-in-production":
         import sys
         logger.error("JWT_SECRET_KEY environment variable must be set with a secure value in production")
         logger.error("Please set JWT_SECRET_KEY in your .env file or environment")
+        logger.error("Generate a secure key: python -c \"import secrets; print(secrets.token_urlsafe(64))\"")
         sys.exit(1)
     else:
         # Development: Use a default but warn
@@ -24,9 +94,16 @@ if not SECRET_KEY or SECRET_KEY == "your-secret-key-change-in-production":
         logger.warning("⚠️  WARNING: Using default JWT_SECRET_KEY for development. This is NOT secure for production!")
         logger.warning("⚠️  Please set JWT_SECRET_KEY in your .env file for production use")
 
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-REFRESH_TOKEN_EXPIRE_DAYS = 7
+# Validate key strength (addresses CVE-2025-45768)
+try:
+    validate_jwt_secret_key(SECRET_KEY, ALGORITHM, ENVIRONMENT)
+except ValueError as e:
+    # In production, validation failure is fatal
+    if ENVIRONMENT == "production":
+        import sys
+        logger.error(f"❌ JWT_SECRET_KEY validation failed: {e}")
+        logger.error("Generate a secure key: python -c \"import secrets; print(secrets.token_urlsafe(64))\"")
+        sys.exit(1)
 
 
 class JWTHandler:

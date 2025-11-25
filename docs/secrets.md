@@ -139,19 +139,36 @@ JWT_SECRET_KEY=dev-secret-key-change-in-production-not-for-production-use
 
 **For Production (REQUIRED):**
 ```bash
-# Generate a strong random secret (minimum 32 characters)
+# Generate a strong random secret (minimum 32 bytes/characters, recommended 64+)
+# The application validates key strength to prevent weak encryption (CVE-2025-45768)
 JWT_SECRET_KEY=your-super-secret-jwt-key-here-must-be-at-least-32-characters-long
 ENVIRONMENT=production
 ```
 
 **Generating a Secure Secret:**
 ```bash
-# Using OpenSSL
+# Using OpenSSL (generates 32 bytes = 64 hex characters)
 openssl rand -hex 32
 
-# Using Python
+# Using Python (recommended: 64 bytes for better security)
+python -c "import secrets; print(secrets.token_urlsafe(64))"
+
+# Minimum length (32 bytes = 43 base64 characters)
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
+
+### JWT Secret Key Requirements
+
+**Minimum Requirements (HS256 algorithm):**
+- **Minimum length**: 32 bytes (256 bits) - Required by RFC 7518 Section 3.2
+- **Recommended length**: 64+ bytes (512+ bits) - For better security
+- **Validation**: The application automatically validates key strength at startup
+- **Production**: Weak keys are rejected in production mode
+
+**Security Standards Compliance:**
+- RFC 7518 Section 3.2 (JWS HMAC SHA-2 Algorithms)
+- NIST SP800-117 (Key Management)
+- Addresses CVE-2025-45768 (PyJWT weak encryption vulnerability)
 
 ### JWT Secret Example
 
@@ -162,4 +179,9 @@ your-super-secret-jwt-key-here-must-be-at-least-32-characters-long
 
 **⚠️ This is a sample only - change in production!**
 
-**Security Note:** The JWT secret key is critical for security. Never commit it to version control, use a secrets management system in production, and rotate it regularly.
+**Security Note:** 
+- The JWT secret key is critical for security. Never commit it to version control.
+- Use a secrets management system in production.
+- Rotate keys regularly.
+- The application enforces minimum key length to prevent weak encryption vulnerabilities.
+- Keys shorter than 32 bytes will be rejected in production.
