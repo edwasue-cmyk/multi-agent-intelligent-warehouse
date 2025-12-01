@@ -9,6 +9,14 @@
  * react-scripts and webpack-dev-server 5.x.
  */
 
+/**
+ * CRACO configuration to fix webpack-dev-server 5.x compatibility issues
+ * 
+ * This configuration:
+ * 1. Excludes webpack-dev-server from source-map-loader processing
+ * 2. Patches react-scripts to remove deprecated webpack-dev-server options
+ */
+
 module.exports = {
   webpack: {
     configure: (webpackConfig) => {
@@ -86,6 +94,13 @@ module.exports = {
       // Process module rules
       if (webpackConfig.module && webpackConfig.module.rules) {
         processRules(webpackConfig.module.rules);
+      }
+      
+      // Remove deprecated webpack-dev-server options for webpack-dev-server 5.x compatibility
+      // These are set by react-scripts but not supported in webpack-dev-server 5.x
+      if (webpackConfig.devServer) {
+        delete webpackConfig.devServer.onAfterSetupMiddleware;
+        delete webpackConfig.devServer.onBeforeSetupMiddleware;
       }
       
       return webpackConfig;
