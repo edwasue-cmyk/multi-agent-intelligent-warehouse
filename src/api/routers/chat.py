@@ -635,14 +635,42 @@ async def chat(req: ChatRequest):
         tool_count = 0
         tool_execution_time_ms = 0.0
         
+        # Track guardrails method and timing
+        guardrails_method = None
+        guardrails_time_ms = None
+        
         try:
             # Check input safety with guardrails (with timeout)
+            guardrails_start = time.time()
             input_safety = await asyncio.wait_for(
                 guardrails_service.check_input_safety(req.message, req.context),
                 timeout=3.0  # 3 second timeout for safety check
             )
+            guardrails_time_ms = (time.time() - guardrails_start) * 1000
+            guardrails_method = input_safety.method_used
+            
+            # Log guardrails method used
+            logger.info(
+                f"🔒 Guardrails check: method={guardrails_method}, "
+                f"safe={input_safety.is_safe}, "
+                f"time={guardrails_time_ms:.1f}ms, "
+                f"confidence={input_safety.confidence:.2f}"
+            )
+            
             if not input_safety.is_safe:
-                logger.warning(f"Input safety violation: {_sanitize_log_data(str(input_safety.violations))}")
+                logger.warning(
+                    f"Input safety violation ({guardrails_method}): "
+                    f"{_sanitize_log_data(str(input_safety.violations))}"
+                )
+                # Record metrics before returning
+                await performance_monitor.end_request(
+                    request_id,
+                    route="safety",
+                    intent="safety_violation",
+                    cache_hit=False,
+                    guardrails_method=guardrails_method,
+                    guardrails_time_ms=guardrails_time_ms
+                )
                 return _create_safety_violation_response(
                     input_safety.violations,
                     input_safety.confidence,
@@ -650,8 +678,11 @@ async def chat(req: ChatRequest):
                 )
         except asyncio.TimeoutError:
             logger.warning("Input safety check timed out, proceeding")
+            guardrails_time_ms = 3000.0  # Timeout duration
         except Exception as safety_error:
-            logger.warning(f"Input safety check failed: {_sanitize_log_data(str(safety_error))}, proceeding")
+            logger.warning(
+                f"Input safety check failed: {_sanitize_log_data(str(safety_error))}, proceeding"
+            )
 
         # Process the query through the MCP planner graph with error handling
         # Add timeout to prevent hanging on slow queries
@@ -1019,17 +1050,46 @@ async def chat(req: ChatRequest):
             )
 
         # Check output safety with guardrails (with timeout protection)
+        output_guardrails_method = None
+        output_guardrails_time_ms = None
         try:
             if result and result.get("response"):
+                output_guardrails_start = time.time()
                 output_safety = await asyncio.wait_for(
                     guardrails_service.check_output_safety(result["response"], req.context),
                     timeout=5.0  # 5 second timeout for safety check
+                )
+                output_guardrails_time_ms = (time.time() - output_guardrails_start) * 1000
+                output_guardrails_method = output_safety.method_used
+                
+                # Log output guardrails method used
+                logger.info(
+                    f"🔒 Output guardrails check: method={output_guardrails_method}, "
+                    f"safe={output_safety.is_safe}, "
+                    f"time={output_guardrails_time_ms:.1f}ms, "
+                    f"confidence={output_safety.confidence:.2f}"
                 )
             else:
                 # Skip safety check if no result
                 output_safety = None
             if output_safety and not output_safety.is_safe:
-                logger.warning(f"Output safety violation: {_sanitize_log_data(str(output_safety.violations))}")
+                logger.warning(
+                    f"Output safety violation ({output_guardrails_method}): "
+                    f"{_sanitize_log_data(str(output_safety.violations))}"
+                )
+                # Use output guardrails metrics if available, otherwise use input metrics
+                final_guardrails_method = output_guardrails_method or guardrails_method
+                final_guardrails_time_ms = (
+                    (output_guardrails_time_ms or 0) + (guardrails_time_ms or 0)
+                )
+                await performance_monitor.end_request(
+                    request_id,
+                    route="safety",
+                    intent="safety_violation",
+                    cache_hit=False,
+                    guardrails_method=final_guardrails_method,
+                    guardrails_time_ms=final_guardrails_time_ms
+                )
                 return _create_safety_violation_response(
                     output_safety.violations,
                     output_safety.confidence,
@@ -1037,8 +1097,11 @@ async def chat(req: ChatRequest):
                 )
         except asyncio.TimeoutError:
             logger.warning("Output safety check timed out, proceeding with response")
+            output_guardrails_time_ms = 5000.0  # Timeout duration
         except Exception as safety_error:
-            logger.warning(f"Output safety check failed: {_sanitize_log_data(str(safety_error))}, proceeding with response")
+            logger.warning(
+                f"Output safety check failed: {_sanitize_log_data(str(safety_error))}, proceeding with response"
+            )
 
         # Extract structured response if available
         structured_response = result.get("structured_response", {}) if result else {}
@@ -1482,7 +1545,9 @@ async def chat(req: ChatRequest):
                 cache_hit=False,
                 error=None,
                 tool_count=tool_count,
-                tool_execution_time_ms=tool_execution_time_ms
+                tool_execution_time_ms=tool_execution_time_ms,
+                guardrails_method=guardrails_method,
+                guardrails_time_ms=guardrails_time_ms
             )
             
             return response

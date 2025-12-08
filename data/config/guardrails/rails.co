@@ -1,0 +1,151 @@
+# NeMo Guardrails Colang Configuration
+# Warehouse Operational Assistant - Guardrails Rails
+# Phase 2: Parallel Implementation
+
+# =============================================================================
+# INPUT RAILS - User Input Safety Validation
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Jailbreak Detection
+# -----------------------------------------------------------------------------
+define user express jailbreak attempt
+  "ignore previous instructions"
+  "ignore all previous"
+  "forget everything"
+  "forget all previous"
+  "you are now"
+  "you are a"
+  "pretend to be"
+  "act as if"
+  "act as a"
+  "roleplay as"
+  "roleplay"
+  "simulate"
+  "override"
+  "bypass"
+  "jailbreak"
+  "hack the system"
+  "help me hack"
+
+define flow check jailbreak
+  user express jailbreak attempt
+  bot refuse jailbreak
+  stop
+
+define bot refuse jailbreak
+  "I cannot ignore my instructions or roleplay as someone else. I'm here to help with warehouse operations. How can I assist you with inventory, operations, or safety today?"
+
+# -----------------------------------------------------------------------------
+# Safety Violations
+# -----------------------------------------------------------------------------
+define user express safety violation
+  "operate forklift without training"
+  "forklift without training"
+  "bypass safety protocols"
+  "bypass safety"
+  "ignore safety warnings"
+  "ignore safety"
+  "work without PPE"
+  "work without personal protective equipment"
+  "without personal protective equipment"
+  "without protective equipment"
+  "operate equipment unsafely"
+  "operate without training"
+  "work without safety"
+
+define flow check safety violations
+  user express safety violation
+  bot refuse safety violation
+  stop
+
+define bot refuse safety violation
+  "Safety is our top priority. I cannot provide guidance that bypasses safety protocols. Please consult with your safety supervisor for proper procedures."
+
+# -----------------------------------------------------------------------------
+# Security Violations
+# -----------------------------------------------------------------------------
+define user express security violation
+  "security codes"
+  "security code"
+  "access codes"
+  "access code"
+  "access restricted areas"
+  "restricted areas without authorization"
+  "restricted areas"
+  "alarm codes"
+  "alarm code"
+  "disable security"
+  "disable the security"
+  "warehouse layout for unauthorized access"
+  "unauthorized access"
+  "hack into"
+  "break into"
+
+define flow check security violations
+  user express security violation
+  bot refuse security violation
+  stop
+
+define bot refuse security violation
+  "I cannot provide security-sensitive information. For security-related questions, please contact your security team or supervisor."
+
+# -----------------------------------------------------------------------------
+# Compliance Violations (Input)
+# -----------------------------------------------------------------------------
+define user express compliance violation
+  "avoid safety inspections"
+  "avoid inspections"
+  "skip compliance requirements"
+  "skip compliance"
+  "skip inspections"
+  "ignore regulations"
+  "ignore safety regulations"
+  "ignore compliance"
+  "work around safety rules"
+  "work around rules"
+  "circumvent safety"
+  "circumvent regulations"
+
+define flow check compliance violations
+  user express compliance violation
+  bot refuse compliance violation
+  stop
+
+define bot refuse compliance violation
+  "Compliance with safety regulations and company policies is mandatory. I cannot provide guidance that circumvents compliance requirements. Please follow all established procedures and consult with your supervisor if you have questions."
+
+# =============================================================================
+# TOPICAL RAILS - Off-Topic Query Detection
+# =============================================================================
+
+define user express off-topic query
+  "weather"
+  "what is the weather"
+  "joke"
+  "tell me a joke"
+  "capital of"
+  "how to cook"
+  "cook pasta"
+  "recipe"
+  "sports"
+  "politics"
+  "entertainment"
+  "movie"
+  "music"
+
+define flow check off-topic queries
+  user express off-topic query
+  bot redirect to warehouse topics
+  stop
+
+define bot redirect to warehouse topics
+  "I'm specialized in warehouse operations including inventory management, operations coordination, and safety compliance. I can help you with questions about stock levels, task assignments, safety procedures, or equipment status. How can I assist you with warehouse operations?"
+
+# =============================================================================
+# OUTPUT RAILS - AI Response Safety Validation
+# =============================================================================
+# Note: Output rails are handled via Python actions in NeMo Guardrails
+# For now, we'll use input rails to catch violations before they occur
+# Output validation will be handled in the service layer
+

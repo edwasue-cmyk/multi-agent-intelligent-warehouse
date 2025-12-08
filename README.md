@@ -496,234 +496,85 @@ The system implements **NVIDIA NeMo Guardrails** for content safety, security, a
 
 ### Overview
 
-NeMo Guardrails provides multi-layer protection for the warehouse operational assistant:
+The guardrails system provides **dual implementation support** with automatic fallback:
 
-- **API Integration** - Uses NVIDIA NeMo Guardrails API for intelligent safety validation
-- **Input Safety Validation** - Checks user queries before processing
-- **Output Safety Validation** - Validates AI responses before returning to users
-- **Pattern-Based Fallback** - Falls back to keyword/phrase matching if API is unavailable
-- **Timeout Protection** - Prevents hanging requests with configurable timeouts
-- **Graceful Degradation** - Continues operation even if guardrails fail
+- **NeMo Guardrails SDK** (with Colang) - Intelligent, programmable guardrails using NVIDIA's official SDK
+  - ✅ **Already included** in `requirements.txt` (`nemoguardrails>=0.19.0`)
+  - Installed automatically when you run `pip install -r requirements.txt`
+- **Pattern-Based Matching** - Fast, lightweight fallback using keyword/phrase matching
+- **Feature Flag Control** - Runtime switching between implementations via `USE_NEMO_GUARDRAILS_SDK`
+- **Automatic Fallback** - Seamlessly switches to pattern-based if SDK unavailable
+- **Input & Output Validation** - Checks both user queries and AI responses
+- **Timeout Protection** - Prevents hanging requests (3s input, 5s output)
+- **Comprehensive Monitoring** - Metrics tracking for method usage and performance
 
 ### Protection Categories
 
-The guardrails system protects against:
+The guardrails system protects against **88 patterns** across 5 categories:
 
-#### 1. Jailbreak Attempts
-Detects attempts to override system instructions:
-- "ignore previous instructions"
-- "forget everything"
-- "pretend to be"
-- "roleplay as"
-- "bypass"
-- "jailbreak"
+1. **Jailbreak Attempts** (17 patterns) - Prevents instruction override attempts
+2. **Safety Violations** (13 patterns) - Blocks unsafe operational guidance
+3. **Security Violations** (15 patterns) - Prevents security information requests
+4. **Compliance Violations** (12 patterns) - Ensures regulatory adherence
+5. **Off-Topic Queries** (13 patterns) - Redirects non-warehouse queries
 
-#### 2. Safety Violations
-Prevents guidance that could endanger workers or equipment:
-- Operating equipment without training
-- Bypassing safety protocols
-- Working without personal protective equipment (PPE)
-- Unsafe equipment operation
-
-#### 3. Security Violations
-Blocks requests for sensitive security information:
-- Security codes and access codes
-- Restricted area access
-- Alarm codes
-- System bypass instructions
-
-#### 4. Compliance Violations
-Ensures adherence to regulations and policies:
-- Avoiding safety inspections
-- Skipping compliance requirements
-- Ignoring regulations
-- Working around safety rules
-
-#### 5. Off-Topic Queries
-Redirects non-warehouse related queries:
-- Weather, jokes, cooking recipes
-- Sports, politics, entertainment
-- General knowledge questions
-
-### Configuration
-
-#### Environment Variables
-
-The guardrails service can be configured via environment variables:
+### Quick Configuration
 
 ```bash
-# NeMo Guardrails API Configuration
-# Use RAIL_API_KEY for guardrails-specific key, or it will fall back to NVIDIA_API_KEY
-RAIL_API_KEY=your-nvidia-api-key-here
+# Enable SDK implementation (recommended)
+USE_NEMO_GUARDRAILS_SDK=true
 
-# Guardrails API endpoint (defaults to NVIDIA's cloud endpoint)
+# NVIDIA API key (required for SDK)
+NVIDIA_API_KEY=your-api-key-here
+
+# Optional: Guardrails-specific configuration
+RAIL_API_KEY=your-api-key-here  # Falls back to NVIDIA_API_KEY if not set
 RAIL_API_URL=https://integrate.api.nvidia.com/v1
-
-# Timeout for guardrails API calls in seconds (default: 10)
 GUARDRAILS_TIMEOUT=10
-
-# Enable/disable API usage (default: true)
-# If false, will only use pattern-based matching
 GUARDRAILS_USE_API=true
 ```
 
-**Note:** If `RAIL_API_KEY` is not set, the service will use `NVIDIA_API_KEY` as a fallback. If neither is set, the service will use pattern-based matching only.
-
-#### YAML Configuration
-
-Guardrails configuration is also defined in `data/config/guardrails/rails.yaml`:
-
-```yaml
-# Safety and compliance rules
-safety_rules:
-  - name: "jailbreak_detection"
-    patterns:
-      - "ignore previous instructions"
-      - "forget everything"
-      # ... more patterns
-    response: "I cannot ignore my instructions..."
-
-  - name: "safety_violations"
-    patterns:
-      - "operate forklift without training"
-      - "bypass safety protocols"
-      # ... more patterns
-    response: "Safety is our top priority..."
-```
-
-**Configuration Features:**
-- Pattern-based rule definitions
-- Custom response messages for each violation type
-- Monitoring and logging configuration
-- Conversation limits and constraints
-
 ### Integration
 
-Guardrails are integrated into the chat endpoint at two critical points:
-
-1. **Input Safety Check** (before processing):
-   ```python
-   input_safety = await guardrails_service.check_input_safety(req.message)
-   if not input_safety.is_safe:
-       return safety_response
-   ```
-
-2. **Output Safety Check** (after AI response):
-   ```python
-   output_safety = await guardrails_service.check_output_safety(ai_response)
-   if not output_safety.is_safe:
-       return safety_response
-   ```
-
-**Timeout Protection:**
-- Input check: 3-second timeout
-- Output check: 5-second timeout
-- Graceful degradation on timeout
+Guardrails are automatically integrated into the chat endpoint:
+- **Input Safety Check** - Validates user queries before processing (3s timeout)
+- **Output Safety Check** - Validates AI responses before returning (5s timeout)
+- **Metrics Tracking** - Logs method used, performance, and safety status
 
 ### Testing
 
-Comprehensive test suite available in `tests/unit/test_guardrails.py`:
-
 ```bash
-# Run guardrails tests
-python tests/unit/test_guardrails.py
+# Unit tests
+pytest tests/unit/test_guardrails_sdk.py -v
+
+# Integration tests (compares both implementations)
+pytest tests/integration/test_guardrails_comparison.py -v -s
+
+# Performance benchmarks
+pytest tests/integration/test_guardrails_comparison.py::test_performance_benchmark -v -s
 ```
 
-**Test Coverage:**
-- 18 test scenarios covering all violation categories
-- Legitimate query validation
-- Performance testing with concurrent requests
-- Response time measurement
+### Documentation
 
-**Test Categories:**
-- Jailbreak attempts (2 tests)
-- Safety violations (3 tests)
-- Security violations (3 tests)
-- Compliance violations (2 tests)
-- Off-topic queries (3 tests)
-- Legitimate warehouse queries (4 tests)
+**📖 For comprehensive documentation, see: [Guardrails Implementation Guide](docs/architecture/guardrails-implementation.md)**
 
-### Service Implementation
+The detailed guide includes:
+- Complete architecture overview
+- Implementation details (SDK vs Pattern-based)
+- All 88 guardrails patterns
+- API interface documentation
+- Configuration reference
+- Monitoring & metrics
+- Testing instructions
+- Troubleshooting guide
+- Future roadmap
 
-The guardrails service (`src/api/services/guardrails/guardrails_service.py`) provides:
-
-- **GuardrailsService** class with async methods
-- **API Integration** - Calls NVIDIA NeMo Guardrails API for intelligent validation
-- **Pattern-based Fallback** - Falls back to keyword/phrase matching if API unavailable
-- **Safety response generation** based on violation types
-- **Configuration loading** from YAML files
-- **Error handling** with graceful degradation
-- **Automatic fallback** - Seamlessly switches to pattern matching on API failures
-
-### Response Format
-
-When a violation is detected, the system returns:
-
-```json
-{
-  "reply": "Safety is our top priority. I cannot provide guidance...",
-  "route": "guardrails",
-  "intent": "safety_violation",
-  "context": {
-    "safety_violations": ["Safety violation: 'operate forklift without training'"]
-  },
-  "confidence": 0.9
-}
-```
-
-### Monitoring
-
-Guardrails activity is logged and monitored:
-
-- **Log Level**: INFO
-- **Conversation Logging**: Enabled
-- **Rail Hits Logging**: Enabled
-- **Metrics Tracked**:
-  - Conversation length
-  - Rail hits (violations detected)
-  - Response time
-  - Safety violations
-  - Compliance issues
-
-### Best Practices
-
-1. **Regular Updates**: Review and update patterns in `rails.yaml` based on new threats
-2. **Monitoring**: Monitor guardrails logs for patterns and trends
-3. **Testing**: Run test suite after configuration changes
-4. **Customization**: Adjust timeout values based on your infrastructure
-5. **Response Messages**: Keep safety responses professional and helpful
-
-### API Integration Details
-
-The guardrails service now integrates with the NVIDIA NeMo Guardrails API:
-
-1. **Primary Method**: API-based validation using NVIDIA's guardrails endpoint
-   - Uses `/chat/completions` endpoint with safety-focused prompts
-   - Leverages LLM-based violation detection for more intelligent analysis
-   - Returns structured JSON with violation details and confidence scores
-
-2. **Fallback Method**: Pattern-based matching
-   - Automatically used if API is unavailable or times out
-   - Uses keyword/phrase matching for common violation patterns
-   - Ensures system continues to function even without API access
-
-3. **Hybrid Approach**: Best of both worlds
-   - API provides intelligent, context-aware validation
-   - Pattern matching ensures reliability and low latency fallback
-   - Seamless switching between methods based on availability
-
-### Future Enhancements
-
-Planned improvements:
-- Enhanced API integration with dedicated guardrails endpoints
-- Machine learning for adaptive threat detection
-- Enhanced monitoring dashboards
-- Custom guardrails rules via API configuration
-
-**Related Documentation:**
-- Configuration file: `data/config/guardrails/rails.yaml`
-- Service implementation: `src/api/services/guardrails/guardrails_service.py`
-- Test suite: `tests/unit/test_guardrails.py`
+**Key Files:**
+- Service: `src/api/services/guardrails/guardrails_service.py`
+- SDK Wrapper: `src/api/services/guardrails/nemo_sdk_service.py`
+- Colang Config: `data/config/guardrails/rails.co`
+- NeMo Config: `data/config/guardrails/config.yml`
+- Legacy YAML: `data/config/guardrails/rails.yaml`
 
 ## Development Guide
 

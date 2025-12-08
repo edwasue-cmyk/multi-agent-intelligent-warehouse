@@ -1,9 +1,12 @@
 """
 NeMo Guardrails Service for Warehouse Operations
 
-Provides integration with NVIDIA NeMo Guardrails API for content safety,
-security, and compliance protection. Falls back to pattern-based matching
-if API is unavailable.
+Provides integration with NVIDIA NeMo Guardrails for content safety,
+security, and compliance protection. Supports multiple implementation modes:
+1. NeMo Guardrails SDK (with Colang) - Phase 2 implementation
+2. Pattern-based matching - Fallback/legacy implementation
+
+Feature flag: USE_NEMO_GUARDRAILS_SDK (default: false)
 """
 
 import logging
@@ -21,6 +24,13 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+# Try to import NeMo Guardrails SDK service
+try:
+    from .nemo_sdk_service import NeMoGuardrailsSDKService, NEMO_SDK_AVAILABLE
+except ImportError:
+    NEMO_SDK_AVAILABLE = False
+    logger.warning("NeMo Guardrails SDK service not available")
+
 
 @dataclass
 class GuardrailsConfig:
@@ -33,6 +43,7 @@ class GuardrailsConfig:
     )
     timeout: int = int(os.getenv("GUARDRAILS_TIMEOUT", "10"))
     use_api: bool = os.getenv("GUARDRAILS_USE_API", "true").lower() == "true"
+    use_sdk: bool = os.getenv("USE_NEMO_GUARDRAILS_SDK", "false").lower() == "true"
     model_name: str = "nvidia/llama-3-70b-instruct"
     temperature: float = 0.1
     max_tokens: int = 1000
@@ -52,14 +63,44 @@ class GuardrailsResult:
 
 
 class GuardrailsService:
-    """Service for NeMo Guardrails integration with API support."""
+    """
+    Service for NeMo Guardrails integration with multiple implementation modes.
+    
+    Supports:
+    - NeMo Guardrails SDK (with Colang) - Phase 2 implementation
+    - Pattern-based matching - Fallback/legacy implementation
+    
+    Implementation is selected via USE_NEMO_GUARDRAILS_SDK environment variable.
+    """
 
     def __init__(self, config: Optional[GuardrailsConfig] = None):
         self.config = config or GuardrailsConfig()
         self.rails_config = None
         self.api_available = False
-        self._load_rails_config()
-        self._initialize_api_client()
+        self.sdk_service: Optional[NeMoGuardrailsSDKService] = None
+        self.use_sdk = False
+        
+        # Determine which implementation to use
+        if self.config.use_sdk and NEMO_SDK_AVAILABLE:
+            try:
+                self.sdk_service = NeMoGuardrailsSDKService()
+                self.use_sdk = True
+                logger.info("Using NeMo Guardrails SDK implementation (Phase 2)")
+            except Exception as e:
+                logger.warning(f"Failed to initialize SDK service, falling back to pattern matching: {e}")
+                self.use_sdk = False
+        else:
+            if self.config.use_sdk and not NEMO_SDK_AVAILABLE:
+                logger.warning(
+                    "USE_NEMO_GUARDRAILS_SDK is enabled but SDK is not available. "
+                    "Falling back to pattern-based matching."
+                )
+            logger.info("Using pattern-based guardrails implementation (legacy)")
+        
+        # Initialize legacy components if not using SDK
+        if not self.use_sdk:
+            self._load_rails_config()
+            self._initialize_api_client()
 
     def _load_rails_config(self):
         """Load the guardrails configuration from YAML file."""
@@ -245,11 +286,31 @@ class GuardrailsService:
     async def check_input_safety(
         self, user_input: str, context: Optional[Dict[str, Any]] = None
     ) -> GuardrailsResult:
-        """Check if user input is safe and compliant."""
+        """
+        Check if user input is safe and compliant.
+        
+        Uses SDK implementation if enabled, otherwise falls back to pattern-based matching.
+        """
         start_time = time.time()
 
         try:
-            # Try API first if available
+            # Use SDK implementation if enabled
+            if self.use_sdk and self.sdk_service:
+                try:
+                    result = await self.sdk_service.check_input_safety(user_input, context)
+                    # Convert SDK result to GuardrailsResult
+                    return GuardrailsResult(
+                        is_safe=result.get("is_safe", True),
+                        violations=result.get("violations"),
+                        confidence=result.get("confidence", 0.95),
+                        processing_time=result.get("processing_time", time.time() - start_time),
+                        method_used="sdk",
+                    )
+                except Exception as e:
+                    logger.warning(f"SDK input check failed, falling back to pattern matching: {e}")
+                    # Fall through to pattern matching
+
+            # Legacy implementation: Try API first if available
             if self.api_available and self.config.use_api:
                 api_result = await self._check_safety_via_api(user_input, "input")
                 if api_result is not None:
@@ -410,11 +471,31 @@ class GuardrailsService:
     async def check_output_safety(
         self, response: str, context: Optional[Dict[str, Any]] = None
     ) -> GuardrailsResult:
-        """Check if AI response is safe and compliant."""
+        """
+        Check if AI response is safe and compliant.
+        
+        Uses SDK implementation if enabled, otherwise falls back to pattern-based matching.
+        """
         start_time = time.time()
 
         try:
-            # Try API first if available
+            # Use SDK implementation if enabled
+            if self.use_sdk and self.sdk_service:
+                try:
+                    result = await self.sdk_service.check_output_safety(response, context)
+                    # Convert SDK result to GuardrailsResult
+                    return GuardrailsResult(
+                        is_safe=result.get("is_safe", True),
+                        violations=result.get("violations"),
+                        confidence=result.get("confidence", 0.95),
+                        processing_time=result.get("processing_time", time.time() - start_time),
+                        method_used="sdk",
+                    )
+                except Exception as e:
+                    logger.warning(f"SDK output check failed, falling back to pattern matching: {e}")
+                    # Fall through to pattern matching
+
+            # Legacy implementation: Try API first if available
             if self.api_available and self.config.use_api:
                 api_result = await self._check_safety_via_api(response, "output")
                 if api_result is not None:
@@ -588,7 +669,9 @@ class GuardrailsService:
         )
 
     async def close(self):
-        """Close the API client."""
+        """Close the service and clean up resources."""
+        if self.sdk_service:
+            await self.sdk_service.close()
         if hasattr(self, "api_client"):
             await self.api_client.aclose()
 

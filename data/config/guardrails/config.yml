@@ -1,0 +1,100 @@
+# NeMo Guardrails Configuration
+# Warehouse Operational Assistant
+# Phase 2: Parallel Implementation
+
+# =============================================================================
+# Models Configuration
+# =============================================================================
+# Note: For Phase 2, we use OpenAI-compatible endpoints (NVIDIA NIM supports this)
+# The SDK will use pattern matching via Colang for guardrails validation
+models:
+  - type: main
+    engine: openai
+    model: nvidia/llama-3-70b-instruct
+    parameters:
+      api_key: ${NVIDIA_API_KEY}
+      api_base: ${RAIL_API_URL:https://integrate.api.nvidia.com/v1}
+      temperature: 0.1
+      max_tokens: 1000
+      top_p: 0.9
+
+  - type: embedding
+    engine: openai
+    model: nvidia/nv-embedqa-e5-v5
+    parameters:
+      api_key: ${NVIDIA_API_KEY}
+      api_base: ${RAIL_API_URL:https://integrate.api.nvidia.com/v1}
+
+# =============================================================================
+# Rails Configuration
+# =============================================================================
+rails:
+  # Input rails - checked before processing user input
+  input:
+    flows:
+      - check jailbreak
+      - check safety violations
+      - check security violations
+      - check compliance violations
+      - check off-topic queries
+
+  # Output rails - checked after AI generates response
+  # Note: Output validation is handled in the service layer for now
+  # Can be enhanced with Python actions in the future
+  # output:
+  #   flows:
+  #     - self check facts
+
+  # Topical rails - control conversation topics
+  config:
+    topics:
+      - warehouse operations
+      - inventory management
+      - safety compliance
+      - equipment operations
+
+# =============================================================================
+# Instructions
+# =============================================================================
+instructions:
+  - type: general
+    content: |
+      You are a helpful warehouse operational assistant. You help with inventory management,
+      operations coordination, and safety compliance. Always be professional, accurate,
+      and follow safety protocols. Never provide information that could compromise
+      warehouse security or safety.
+
+  - type: safety
+    content: |
+      Safety is paramount in warehouse operations. Always prioritize safety protocols
+      and never suggest actions that could endanger workers or equipment. If asked
+      about potentially dangerous operations, always recommend consulting with safety
+      personnel first.
+
+  - type: compliance
+    content: |
+      Ensure all recommendations comply with warehouse policies, safety regulations,
+      and industry standards. Never suggest actions that violate compliance requirements.
+
+# =============================================================================
+# Limits and Constraints
+# =============================================================================
+limits:
+  max_turns: 50
+  max_tokens_per_turn: 1000
+  max_tokens_per_conversation: 10000
+
+# =============================================================================
+# Monitoring and Logging
+# =============================================================================
+monitoring:
+  log_level: INFO
+  log_conversations: true
+  log_rail_hits: true
+  metrics:
+    - conversation_length
+    - rail_hits
+    - response_time
+    - safety_violations
+    - compliance_issues
+

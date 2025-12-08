@@ -37,6 +37,8 @@ class RequestMetrics:
     error: Optional[str] = None
     tool_count: int = 0
     tool_execution_time_ms: float = 0.0
+    guardrails_method: Optional[str] = None  # "sdk", "pattern_matching", "api", or None
+    guardrails_time_ms: Optional[float] = None  # Time spent in guardrails check
 
 
 class PerformanceMonitor:
@@ -65,7 +67,9 @@ class PerformanceMonitor:
         cache_hit: bool = False,
         error: Optional[str] = None,
         tool_count: int = 0,
-        tool_execution_time_ms: float = 0.0
+        tool_execution_time_ms: float = 0.0,
+        guardrails_method: Optional[str] = None,
+        guardrails_time_ms: Optional[float] = None
     ) -> None:
         """End tracking a request and record metrics."""
         async with self._lock:
@@ -82,6 +86,22 @@ class PerformanceMonitor:
             request_metric.error = error
             request_metric.tool_count = tool_count
             request_metric.tool_execution_time_ms = tool_execution_time_ms
+            request_metric.guardrails_method = guardrails_method
+            request_metric.guardrails_time_ms = guardrails_time_ms
+
+            # Record guardrails metrics if available
+            if guardrails_method:
+                await self._record_metric(
+                    "guardrails_check",
+                    1.0,
+                    {"method": guardrails_method}
+                )
+            if guardrails_time_ms is not None:
+                await self._record_metric(
+                    "guardrails_latency_ms",
+                    guardrails_time_ms,
+                    {"method": guardrails_method or "unknown"}
+                )
 
             # Record metrics
             await self._record_metric(
