@@ -316,7 +316,7 @@ class OperationsActionTools:
     async def assign_task(
         self,
         task_id: str,
-        worker_id: str,
+        worker_id: Optional[str] = None,
         assignment_type: str = "manual",
     ) -> Dict[str, Any]:
         """
@@ -324,13 +324,26 @@ class OperationsActionTools:
 
         Args:
             task_id: Task ID to assign
-            worker_id: Worker ID to assign task to
+            worker_id: Worker ID to assign task to (optional - if None, task remains unassigned)
             assignment_type: Type of assignment (manual, automatic)
 
         Returns:
             Dict with assignment result
         """
         try:
+            # If no worker_id provided, skip assignment but return success
+            # Task will remain in 'queued' status until manually assigned
+            if not worker_id:
+                logger.info(f"Task {task_id} created but not assigned (no worker_id provided). Task is queued and ready for assignment.")
+                return {
+                    "success": True,
+                    "task_id": task_id,
+                    "worker_id": None,
+                    "assignment_type": assignment_type,
+                    "status": "queued",
+                    "message": "Task created successfully but not assigned. Please assign a worker manually or specify worker_id.",
+                }
+
             if not self.wms_service:
                 await self.initialize()
 
@@ -349,11 +362,14 @@ class OperationsActionTools:
                     "status": "assigned",
                 }
             else:
+                error_msg = result.get("error", "Failed to update work queue entry") if result else "Failed to update work queue entry"
+                logger.warning(f"Failed to assign task {task_id} to worker {worker_id}: {error_msg}")
                 return {
                     "success": False,
                     "task_id": task_id,
                     "worker_id": worker_id,
-                    "error": "Failed to update work queue entry",
+                    "error": error_msg,
+                    "status": "queued",  # Task remains queued if assignment fails
                 }
         except Exception as e:
             logger.error(f"Failed to assign task: {e}")
@@ -362,6 +378,7 @@ class OperationsActionTools:
                 "task_id": task_id,
                 "worker_id": worker_id,
                 "error": str(e),
+                "status": "queued",  # Task remains queued if assignment fails
             }
 
     async def get_task_status(

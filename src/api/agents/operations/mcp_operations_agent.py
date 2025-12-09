@@ -857,6 +857,41 @@ Return only valid JSON.""",
                     if dep_result:
                         break  # Found the dependency, no need to check others
             
+            # Skip tool execution if required parameters are missing
+            if tool_name == "assign_task" and (arguments.get("task_id") is None or arguments.get("task_id") == "None"):
+                logger.warning(f"Skipping {tool_name} - task_id is required but not provided")
+                result_dict = {
+                    "tool_name": tool_name,
+                    "success": False,
+                    "error": "task_id is required but not provided",
+                    "execution_time": datetime.utcnow().isoformat(),
+                }
+                return (tool_id, result_dict)
+            
+            if tool_name == "assign_task" and (arguments.get("worker_id") is None or arguments.get("worker_id") == "None"):
+                logger.info(f"Executing {tool_name} without worker_id - task will remain queued")
+                # Continue execution - the tool will handle None worker_id gracefully
+            
+            if tool_name in ["assign_equipment", "dispatch_equipment"]:
+                if arguments.get("task_id") is None or arguments.get("task_id") == "None":
+                    logger.warning(f"Skipping {tool_name} - task_id is required but not provided")
+                    result_dict = {
+                        "tool_name": tool_name,
+                        "success": False,
+                        "error": "task_id is required but not provided (should come from create_task result)",
+                        "execution_time": datetime.utcnow().isoformat(),
+                    }
+                    return (tool_id, result_dict)
+                if arguments.get("asset_id") is None or arguments.get("asset_id") == "None":
+                    logger.warning(f"Skipping {tool_name} - asset_id is required but not provided (should come from get_equipment_status result)")
+                    result_dict = {
+                        "tool_name": tool_name,
+                        "success": False,
+                        "error": "asset_id is required but not provided (should come from get_equipment_status result)",
+                        "execution_time": datetime.utcnow().isoformat(),
+                    }
+                    return (tool_id, result_dict)
+
             try:
                 logger.info(
                     f"Executing MCP tool: {tool_name} with arguments: {arguments}"

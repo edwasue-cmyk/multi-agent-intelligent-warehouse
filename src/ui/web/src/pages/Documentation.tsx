@@ -680,18 +680,18 @@ const Documentation: React.FC = () => {
               🛡️ Content Safety & Compliance Protection
             </Typography>
             <Typography variant="body1" sx={{ mb: 2 }}>
-              The system implements <strong>NVIDIA NeMo Guardrails</strong> to ensure content safety, security, and compliance 
-              for all LLM inputs and outputs. This provides enterprise-grade protection against harmful content, policy violations, 
-              and security threats.
+              The system implements <strong>NVIDIA NeMo Guardrails</strong> with dual implementation support:
+              <strong> NeMo Guardrails SDK</strong> (with Colang) for intelligent validation and <strong>pattern-based matching</strong> 
+              as a fast fallback. All user inputs and AI responses are validated to ensure safe and compliant interactions.
             </Typography>
             <Alert severity="success" sx={{ mb: 3 }}>
               <AlertTitle>✅ Production Ready</AlertTitle>
               <Typography variant="body2">
-                • Pattern-based content filtering<br/>
-                • Security threat detection<br/>
-                • Compliance violation prevention<br/>
+                • Dual implementation: SDK (Colang) + Pattern-based fallback<br/>
+                • 88 protection patterns across 5 categories<br/>
                 • Real-time input/output validation<br/>
-                • Configurable policy enforcement
+                • Automatic fallback on errors<br/>
+                • Comprehensive monitoring and metrics
               </Typography>
             </Alert>
           </Box>
@@ -704,11 +704,10 @@ const Documentation: React.FC = () => {
               <Card variant="outlined">
                 <CardContent>
                   <Typography variant="h6" gutterBottom color="primary">
-                    Content Safety
+                    Jailbreak Detection (17 patterns)
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Filters harmful, toxic, or inappropriate content from user inputs and AI responses. 
-                    Protects against profanity, hate speech, and offensive language.
+                    Prevents attempts to override system instructions, roleplay, or bypass safety protocols.
                   </Typography>
                 </CardContent>
               </Card>
@@ -717,11 +716,10 @@ const Documentation: React.FC = () => {
               <Card variant="outlined">
                 <CardContent>
                   <Typography variant="h6" gutterBottom color="primary">
-                    Security Protection
+                    Safety Violations (13 patterns)
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Detects and prevents security threats including injection attacks, prompt manipulation, 
-                    and unauthorized access attempts.
+                    Blocks unsafe operational guidance, equipment operation without training, and bypassing safety protocols.
                   </Typography>
                 </CardContent>
               </Card>
@@ -730,11 +728,10 @@ const Documentation: React.FC = () => {
               <Card variant="outlined">
                 <CardContent>
                   <Typography variant="h6" gutterBottom color="primary">
-                    Compliance Enforcement
+                    Security Violations (15 patterns)
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Ensures compliance with warehouse safety regulations, operational policies, and 
-                    industry standards. Prevents violations of safety protocols.
+                    Prevents requests for security codes, access codes, restricted areas, and unauthorized access attempts.
                   </Typography>
                 </CardContent>
               </Card>
@@ -743,11 +740,22 @@ const Documentation: React.FC = () => {
               <Card variant="outlined">
                 <CardContent>
                   <Typography variant="h6" gutterBottom color="primary">
-                    Policy Management
+                    Compliance Violations (12 patterns)
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Configurable policy rules defined in YAML format. Easy to customize for different 
-                    warehouse environments and compliance requirements.
+                    Ensures adherence to safety regulations, prevents skipping inspections, and blocks policy circumvention.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography variant="h6" gutterBottom color="primary">
+                    Off-Topic Queries (13 patterns)
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Redirects non-warehouse related queries (weather, jokes, cooking, etc.) to warehouse operations topics.
                   </Typography>
                 </CardContent>
               </Card>
@@ -755,38 +763,27 @@ const Documentation: React.FC = () => {
           </Grid>
 
           <Typography variant="h6" gutterBottom>
-            🔧 Implementation Details
+            🔧 Implementation
           </Typography>
           <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <Card variant="outlined">
                 <CardContent>
-                  <Typography variant="subtitle1" gutterBottom>Configuration</Typography>
-                  <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
-                    data/config/guardrails/<br/>
-                    rails.yaml
+                  <Typography variant="subtitle1" gutterBottom>NeMo Guardrails SDK</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Intelligent, programmable guardrails using NVIDIA's official SDK with Colang configuration. 
+                    Enabled via <code>USE_NEMO_GUARDRAILS_SDK=true</code> environment variable.
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <Card variant="outlined">
                 <CardContent>
-                  <Typography variant="subtitle1" gutterBottom>Service</Typography>
-                  <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
-                    src/api/services/<br/>
-                    guardrails/
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Card variant="outlined">
-                <CardContent>
-                  <Typography variant="subtitle1" gutterBottom>Integration</Typography>
-                  <Typography variant="body2">
-                    Automatically applied to all chat endpoints and agent responses. 
-                    Transparent to end users with graceful error handling.
+                  <Typography variant="subtitle1" gutterBottom>Pattern-Based Fallback</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Fast, lightweight keyword/phrase matching. Automatically used if SDK is unavailable or fails. 
+                    Ensures system continues to function reliably.
                   </Typography>
                 </CardContent>
               </Card>
@@ -794,10 +791,10 @@ const Documentation: React.FC = () => {
           </Grid>
 
           <Alert severity="info" sx={{ mb: 2 }}>
-            <AlertTitle>Configuration Example</AlertTitle>
-            <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.875rem', mt: 1 }}>
-              Guardrails are configured via YAML files in <code>data/config/guardrails/</code>. 
-              Policies can be customized for specific warehouse requirements and compliance needs.
+            <AlertTitle>📖 Detailed Documentation</AlertTitle>
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              For comprehensive documentation including configuration, API interface, monitoring, and troubleshooting, 
+              see the <Link href="https://github.com/NVIDIA-AI-Blueprints/Multi-Agent-Intelligent-Warehouse/blob/main/docs/architecture/guardrails-implementation.md" target="_blank" rel="noopener">Guardrails Implementation Guide</Link>.
             </Typography>
           </Alert>
         </AccordionDetails>

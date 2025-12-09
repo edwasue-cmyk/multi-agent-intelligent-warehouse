@@ -179,8 +179,16 @@ class MCPParameterValidator:
             for param_name, param_value in arguments.items():
                 if param_name in properties:
                     param_schema = properties[param_name]
+                    is_required = param_name in required_params
+                    
+                    # Skip validation for None values of optional parameters
+                    # This allows tools like get_equipment_status to work with asset_id=None
+                    if param_value is None and not is_required:
+                        validated_arguments[param_name] = None
+                        continue
+                    
                     validation_result = await self._validate_parameter(
-                        param_name, param_value, param_schema, tool_name
+                        param_name, param_value, param_schema, tool_name, is_required
                     )
 
                     if validation_result["valid"]:
@@ -247,11 +255,17 @@ class MCPParameterValidator:
         param_value: Any,
         param_schema: Dict[str, Any],
         tool_name: str,
+        is_required: bool = False,
     ) -> Dict[str, Any]:
         """Validate a single parameter."""
         try:
             # Get parameter type
             param_type = param_schema.get("type", "string")
+
+            # Allow None for optional parameters (not required)
+            # This allows tools to work with optional parameters like asset_id in get_equipment_status
+            if param_value is None and not is_required:
+                return {"valid": True, "value": None, "issue": None}
 
             # Type validation
             if not self._validate_type(param_value, param_type):
@@ -268,32 +282,36 @@ class MCPParameterValidator:
                     ),
                 }
 
-            # Format validation
-            if param_type == "string":
+            # Skip format/length/range validation for None values (already handled above)
+            if param_value is None:
+                return {"valid": True, "value": None, "issue": None}
+
+            # Format validation (skip if None - already handled above)
+            if param_type == "string" and param_value is not None:
                 format_validation = self._validate_string_format(
                     param_name, param_value, param_schema
                 )
                 if not format_validation["valid"]:
                     return format_validation
 
-            # Range validation
-            if param_type in ["integer", "number"]:
+            # Range validation (skip if None - already handled above)
+            if param_type in ["integer", "number"] and param_value is not None:
                 range_validation = self._validate_range(
                     param_name, param_value, param_schema
                 )
                 if not range_validation["valid"]:
                     return range_validation
 
-            # Length validation
-            if param_type == "string":
+            # Length validation (skip if None - already handled above)
+            if param_type == "string" and param_value is not None:
                 length_validation = self._validate_length(
                     param_name, param_value, param_schema
                 )
                 if not length_validation["valid"]:
                     return length_validation
 
-            # Enum validation
-            if "enum" in param_schema:
+            # Enum validation (skip if None - already handled above)
+            if "enum" in param_schema and param_value is not None:
                 enum_validation = self._validate_enum(
                     param_name, param_value, param_schema
                 )
@@ -496,8 +514,8 @@ class MCPParameterValidator:
         """Validate equipment-specific business rules."""
         issues = []
 
-        # Equipment ID format validation
-        if "asset_id" in arguments:
+        # Equipment ID format validation (skip if None - it's optional)
+        if "asset_id" in arguments and arguments["asset_id"] is not None:
             asset_id = arguments["asset_id"]
             if not self.validation_patterns[ParameterType.EQUIPMENT_ID.value].match(
                 asset_id
@@ -512,8 +530,8 @@ class MCPParameterValidator:
                     )
                 )
 
-        # Equipment status validation
-        if "status" in arguments:
+        # Equipment status validation (skip if None - it's optional)
+        if "status" in arguments and arguments["status"] is not None:
             status = arguments["status"]
             valid_statuses = self.business_rules["equipment_status"]["valid_values"]
             if status not in valid_statuses:
@@ -526,6 +544,22 @@ class MCPParameterValidator:
                         provided_value=status,
                     )
                 )
+        
+        # Equipment type validation (skip if None - it's optional, but if provided should be valid)
+        if "equipment_type" in arguments and arguments["equipment_type"] is not None:
+            equipment_type = arguments["equipment_type"]
+            if "equipment_type" in self.business_rules:
+                valid_types = self.business_rules["equipment_type"]["valid_values"]
+                if equipment_type not in valid_types:
+                    issues.append(
+                        ValidationIssue(
+                            parameter="equipment_type",
+                            level=ValidationLevel.WARNING,
+                            message=f"Equipment type '{equipment_type}' is not in standard list",
+                            suggestion=f"Valid types are: {', '.join(valid_types)}",
+                            provided_value=equipment_type,
+                        )
+                    )
 
         return issues
 
@@ -535,8 +569,8 @@ class MCPParameterValidator:
         """Validate task-specific business rules."""
         issues = []
 
-        # Task ID format validation
-        if "task_id" in arguments:
+        # Task ID format validation (skip if None - it's optional)
+        if "task_id" in arguments and arguments["task_id"] is not None:
             task_id = arguments["task_id"]
             if not self.validation_patterns[ParameterType.TASK_ID.value].match(task_id):
                 issues.append(

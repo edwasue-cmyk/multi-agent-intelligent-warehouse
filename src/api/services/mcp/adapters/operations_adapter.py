@@ -137,7 +137,7 @@ class OperationsMCPAdapter(MCPAdapter):
         # Register assign_task tool
         self.tools["assign_task"] = MCPTool(
             name="assign_task",
-            description="Assign a task to a worker",
+            description="Assign a task to a worker. If worker_id is not provided, task will remain queued for manual assignment.",
             tool_type=MCPToolType.FUNCTION,
             parameters={
                 "type": "object",
@@ -145,14 +145,14 @@ class OperationsMCPAdapter(MCPAdapter):
                     "task_id": {"type": "string", "description": "Task ID to assign"},
                     "worker_id": {
                         "type": "string",
-                        "description": "Worker ID to assign task to",
+                        "description": "Worker ID to assign task to (optional - if not provided, task remains queued)",
                     },
                     "assignment_type": {
                         "type": "string",
                         "description": "Type of assignment (manual, automatic)",
                     },
                 },
-                "required": ["task_id", "worker_id"],
+                "required": ["task_id"],  # worker_id is now optional
             },
             handler=self._handle_assign_task,
         )
@@ -231,9 +231,10 @@ class OperationsMCPAdapter(MCPAdapter):
     async def _handle_assign_task(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Handle assign_task tool execution."""
         try:
+            # worker_id is now optional - if not provided, task will remain queued
             result = await self.operations_tools.assign_task(
                 task_id=arguments["task_id"],
-                worker_id=arguments["worker_id"],
+                worker_id=arguments.get("worker_id"),  # Optional - can be None
                 assignment_type=arguments.get("assignment_type", "manual"),
             )
             return result
