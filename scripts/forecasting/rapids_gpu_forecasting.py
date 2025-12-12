@@ -46,9 +46,9 @@ from sklearn.svm import SVR
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error
-    
-    # Check if CUDA is available for XGBoost GPU support
-    CUDA_AVAILABLE = False
+
+# Check if CUDA is available for XGBoost GPU support (only if RAPIDS not available)
+if not RAPIDS_AVAILABLE:
     try:
         # Check if nvidia-smi is available
         import subprocess
