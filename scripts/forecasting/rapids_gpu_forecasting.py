@@ -291,6 +291,34 @@ class RAPIDSForecastingAgent:
         X_train_scaled = self.scaler.fit_transform(X_train)
         X_test_scaled = self.scaler.transform(X_test)
         
+        # Convert cuDF arrays to NumPy for sklearn models that don't support cuDF
+        if RAPIDS_AVAILABLE:
+            # Check if arrays are cuDF/cuML arrays and convert to NumPy
+            if hasattr(X_train_scaled, 'get'):
+                X_train_scaled_np = X_train_scaled.get()
+                X_test_scaled_np = X_test_scaled.get()
+            elif hasattr(X_train_scaled, 'to_numpy'):
+                X_train_scaled_np = X_train_scaled.to_numpy()
+                X_test_scaled_np = X_test_scaled.to_numpy()
+            else:
+                X_train_scaled_np = X_train_scaled
+                X_test_scaled_np = X_test_scaled
+            
+            if hasattr(y_train, 'get'):
+                y_train_np = y_train.get()
+                y_test_np = y_test.get()
+            elif hasattr(y_train, 'to_numpy'):
+                y_train_np = y_train.to_numpy()
+                y_test_np = y_test.to_numpy()
+            else:
+                y_train_np = y_train
+                y_test_np = y_test
+        else:
+            X_train_scaled_np = X_train_scaled
+            X_test_scaled_np = X_test_scaled
+            y_train_np = y_train
+            y_test_np = y_test
+        
         models = {}
         metrics = {}
         
@@ -392,7 +420,7 @@ class RAPIDSForecastingAgent:
                 'mae': mean_absolute_error(y_test, xgb_pred)
             }
         
-        # 4. Gradient Boosting
+        # 4. Gradient Boosting (sklearn - needs NumPy arrays)
         logger.info("🌳 Training Gradient Boosting...")
         gb_model = GradientBoostingRegressor(
             n_estimators=100,
@@ -400,13 +428,13 @@ class RAPIDSForecastingAgent:
             learning_rate=0.1,
             random_state=self.config['random_state']
         )
-        gb_model.fit(X_train_scaled, y_train)
-        gb_pred = gb_model.predict(X_test_scaled)
+        gb_model.fit(X_train_scaled_np, y_train_np)
+        gb_pred = gb_model.predict(X_test_scaled_np)
         
         models['gradient_boosting'] = gb_model
         metrics['gradient_boosting'] = {
-            'mse': mean_squared_error(y_test, gb_pred),
-            'mae': mean_absolute_error(y_test, gb_pred)
+            'mse': mean_squared_error(y_test_np, gb_pred),
+            'mae': mean_absolute_error(y_test_np, gb_pred)
         }
         
         # 5. Ridge Regression
@@ -439,8 +467,8 @@ class RAPIDSForecastingAgent:
             }
         else:
             metrics['svr'] = {
-                'mse': mean_squared_error(y_test, svr_pred),
-                'mae': mean_absolute_error(y_test, svr_pred)
+                'mse': mean_squared_error(y_test_np, svr_pred),
+                'mae': mean_absolute_error(y_test_np, svr_pred)
             }
         
         self.models = models
