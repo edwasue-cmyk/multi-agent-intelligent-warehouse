@@ -104,26 +104,30 @@ def get_pypi_info(package_name: str, version: Optional[str] = None) -> Dict:
             project_urls = info.get('project_urls', {})
             license_url = project_urls.get('License', '') or info.get('home_page', '')
             
+            download_url = f"https://pypi.org/project/{package_name}/"
             return {
                 'name': info.get('name', package_name),
                 'version': info.get('version', version or 'N/A'),
                 'license': license_info or 'N/A',
-                'license_url': license_url or f"https://pypi.org/project/{package_name}/",
+                'license_url': license_url or download_url,
                 'author': author or 'N/A',
-                'home_page': info.get('home_page', f"https://pypi.org/project/{package_name}/"),
+                'home_page': info.get('home_page', download_url),
                 'source': 'PyPI',
-                'distribution': 'pip'
+                'distribution': 'pip',
+                'download_location': download_url
             }
     except Exception as e:
+        download_url = f"https://pypi.org/project/{package_name}/"
         return {
             'name': package_name,
             'version': version or 'N/A',
             'license': 'N/A',
-            'license_url': f"https://pypi.org/project/{package_name}/",
+            'license_url': download_url,
             'author': 'N/A',
-            'home_page': f"https://pypi.org/project/{package_name}/",
+            'home_page': download_url,
             'source': 'PyPI',
             'distribution': 'pip',
+            'download_location': download_url,
             'error': str(e)
         }
 
@@ -181,26 +185,30 @@ def get_npm_info(package_name: str, version: Optional[str] = None) -> Dict:
             if 'github.com' in repo_url:
                 license_url = f"{repo_url}/blob/main/LICENSE" if repo_url else license_url
             
+            download_url = f"https://www.npmjs.com/package/{package_name}"
             return {
                 'name': package_name,
                 'version': version_data.get('version', version or 'N/A'),
                 'license': license_info or 'N/A',
                 'license_url': license_url,
                 'author': author or 'N/A',
-                'home_page': homepage or f"https://www.npmjs.com/package/{package_name}",
+                'home_page': homepage or download_url,
                 'source': 'npm',
-                'distribution': 'npm'
+                'distribution': 'npm',
+                'download_location': download_url
             }
     except Exception as e:
+        download_url = f"https://www.npmjs.com/package/{package_name}"
         return {
             'name': package_name,
             'version': version or 'N/A',
             'license': 'N/A',
-            'license_url': f"https://www.npmjs.com/package/{package_name}",
+            'license_url': download_url,
             'author': 'N/A',
-            'home_page': f"https://www.npmjs.com/package/{package_name}",
+            'home_page': download_url,
             'source': 'npm',
             'distribution': 'npm',
+            'download_location': download_url,
             'error': str(e)
         }
 
@@ -428,20 +436,22 @@ def main():
         f.write("- Queries PyPI and npm registries for package metadata\n")
         f.write("- Removes duplicates and formats the data into this table\n\n")
         f.write("## Python Packages (PyPI)\n\n")
-        f.write("| Package Name | Version | License | License URL | Author | Source | Distribution Method |\n")
-        f.write("|--------------|---------|---------|-------------|--------|--------|---------------------|\n")
+        f.write("| Package Name | Version | License | License URL | Author | Source | Distribution Method | Download Location |\n")
+        f.write("|--------------|---------|---------|-------------|--------|--------|---------------------|-------------------|\n")
         
         python_packages = [p for p in inventory if p.get('source') == 'PyPI']
         for pkg in sorted(python_packages, key=lambda x: x['name'].lower()):
-            f.write(f"| {pkg['name']} | {pkg['version']} | {pkg['license']} | {pkg['license_url']} | {pkg['author']} | {pkg['source']} | {pkg['distribution']} |\n")
+            download_loc = pkg.get('download_location', f"https://pypi.org/project/{pkg['name']}/")
+            f.write(f"| {pkg['name']} | {pkg['version']} | {pkg['license']} | {pkg['license_url']} | {pkg['author']} | {pkg['source']} | {pkg['distribution']} | {download_loc} |\n")
         
         f.write("\n## Node.js Packages (npm)\n\n")
-        f.write("| Package Name | Version | License | License URL | Author | Source | Distribution Method |\n")
-        f.write("|--------------|---------|---------|-------------|--------|--------|---------------------|\n")
+        f.write("| Package Name | Version | License | License URL | Author | Source | Distribution Method | Download Location |\n")
+        f.write("|--------------|---------|---------|-------------|--------|--------|---------------------|-------------------|\n")
         
         npm_packages = [p for p in inventory if p.get('source') == 'npm']
         for pkg in sorted(npm_packages, key=lambda x: x['name'].lower()):
-            f.write(f"| {pkg['name']} | {pkg['version']} | {pkg['license']} | {pkg['license_url']} | {pkg['author']} | {pkg['source']} | {pkg['distribution']} |\n")
+            download_loc = pkg.get('download_location', f"https://www.npmjs.com/package/{pkg['name']}")
+            f.write(f"| {pkg['name']} | {pkg['version']} | {pkg['license']} | {pkg['license_url']} | {pkg['author']} | {pkg['source']} | {pkg['distribution']} | {download_loc} |\n")
         
         f.write("\n## Notes\n\n")
         f.write("- **Source**: Location where the package was downloaded from (PyPI, npm)\n")
