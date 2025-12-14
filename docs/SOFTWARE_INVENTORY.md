@@ -20,7 +20,9 @@ python scripts/tools/generate_software_inventory.py
 
 The script automatically:
 - Parses `requirements.txt`, `requirements.docker.txt`, and `scripts/requirements_synthetic_data.txt`
-- Parses `package.json` for Node.js dependencies
+- Parses `pyproject.toml` for Python dependencies and dev dependencies
+- Parses root `package.json` for Node.js dev dependencies (tooling)
+- Parses `src/ui/web/package.json` for frontend dependencies (React, Material-UI, etc.)
 - Queries PyPI and npm registries for package metadata
 - Removes duplicates and formats the data into this table
 
@@ -73,14 +75,43 @@ The script automatically:
 |--------------|---------|---------|-------------|--------|--------|---------------------|
 | @commitlint/cli | 19.8.1 | MIT | https://github.com/conventional-changelog/commitlint/blob/main/LICENSE | Mario Nebl <hello@herebecode.com> | npm | npm |
 | @commitlint/config-conventional | 19.8.1 | MIT | https://github.com/conventional-changelog/commitlint/blob/main/LICENSE | Mario Nebl <hello@herebecode.com> | npm | npm |
+| @craco/craco | 7.1.0 | Apache-2.0 | https://github.com/dilanx/craco/blob/main/LICENSE | Dilan Nair | npm | npm |
+| @emotion/react | 11.10.0 | MIT | https://github.com/emotion-js/emotion.git#main/blob/main/LICENSE | Emotion Contributors | npm | npm |
+| @emotion/styled | 11.10.0 | MIT | https://github.com/emotion-js/emotion.git#main/blob/main/LICENSE | N/A | npm | npm |
+| @mui/icons-material | 5.10.0 | N/A | https://mui.com/material-ui/material-icons/ | N/A | npm | npm |
+| @mui/material | 5.10.0 | MIT | https://github.com/mui/material-ui/blob/main/LICENSE | MUI Team | npm | npm |
+| @mui/x-data-grid | 5.17.0 | MIT | https://github.com/mui/mui-x/blob/main/LICENSE | MUI Team | npm | npm |
 | @semantic-release/changelog | 6.0.3 | MIT | https://github.com/semantic-release/changelog/blob/main/LICENSE | Pierre Vanduynslager | npm | npm |
 | @semantic-release/exec | 7.1.0 | MIT | https://github.com/semantic-release/exec/blob/main/LICENSE | Pierre Vanduynslager | npm | npm |
 | @semantic-release/git | 10.0.1 | MIT | https://github.com/semantic-release/git/blob/main/LICENSE | Pierre Vanduynslager | npm | npm |
 | @semantic-release/github | 11.0.6 | MIT | https://github.com/semantic-release/github/blob/main/LICENSE | Pierre Vanduynslager | npm | npm |
+| @testing-library/jest-dom | 5.16.4 | MIT | https://github.com/testing-library/jest-dom/blob/main/LICENSE | Ernesto Garcia <gnapse@gmail.com> | npm | npm |
+| @testing-library/react | 13.3.0 | MIT | https://github.com/testing-library/react-testing-library/blob/main/LICENSE | Kent C. Dodds <me@kentcdodds.com> | npm | npm |
+| @testing-library/user-event | 13.5.0 | MIT | https://github.com/testing-library/user-event/blob/main/LICENSE | Giorgio Polvara <polvara@gmail.com> | npm | npm |
+| @types/jest | 27.5.2 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped/blob/main/LICENSE | N/A | npm | npm |
+| @types/node | 16.11.56 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped/blob/main/LICENSE | N/A | npm | npm |
+| @types/papaparse | 5.5.1 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped/blob/main/LICENSE | N/A | npm | npm |
+| @types/react | 18.3.27 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped/blob/main/LICENSE | N/A | npm | npm |
+| @types/react-copy-to-clipboard | 5.0.7 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped/blob/main/LICENSE | N/A | npm | npm |
+| @types/react-dom | 18.3.7 | MIT | https://github.com/DefinitelyTyped/DefinitelyTyped/blob/main/LICENSE | N/A | npm | npm |
+| @uiw/react-json-view | 2.0.0-alpha.39 | MIT | https://github.com/uiwjs/react-json-view/blob/main/LICENSE | Kenny Wang <wowohoo@qq.com> | npm | npm |
+| axios | 1.8.3 | MIT | https://github.com/axios/axios/blob/main/LICENSE | Matt Zabriskie | npm | npm |
 | commitizen | 4.3.1 | MIT | https://github.com/commitizen/cz-cli/blob/main/LICENSE | Jim Cummins <jimthedev@gmail.com> | npm | npm |
 | conventional-changelog-conventionalcommits | 9.1.0 | ISC | https://github.com/conventional-changelog/conventional-changelog/blob/main/LICENSE | Ben Coe | npm | npm |
 | cz-conventional-changelog | 3.3.0 | MIT | https://github.com/commitizen/cz-conventional-changelog/blob/main/LICENSE | Jim Cummins <jimthedev@gmail.com> | npm | npm |
+| date-fns | 2.29.0 | MIT | https://github.com/date-fns/date-fns/blob/main/LICENSE | N/A | npm | npm |
+| http-proxy-middleware | 3.0.5 | MIT | https://github.com/chimurai/http-proxy-middleware/blob/main/LICENSE | Steven Chim | npm | npm |
 | husky | 9.1.7 | MIT | https://github.com/typicode/husky/blob/main/LICENSE | typicode | npm | npm |
+| papaparse | 5.5.3 | MIT | https://github.com/mholt/PapaParse/blob/main/LICENSE | Matthew Holt | npm | npm |
+| react | 18.2.0 | MIT | https://github.com/facebook/react/blob/main/LICENSE | N/A | npm | npm |
+| react-copy-to-clipboard | 5.1.0 | MIT | https://github.com/nkbt/react-copy-to-clipboard/blob/main/LICENSE | Nik Butenko <nik@butenko.me> | npm | npm |
+| react-dom | 18.2.0 | MIT | https://github.com/facebook/react/blob/main/LICENSE | N/A | npm | npm |
+| react-query | 3.39.0 | MIT | https://github.com/tannerlinsley/react-query/blob/main/LICENSE | tannerlinsley | npm | npm |
+| react-router-dom | 6.8.0 | MIT | https://github.com/remix-run/react-router/blob/main/LICENSE | Remix Software <hello@remix.run> | npm | npm |
+| react-scripts | 5.0.1 | MIT | https://github.com/facebook/create-react-app/blob/main/LICENSE | N/A | npm | npm |
+| recharts | 2.5.0 | MIT | https://github.com/recharts/recharts/blob/main/LICENSE | recharts group | npm | npm |
+| typescript | 4.7.4 | Apache-2.0 | https://github.com/Microsoft/TypeScript/blob/main/LICENSE | Microsoft Corp. | npm | npm |
+| web-vitals | 2.1.4 | Apache-2.0 | https://github.com/GoogleChrome/web-vitals/blob/main/LICENSE | Philip Walton <philip@philipwalton.com> | npm | npm |
 
 ## Notes
 
@@ -93,15 +124,15 @@ The script automatically:
 
 | License | Count |
 |---------|-------|
-| MIT | 14 |
+| MIT | 39 |
 | BSD-3-Clause | 5 |
+| Apache-2.0 | 5 |
 | MIT License | 4 |
 | BSD | 4 |
-| N/A | 2 |
+| N/A | 3 |
 | BSD License | 2 |
 | Apache License, Version 2.0 | 2 |
 | Apache Software License | 2 |
-| Apache-2.0 | 2 |
 | MIT license | 1 |
 | Apache 2 | 1 |
 | CC0 (copyright waived) | 1 |

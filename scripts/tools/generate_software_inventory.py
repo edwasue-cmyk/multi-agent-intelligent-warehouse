@@ -15,6 +15,15 @@ from datetime import datetime
 from typing import Dict, List, Optional
 from pathlib import Path
 
+# For Python < 3.11, use tomli instead
+try:
+    import tomllib
+except ImportError:
+    try:
+        import tomli as tomllib
+    except ImportError:
+        tomllib = None
+
 def get_pypi_info(package_name: str, version: Optional[str] = None) -> Dict:
     """Get package information from PyPI."""
     try:
@@ -221,24 +230,93 @@ def parse_requirements(requirements_file: Path) -> List[Dict]:
     
     return packages
 
-def parse_package_json(package_json_file: Path) -> List[Dict]:
+def parse_package_json(package_json_file: Path, include_dependencies: bool = True, include_dev_dependencies: bool = True) -> List[Dict]:
     """Parse package.json file."""
     packages = []
     with open(package_json_file, 'r') as f:
         data = json.load(f)
         
+        # Get dependencies
+        if include_dependencies:
+            deps = data.get('dependencies', {})
+            for package_name, version_spec in deps.items():
+                # Remove ^ or ~ from version
+                version = re.sub(r'[\^~]', '', version_spec) if version_spec else None
+                packages.append({
+                    'name': package_name,
+                    'version': version,
+                    'file': str(package_json_file),
+                    'type': 'dependency',
+                    'source': 'npm'  # Mark as npm package
+                })
+        
         # Get devDependencies
-        dev_deps = data.get('devDependencies', {})
-        for package_name, version_spec in dev_deps.items():
-            # Remove ^ or ~ from version
-            version = re.sub(r'[\^~]', '', version_spec) if version_spec else None
-            packages.append({
-                'name': package_name,
-                'version': version,
-                'file': str(package_json_file),
-                'type': 'devDependency',
-                'source': 'npm'  # Mark as npm package
-            })
+        if include_dev_dependencies:
+            dev_deps = data.get('devDependencies', {})
+            for package_name, version_spec in dev_deps.items():
+                # Remove ^ or ~ from version
+                version = re.sub(r'[\^~]', '', version_spec) if version_spec else None
+                packages.append({
+                    'name': package_name,
+                    'version': version,
+                    'file': str(package_json_file),
+                    'type': 'devDependency',
+                    'source': 'npm'  # Mark as npm package
+                })
+    
+    return packages
+
+def parse_pyproject_toml(pyproject_file: Path) -> List[Dict]:
+    """Parse pyproject.toml file for dependencies."""
+    packages = []
+    
+    if tomllib is None:
+        print(f"⚠️  Warning: tomllib not available, skipping {pyproject_file}")
+        return packages
+    
+    try:
+        with open(pyproject_file, 'rb') as f:
+            data = tomllib.load(f)
+        
+        project = data.get('project', {})
+        
+        # Get main dependencies
+        dependencies = project.get('dependencies', [])
+        for dep_spec in dependencies:
+            # Parse dependency specification (e.g., "fastapi>=0.104.0", "psycopg[binary]>=3.1.0")
+            # Remove extras [binary] etc.
+            dep_clean = re.sub(r'\[.*?\]', '', dep_spec)
+            # Extract package name and version
+            match = re.match(r'^([a-zA-Z0-9_-]+(?:\[[^\]]+\])?)([<>=!]+)?([0-9.]+)?', dep_clean)
+            if match:
+                package_name = re.sub(r'\[.*\]', '', match.group(1))
+                version = match.group(3) if match.group(3) else None
+                packages.append({
+                    'name': package_name,
+                    'version': version,
+                    'file': str(pyproject_file),
+                    'type': 'dependency',
+                    'source': 'PyPI'
+                })
+        
+        # Get optional dependencies (dev dependencies)
+        optional_deps = project.get('optional-dependencies', {})
+        dev_deps = optional_deps.get('dev', [])
+        for dep_spec in dev_deps:
+            dep_clean = re.sub(r'\[.*?\]', '', dep_spec)
+            match = re.match(r'^([a-zA-Z0-9_-]+)([<>=!]+)?([0-9.]+)?', dep_clean)
+            if match:
+                package_name = match.group(1)
+                version = match.group(3) if match.group(3) else None
+                packages.append({
+                    'name': package_name,
+                    'version': version,
+                    'file': str(pyproject_file),
+                    'type': 'devDependency',
+                    'source': 'PyPI'
+                })
+    except Exception as e:
+        print(f"⚠️  Warning: Failed to parse {pyproject_file}: {e}")
     
     return packages
 
@@ -260,11 +338,27 @@ def main():
             packages = parse_requirements(req_file)
             all_packages.extend(packages)
     
-    # Parse Node.js package.json
-    package_json = repo_root / 'package.json'
-    if package_json.exists():
-        packages = parse_package_json(package_json)
+    # Parse pyproject.toml (if available)
+    pyproject_file = repo_root / 'pyproject.toml'
+    if pyproject_file.exists():
+        packages = parse_pyproject_toml(pyproject_file)
         all_packages.extend(packages)
+    
+    # Parse Node.js package.json files
+    package_json_files = [
+        repo_root / 'package.json',  # Root package.json (dev dependencies only)
+        repo_root / 'src' / 'ui' / 'web' / 'package.json'  # Frontend package.json (dependencies + devDependencies)
+    ]
+    
+    for package_json in package_json_files:
+        if package_json.exists():
+            # Root package.json: only devDependencies (tooling)
+            # Frontend package.json: both dependencies and devDependencies
+            include_deps = 'ui/web' in str(package_json)
+            packages = parse_package_json(package_json, 
+                                         include_dependencies=include_deps,
+                                         include_dev_dependencies=True)
+            all_packages.extend(packages)
     
     # Get information for each package
     print("Fetching package information...")
@@ -328,7 +422,9 @@ def main():
         f.write("```\n\n")
         f.write("The script automatically:\n")
         f.write("- Parses `requirements.txt`, `requirements.docker.txt`, and `scripts/requirements_synthetic_data.txt`\n")
-        f.write("- Parses `package.json` for Node.js dependencies\n")
+        f.write("- Parses `pyproject.toml` for Python dependencies and dev dependencies\n")
+        f.write("- Parses root `package.json` for Node.js dev dependencies (tooling)\n")
+        f.write("- Parses `src/ui/web/package.json` for frontend dependencies (React, Material-UI, etc.)\n")
         f.write("- Queries PyPI and npm registries for package metadata\n")
         f.write("- Removes duplicates and formats the data into this table\n\n")
         f.write("## Python Packages (PyPI)\n\n")
