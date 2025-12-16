@@ -20,12 +20,12 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { equipmentAPI, safetyAPI } from '../services/api';
 
 const Analytics: React.FC = () => {
-  const { data: equipmentAssets } = useQuery('equipment', equipmentAPI.getAllAssets);
-  const { data: incidents } = useQuery('incidents', safetyAPI.getIncidents);
+  const { data: equipmentAssets } = useQuery({ queryKey: ['equipment'], queryFn: equipmentAPI.getAllAssets });
+  const { data: incidents } = useQuery({ queryKey: ['incidents'], queryFn: safetyAPI.getIncidents });
 
   // Equipment assets data processing
   const equipmentTrendData = React.useMemo(() => {

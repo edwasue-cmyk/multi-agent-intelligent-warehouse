@@ -15,7 +15,7 @@ import {
   SmartToy as BotIcon,
   Person as PersonIcon,
 } from '@mui/icons-material';
-import { useMutation } from 'react-query';
+import { useMutation } from '@tanstack/react-query';
 import { chatAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -68,7 +68,8 @@ const ChatInterface: React.FC = () => {
 
   const hasMoreMessages = messagesToShow < allMessages.length;
 
-  const sendMessageMutation = useMutation(chatAPI.sendMessage, {
+  const sendMessageMutation = useMutation({
+    mutationFn: chatAPI.sendMessage,
     onSuccess: (response) => {
       const assistantMessage: Message = {
         id: Date.now().toString(),

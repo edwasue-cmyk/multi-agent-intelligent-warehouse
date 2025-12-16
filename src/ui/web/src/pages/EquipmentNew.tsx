@@ -49,7 +49,7 @@ import {
   Info as InfoIcon,
 } from '@mui/icons-material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { equipmentAPI, EquipmentAsset } from '../services/api';
 
 interface TabPanelProps {
@@ -85,42 +85,42 @@ const EquipmentNew: React.FC = () => {
   const [drawerAssetId, setDrawerAssetId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: equipmentAssets, isLoading, error } = useQuery(
-    'equipment',
-    equipmentAPI.getAllAssets
-  );
+  const { data: equipmentAssets, isLoading, error } = useQuery({
+    queryKey: ['equipment'],
+    queryFn: equipmentAPI.getAllAssets
+  });
 
-  const { data: assignments } = useQuery(
-    'equipment-assignments',
-    () => equipmentAPI.getAssignments(undefined, undefined, true),
-    { enabled: activeTab === 1 }
-  );
+  const { data: assignments } = useQuery({
+    queryKey: ['equipment-assignments'],
+    queryFn: () => equipmentAPI.getAssignments(undefined, undefined, true),
+    enabled: activeTab === 1
+  });
 
-  const { data: maintenanceSchedule } = useQuery(
-    'equipment-maintenance',
-    () => equipmentAPI.getMaintenanceSchedule(undefined, undefined, 30),
-    { enabled: activeTab === 2 }
-  );
+  const { data: maintenanceSchedule } = useQuery({
+    queryKey: ['equipment-maintenance'],
+    queryFn: () => equipmentAPI.getMaintenanceSchedule(undefined, undefined, 30),
+    enabled: activeTab === 2
+  });
 
-  const { data: telemetryData, isLoading: telemetryLoading } = useQuery(
-    ['equipment-telemetry', selectedAssetId],
-    () => selectedAssetId ? equipmentAPI.getTelemetry(selectedAssetId, undefined, 168) : [],
-    { enabled: !!selectedAssetId && activeTab === 3 }
-  );
+  const { data: telemetryData, isLoading: telemetryLoading } = useQuery({
+    queryKey: ['equipment-telemetry', selectedAssetId],
+    queryFn: () => selectedAssetId ? equipmentAPI.getTelemetry(selectedAssetId, undefined, 168) : [],
+    enabled: !!selectedAssetId && activeTab === 3
+  });
 
   // Fetch detailed asset data for drawer
-  const { data: drawerAsset, isLoading: drawerAssetLoading } = useQuery(
-    ['equipment-asset-detail', drawerAssetId],
-    () => drawerAssetId ? equipmentAPI.getAsset(drawerAssetId) : null,
-    { enabled: !!drawerAssetId }
-  );
+  const { data: drawerAsset, isLoading: drawerAssetLoading } = useQuery({
+    queryKey: ['equipment-asset-detail', drawerAssetId],
+    queryFn: () => drawerAssetId ? equipmentAPI.getAsset(drawerAssetId) : null,
+    enabled: !!drawerAssetId
+  });
 
   // Fetch telemetry for drawer
-  const { data: drawerTelemetryRaw, isLoading: drawerTelemetryLoading } = useQuery(
-    ['equipment-telemetry-drawer', drawerAssetId],
-    () => drawerAssetId ? equipmentAPI.getTelemetry(drawerAssetId, undefined, 168) : [],
-    { enabled: !!drawerAssetId && drawerOpen }
-  );
+  const { data: drawerTelemetryRaw, isLoading: drawerTelemetryLoading } = useQuery({
+    queryKey: ['equipment-telemetry-drawer', drawerAssetId],
+    queryFn: () => drawerAssetId ? equipmentAPI.getTelemetry(drawerAssetId, undefined, 168) : [],
+    enabled: !!drawerAssetId && drawerOpen
+  });
 
   // Transform telemetry data for chart
   const drawerTelemetry = React.useMemo(() => {
@@ -150,29 +150,32 @@ const EquipmentNew: React.FC = () => {
   }, [drawerTelemetryRaw]);
 
   // Fetch maintenance schedule for drawer
-  const { data: drawerMaintenance, isLoading: drawerMaintenanceLoading } = useQuery(
-    ['equipment-maintenance-drawer', drawerAssetId],
-    () => drawerAssetId ? equipmentAPI.getMaintenanceSchedule(drawerAssetId, undefined, 90) : [],
-    { enabled: !!drawerAssetId && drawerOpen }
-  );
+  const { data: drawerMaintenance, isLoading: drawerMaintenanceLoading } = useQuery({
+    queryKey: ['equipment-maintenance-drawer', drawerAssetId],
+    queryFn: () => drawerAssetId ? equipmentAPI.getMaintenanceSchedule(drawerAssetId, undefined, 90) : [],
+    enabled: !!drawerAssetId && drawerOpen
+  });
 
-  const assignMutation = useMutation(equipmentAPI.assignAsset, {
+  const assignMutation = useMutation({
+    mutationFn: equipmentAPI.assignAsset,
     onSuccess: () => {
-      queryClient.invalidateQueries('equipment-assignments');
+      queryClient.invalidateQueries({ queryKey: ['equipment-assignments'] });
       setOpen(false);
     },
   });
 
-  const releaseMutation = useMutation(equipmentAPI.releaseAsset, {
+  const releaseMutation = useMutation({
+    mutationFn: equipmentAPI.releaseAsset,
     onSuccess: () => {
-      queryClient.invalidateQueries('equipment-assignments');
-      queryClient.invalidateQueries('equipment');
+      queryClient.invalidateQueries({ queryKey: ['equipment-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['equipment'] });
     },
   });
 
-  const maintenanceMutation = useMutation(equipmentAPI.scheduleMaintenance, {
+  const maintenanceMutation = useMutation({
+    mutationFn: equipmentAPI.scheduleMaintenance,
     onSuccess: () => {
-      queryClient.invalidateQueries('equipment-maintenance');
+      queryClient.invalidateQueries({ queryKey: ['equipment-maintenance'] });
       setOpen(false);
     },
   });
@@ -395,9 +398,13 @@ const EquipmentNew: React.FC = () => {
             rows={equipmentAssets || []}
             columns={columns}
             loading={isLoading}
-            pageSize={10}
-            rowsPerPageOptions={[10, 25, 50]}
-            disableSelectionOnClick
+            initialState={{
+              pagination: {
+                paginationModel: { pageSize: 10 },
+              },
+            }}
+            pageSizeOptions={[10, 25, 50]}
+            disableRowSelectionOnClick
             getRowId={(row) => row.asset_id}
             sx={{
               border: 'none',

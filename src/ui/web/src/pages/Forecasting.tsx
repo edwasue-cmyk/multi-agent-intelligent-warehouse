@@ -72,7 +72,7 @@ import {
   ArrowDownward as ArrowDownwardIcon,
   Remove as RemoveIcon,
 } from '@mui/icons-material';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { forecastingAPI } from '../services/forecastingAPI';
 import { trainingAPI, TrainingRequest, TrainingStatus } from '../services/trainingAPI';
 
@@ -112,39 +112,33 @@ const ForecastingPage: React.FC = () => {
   const [trainingDialogOpen, setTrainingDialogOpen] = useState(false);
 
   // Fetch forecasting data - use dashboard endpoint only for faster loading
-  const { data: dashboardData, isLoading: dashboardLoading, refetch: refetchDashboard, error: dashboardError } = useQuery(
-    'forecasting-dashboard',
-    forecastingAPI.getDashboardSummary,
-    { 
-      refetchInterval: 300000, // Refetch every 5 minutes
-      retry: 1,
-      retryDelay: 200,
-      staleTime: 30000, // Consider data fresh for 30 seconds
-      cacheTime: 300000, // Keep in cache for 5 minutes
-      refetchOnWindowFocus: false // Don't refetch when window gains focus
-    }
-  );
+  const { data: dashboardData, isLoading: dashboardLoading, refetch: refetchDashboard, error: dashboardError } = useQuery({
+    queryKey: ['forecasting-dashboard'],
+    queryFn: forecastingAPI.getDashboardSummary,
+    refetchInterval: 300000, // Refetch every 5 minutes
+    retry: 1,
+    retryDelay: 200,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 300000, // Keep in cache for 5 minutes (renamed from cacheTime in v5)
+    refetchOnWindowFocus: false // Don't refetch when window gains focus
+  });
 
   // Fetch training status with polling when training is running
-  const { data: trainingStatus, refetch: refetchTrainingStatus } = useQuery(
-    'training-status',
-    trainingAPI.getTrainingStatus,
-    { 
-      refetchInterval: 2000, // Poll every 2 seconds
-      retry: 1,
-      retryDelay: 200,
-    }
-  );
+  const { data: trainingStatus, refetch: refetchTrainingStatus } = useQuery({
+    queryKey: ['training-status'],
+    queryFn: trainingAPI.getTrainingStatus,
+    refetchInterval: 2000, // Poll every 2 seconds
+    retry: 1,
+    retryDelay: 200,
+  });
 
   // Fetch training history
-  const { data: trainingHistory } = useQuery(
-    'training-history',
-    trainingAPI.getTrainingHistory,
-    { 
-      refetchInterval: 60000, // Refetch every minute
-      retry: 1,
-    }
-  );
+  const { data: trainingHistory } = useQuery({
+    queryKey: ['training-history'],
+    queryFn: trainingAPI.getTrainingHistory,
+    refetchInterval: 60000, // Refetch every minute
+    retry: 1,
+  });
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
@@ -312,7 +306,7 @@ const ForecastingPage: React.FC = () => {
                 </Typography>
               </Box>
               <Typography variant="h4" component="div" sx={{ mt: 1 }}>
-                {dashboardData?.forecast_summary?.total_skus || 0}
+                {(dashboardData as any)?.forecast_summary?.total_skus || 0}
               </Typography>
             </CardContent>
           </Card>
@@ -327,7 +321,7 @@ const ForecastingPage: React.FC = () => {
                 </Typography>
               </Box>
               <Typography variant="h4" component="div" sx={{ mt: 1 }}>
-                {dashboardData?.reorder_recommendations?.filter((r: any) => 
+                {(dashboardData as any)?.reorder_recommendations?.filter((r: any) => 
                   r.urgency_level === 'HIGH' || r.urgency_level === 'CRITICAL'
                 ).length || 0}
               </Typography>
@@ -344,8 +338,8 @@ const ForecastingPage: React.FC = () => {
                 </Typography>
               </Box>
               <Typography variant="h4" component="div" sx={{ mt: 1 }}>
-                {dashboardData?.model_performance ? 
-                  `${(dashboardData.model_performance.reduce((acc: number, m: any) => acc + m.accuracy_score, 0) / dashboardData.model_performance.length * 100).toFixed(1)}%` 
+                {(dashboardData as any)?.model_performance ? 
+                  `${((dashboardData as any).model_performance.reduce((acc: number, m: any) => acc + m.accuracy_score, 0) / (dashboardData as any).model_performance.length * 100).toFixed(1)}%` 
                   : 'N/A'
                 }
               </Typography>
@@ -362,7 +356,7 @@ const ForecastingPage: React.FC = () => {
                 </Typography>
               </Box>
               <Typography variant="h4" component="div" sx={{ mt: 1 }}>
-                {dashboardData?.model_performance?.length || 0}
+                {(dashboardData as any)?.model_performance?.length || 0}
               </Typography>
             </CardContent>
           </Card>
@@ -398,7 +392,7 @@ const ForecastingPage: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {dashboardData?.forecast_summary?.forecast_summary && Object.entries(dashboardData.forecast_summary.forecast_summary).map(([sku, data]: [string, any]) => (
+              {(dashboardData as any)?.forecast_summary?.forecast_summary && Object.entries((dashboardData as any).forecast_summary.forecast_summary).map(([sku, data]: [string, any]) => (
                 <TableRow key={sku}>
                   <TableCell>
                     <Typography variant="body2" fontWeight="bold">
@@ -431,7 +425,7 @@ const ForecastingPage: React.FC = () => {
         <Typography variant="h5" gutterBottom>
           Reorder Recommendations
         </Typography>
-        {dashboardData?.reorder_recommendations && dashboardData.reorder_recommendations.length > 0 ? (
+        {(dashboardData as any)?.reorder_recommendations && (dashboardData as any).reorder_recommendations.length > 0 ? (
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
@@ -445,7 +439,7 @@ const ForecastingPage: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {dashboardData.reorder_recommendations.map((rec: any, index: number) => (
+                {(dashboardData as any).reorder_recommendations.map((rec: any, index: number) => (
                   <TableRow key={index}>
                     <TableCell>
                       <Typography variant="body2" fontWeight="bold">
@@ -483,7 +477,7 @@ const ForecastingPage: React.FC = () => {
         
         {/* Model Comparison Cards */}
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          {dashboardData?.model_performance?.map((model: any, index: number) => (
+          {(dashboardData as any)?.model_performance?.map((model: any, index: number) => (
             <Grid item xs={12} sm={6} md={4} key={index}>
               <Card sx={{ 
                 border: model.model_name === 'XGBoost' ? '2px solid #1976d2' : '1px solid #e0e0e0',
@@ -564,7 +558,7 @@ const ForecastingPage: React.FC = () => {
         <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>
           Detailed Performance Metrics
         </Typography>
-        {dashboardData?.model_performance && dashboardData.model_performance.length > 0 ? (
+        {(dashboardData as any)?.model_performance && (dashboardData as any).model_performance.length > 0 ? (
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
@@ -579,7 +573,7 @@ const ForecastingPage: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {dashboardData.model_performance.map((model: any, index: number) => (
+                {(dashboardData as any).model_performance.map((model: any, index: number) => (
                   <TableRow key={index} sx={{ 
                     backgroundColor: model.model_name === 'XGBoost' ? '#f8f9ff' : 'inherit'
                   }}>
@@ -648,7 +642,7 @@ const ForecastingPage: React.FC = () => {
           Enhanced Business Intelligence Dashboard
         </Typography>
         
-        {dashboardData?.business_intelligence ? (
+        {(dashboardData as any)?.business_intelligence ? (
           <Box>
             {/* Key Performance Indicators */}
             <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -658,7 +652,7 @@ const ForecastingPage: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Box>
                         <Typography variant="h4" fontWeight="bold">
-                          {dashboardData.business_intelligence.inventory_analytics?.total_skus || 0}
+                          {(dashboardData as any).business_intelligence.inventory_analytics?.total_skus || 0}
                         </Typography>
                         <Typography variant="body2" sx={{ opacity: 0.9 }}>
                           Total SKUs
@@ -676,7 +670,7 @@ const ForecastingPage: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Box>
                         <Typography variant="h4" fontWeight="bold">
-                          {dashboardData.business_intelligence.inventory_analytics?.total_quantity?.toLocaleString() || '0'}
+                          {(dashboardData as any).business_intelligence.inventory_analytics?.total_quantity?.toLocaleString() || '0'}
                         </Typography>
                         <Typography variant="body2" sx={{ opacity: 0.9 }}>
                           Total Quantity
@@ -694,7 +688,7 @@ const ForecastingPage: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Box>
                         <Typography variant="h4" fontWeight="bold">
-                          {dashboardData.business_intelligence.business_kpis?.forecast_coverage || 0}%
+                          {(dashboardData as any).business_intelligence.business_kpis?.forecast_coverage || 0}%
                         </Typography>
                         <Typography variant="body2" sx={{ opacity: 0.9 }}>
                           Forecast Coverage
@@ -712,7 +706,7 @@ const ForecastingPage: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Box>
                         <Typography variant="h4" fontWeight="bold">
-                          {dashboardData.business_intelligence.model_analytics?.avg_accuracy || 0}%
+                          {(dashboardData as any).business_intelligence.model_analytics?.avg_accuracy || 0}%
                         </Typography>
                         <Typography variant="body2" sx={{ opacity: 0.9 }}>
                           Avg Accuracy
@@ -737,10 +731,10 @@ const ForecastingPage: React.FC = () => {
                       </Typography>
                     </Box>
                     <Typography variant="h3" color="error" fontWeight="bold">
-                      {dashboardData.business_intelligence.business_kpis?.stockout_risk || 0}%
+                      {(dashboardData as any).business_intelligence.business_kpis?.stockout_risk || 0}%
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {dashboardData.business_intelligence.inventory_analytics?.low_stock_items || 0} items below reorder point
+                      {(dashboardData as any).business_intelligence.inventory_analytics?.low_stock_items || 0} items below reorder point
                     </Typography>
                   </CardContent>
                 </Card>
@@ -756,10 +750,10 @@ const ForecastingPage: React.FC = () => {
                       </Typography>
                     </Box>
                     <Typography variant="h3" color="warning.main" fontWeight="bold">
-                      {dashboardData.business_intelligence.business_kpis?.overstock_percentage || 0}%
+                      {(dashboardData as any).business_intelligence.business_kpis?.overstock_percentage || 0}%
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {dashboardData.business_intelligence.inventory_analytics?.overstock_items || 0} items overstocked
+                      {(dashboardData as any).business_intelligence.inventory_analytics?.overstock_items || 0} items overstocked
                     </Typography>
                   </CardContent>
                 </Card>
@@ -775,7 +769,7 @@ const ForecastingPage: React.FC = () => {
                       </Typography>
                     </Box>
                     <Typography variant="h3" color="info.main" fontWeight="bold">
-                      {dashboardData.business_intelligence.business_kpis?.demand_volatility || 0}
+                      {(dashboardData as any).business_intelligence.business_kpis?.demand_volatility || 0}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Coefficient of variation
@@ -805,7 +799,7 @@ const ForecastingPage: React.FC = () => {
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {dashboardData.business_intelligence.category_analytics?.slice(0, 5).map((category: any) => (
+                          {(dashboardData as any).business_intelligence.category_analytics?.slice(0, 5).map((category: any) => (
                             <TableRow key={category.category}>
                               <TableCell>
                                 <Chip 
@@ -840,14 +834,14 @@ const ForecastingPage: React.FC = () => {
                       <ShowChartIcon color="primary" />
                       Forecast Trends
                     </Typography>
-                    {dashboardData.business_intelligence.forecast_analytics ? (
+                    {(dashboardData as any).business_intelligence.forecast_analytics ? (
                       <Box>
                         <Grid container spacing={2}>
                           <Grid item xs={4}>
                             <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'success.light', borderRadius: 2 }}>
                               <ArrowUpwardIcon color="success" sx={{ fontSize: 30 }} />
                               <Typography variant="h4" color="success.dark" fontWeight="bold">
-                                {dashboardData.business_intelligence.forecast_analytics.trending_up}
+                                {(dashboardData as any).business_intelligence.forecast_analytics.trending_up}
                               </Typography>
                               <Typography variant="body2">Trending Up</Typography>
                             </Box>
@@ -856,7 +850,7 @@ const ForecastingPage: React.FC = () => {
                             <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'error.light', borderRadius: 2 }}>
                               <ArrowDownwardIcon color="error" sx={{ fontSize: 30 }} />
                               <Typography variant="h4" color="error.dark" fontWeight="bold">
-                                {dashboardData.business_intelligence.forecast_analytics.trending_down}
+                                {(dashboardData as any).business_intelligence.forecast_analytics.trending_down}
                               </Typography>
                               <Typography variant="body2">Trending Down</Typography>
                             </Box>
@@ -865,14 +859,14 @@ const ForecastingPage: React.FC = () => {
                             <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'info.light', borderRadius: 2 }}>
                               <RemoveIcon color="info" sx={{ fontSize: 30 }} />
                               <Typography variant="h4" color="info.dark" fontWeight="bold">
-                                {dashboardData.business_intelligence.forecast_analytics.stable_trends}
+                                {(dashboardData as any).business_intelligence.forecast_analytics.stable_trends}
                               </Typography>
                               <Typography variant="body2">Stable</Typography>
                             </Box>
                           </Grid>
                         </Grid>
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
-                          Total Predicted Demand: {dashboardData.business_intelligence.forecast_analytics.total_predicted_demand?.toLocaleString()}
+                          Total Predicted Demand: {(dashboardData as any).business_intelligence.forecast_analytics.total_predicted_demand?.toLocaleString()}
                         </Typography>
                       </Box>
                     ) : (
@@ -904,7 +898,7 @@ const ForecastingPage: React.FC = () => {
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {dashboardData.business_intelligence.top_performers?.slice(0, 5).map((performer: any, index: number) => (
+                          {(dashboardData as any).business_intelligence.top_performers?.slice(0, 5).map((performer: any, index: number) => (
                             <TableRow key={performer.sku}>
                               <TableCell>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -940,7 +934,7 @@ const ForecastingPage: React.FC = () => {
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {dashboardData.business_intelligence.bottom_performers?.slice(0, 5).map((performer: any, index: number) => (
+                          {(dashboardData as any).business_intelligence.bottom_performers?.slice(0, 5).map((performer: any, index: number) => (
                             <TableRow key={performer.sku}>
                               <TableCell>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -968,7 +962,7 @@ const ForecastingPage: React.FC = () => {
                   AI Recommendations
                 </Typography>
                 <Grid container spacing={2}>
-                  {dashboardData.business_intelligence.recommendations?.map((rec: any, index: number) => (
+                  {(dashboardData as any).business_intelligence.recommendations?.map((rec: any, index: number) => (
                     <Grid item xs={12} md={6} key={index}>
                       <Alert 
                         severity={rec.type === 'urgent' ? 'error' : rec.type === 'warning' ? 'warning' : 'info'}
@@ -1001,7 +995,7 @@ const ForecastingPage: React.FC = () => {
                   <Grid item xs={12} md={3}>
                     <Box sx={{ textAlign: 'center', p: 2 }}>
                       <Typography variant="h4" color="primary" fontWeight="bold">
-                        {dashboardData.business_intelligence.model_analytics?.total_models || 0}
+                        {(dashboardData as any).business_intelligence.model_analytics?.total_models || 0}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         Active Models
@@ -1011,7 +1005,7 @@ const ForecastingPage: React.FC = () => {
                   <Grid item xs={12} md={3}>
                     <Box sx={{ textAlign: 'center', p: 2 }}>
                       <Typography variant="h4" color="success.main" fontWeight="bold">
-                        {dashboardData.business_intelligence.model_analytics?.models_above_80 || 0}
+                        {(dashboardData as any).business_intelligence.model_analytics?.models_above_80 || 0}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         High Accuracy (&gt;80%)
@@ -1021,7 +1015,7 @@ const ForecastingPage: React.FC = () => {
                   <Grid item xs={12} md={3}>
                     <Box sx={{ textAlign: 'center', p: 2 }}>
                       <Typography variant="h4" color="warning.main" fontWeight="bold">
-                        {dashboardData.business_intelligence.model_analytics?.models_below_70 || 0}
+                        {(dashboardData as any).business_intelligence.model_analytics?.models_below_70 || 0}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         Low Accuracy (&lt;70%)
@@ -1031,7 +1025,7 @@ const ForecastingPage: React.FC = () => {
                   <Grid item xs={12} md={3}>
                     <Box sx={{ textAlign: 'center', p: 2 }}>
                       <Typography variant="h4" color="info.main" fontWeight="bold">
-                        {dashboardData.business_intelligence.model_analytics?.best_model || 'N/A'}
+                        {(dashboardData as any).business_intelligence.model_analytics?.best_model || 'N/A'}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         Best Model
@@ -1079,7 +1073,7 @@ const ForecastingPage: React.FC = () => {
                     variant="contained"
                     startIcon={<PlayIcon />}
                     onClick={handleStartTraining}
-                    disabled={trainingStatus?.is_running}
+                    disabled={(trainingStatus as any)?.is_running}
                     color="primary"
                   >
                     Start Training
@@ -1088,7 +1082,7 @@ const ForecastingPage: React.FC = () => {
                     variant="outlined"
                     startIcon={<StopIcon />}
                     onClick={handleStopTraining}
-                    disabled={!trainingStatus?.is_running}
+                    disabled={!(trainingStatus as any)?.is_running}
                     color="error"
                   >
                     Stop Training
@@ -1135,41 +1129,41 @@ const ForecastingPage: React.FC = () => {
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Chip
-                  icon={trainingStatus.is_running ? <BuildIcon /> : <CheckCircleIcon />}
-                  label={trainingStatus.is_running ? 'Training in Progress' : 'Idle'}
-                  color={trainingStatus.is_running ? 'primary' : 'default'}
+                  icon={(trainingStatus as any).is_running ? <BuildIcon /> : <CheckCircleIcon />}
+                  label={(trainingStatus as any).is_running ? 'Training in Progress' : 'Idle'}
+                  color={(trainingStatus as any).is_running ? 'primary' : 'default'}
                   sx={{ mr: 2 }}
                 />
-                {trainingStatus.is_running && (
+                {(trainingStatus as any).is_running && (
                   <Typography variant="body2" color="text.secondary">
-                    {trainingStatus.current_step}
+                    {(trainingStatus as any).current_step}
                   </Typography>
                 )}
               </Box>
               
-              {trainingStatus.is_running && (
+              {(trainingStatus as any).is_running && (
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                     <Typography variant="body2" sx={{ mr: 2 }}>
-                      Progress: {trainingStatus.progress}%
+                      Progress: {(trainingStatus as any).progress}%
                     </Typography>
-                    {trainingStatus.estimated_completion && (
+                    {(trainingStatus as any).estimated_completion && (
                       <Typography variant="body2" color="text.secondary">
-                        ETA: {new Date(trainingStatus.estimated_completion).toLocaleTimeString()}
+                        ETA: {new Date((trainingStatus as any).estimated_completion).toLocaleTimeString()}
                       </Typography>
                     )}
                   </Box>
                   <LinearProgress 
                     variant="determinate" 
-                    value={trainingStatus.progress} 
+                    value={(trainingStatus as any).progress} 
                     sx={{ height: 8, borderRadius: 4 }}
                   />
                 </Box>
               )}
               
-              {trainingStatus.error && (
+              {(trainingStatus as any).error && (
                 <Alert severity="error" sx={{ mt: 2 }}>
-                  {trainingStatus.error}
+                  {(trainingStatus as any).error}
                 </Alert>
               )}
             </CardContent>
@@ -1177,7 +1171,7 @@ const ForecastingPage: React.FC = () => {
         )}
 
         {/* Training Logs */}
-        {trainingStatus?.logs && trainingStatus.logs.length > 0 && (
+        {(trainingStatus as any)?.logs && (trainingStatus as any).logs.length > 0 && (
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -1192,7 +1186,7 @@ const ForecastingPage: React.FC = () => {
                 fontFamily: 'monospace',
                 fontSize: '0.875rem'
               }}>
-                {trainingStatus.logs.map((log, index) => (
+                {(trainingStatus as any).logs.map((log: any, index: number) => (
                   <Typography key={index} variant="body2" sx={{ mb: 0.5 }}>
                     {log}
                   </Typography>
@@ -1316,23 +1310,23 @@ const ForecastingPage: React.FC = () => {
       <Dialog open={trainingDialogOpen} onClose={() => setTrainingDialogOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>Training in Progress</DialogTitle>
         <DialogContent>
-          {trainingStatus?.is_running ? (
+          {(trainingStatus as any)?.is_running ? (
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <CircularProgress size={24} sx={{ mr: 2 }} />
                 <Typography variant="h6">
-                  {trainingStatus.current_step}
+                  {(trainingStatus as any).current_step}
                 </Typography>
               </Box>
               <LinearProgress 
                 variant="determinate" 
-                value={trainingStatus.progress} 
+                value={(trainingStatus as any).progress} 
                 sx={{ height: 8, borderRadius: 4, mb: 2 }}
               />
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Progress: {trainingStatus.progress}%
-                {trainingStatus.estimated_completion && (
-                  <> • ETA: {new Date(trainingStatus.estimated_completion).toLocaleTimeString()}</>
+                Progress: {(trainingStatus as any).progress}%
+                {(trainingStatus as any).estimated_completion && (
+                  <> • ETA: {new Date((trainingStatus as any).estimated_completion).toLocaleTimeString()}</>
                 )}
               </Typography>
               <Box sx={{ 
@@ -1344,7 +1338,7 @@ const ForecastingPage: React.FC = () => {
                 fontFamily: 'monospace',
                 fontSize: '0.875rem'
               }}>
-                {trainingStatus.logs.slice(-10).map((log, index) => (
+                {(trainingStatus as any).logs.slice(-10).map((log: any, index: number) => (
                   <Typography key={index} variant="body2" sx={{ mb: 0.5 }}>
                     {log}
                   </Typography>
@@ -1365,7 +1359,7 @@ const ForecastingPage: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setTrainingDialogOpen(false)}>
-            {trainingStatus?.is_running ? 'Minimize' : 'Close'}
+            {(trainingStatus as any)?.is_running ? 'Minimize' : 'Close'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -27,7 +27,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
-import { useMutation, useQuery } from 'react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { chatAPI, healthAPI, operationsAPI, ReasoningChain, ReasoningStep } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import TopBar from '../components/chat/TopBar';
@@ -148,19 +148,15 @@ const ChatInterfaceNew: React.FC = () => {
   const [role, setRole] = useState(getUserRole());
   
   // Connection status - check health endpoints
-  const { data: healthStatus } = useQuery('health', healthAPI.check, {
+  const { data: healthStatus } = useQuery({
+    queryKey: ['health'],
+    queryFn: healthAPI.check,
     refetchInterval: 30000, // Check every 30 seconds
     retry: false,
     // Don't fail the query if health check is slow - it's non-critical
     refetchOnWindowFocus: false,
     staleTime: 60000, // Consider health status fresh for 60 seconds
-    onError: (error) => {
-      // Silently handle health check errors - don't spam console
-      // Health check failures are non-critical for UI functionality
-      if (process.env.NODE_ENV === 'development') {
-        console.debug('Health check failed (non-critical):', error);
-      }
-    },
+    throwOnError: false, // Don't throw errors - handle them in onError
   });
   
   // Update connections based on health status
@@ -172,7 +168,9 @@ const ChatInterfaceNew: React.FC = () => {
   };
 
   // Recent tasks - get from actual API
-  const { data: tasks } = useQuery('recent-tasks', () => 
+  const { data: tasks } = useQuery({
+    queryKey: ['recent-tasks'],
+    queryFn: () => 
     operationsAPI.getTasks().then(tasks => 
       tasks?.slice(0, 5).map(task => {
         // Map task status to LeftRail expected status values
@@ -194,20 +192,12 @@ const ChatInterfaceNew: React.FC = () => {
         };
       }) || []
     ),
-    {
-      refetchInterval: 60000, // Refresh every minute
-      retry: 1, // Retry once on failure
-      refetchOnWindowFocus: false, // Don't refetch on window focus
-      staleTime: 60000, // Consider data fresh for 60 seconds
-      onError: (error) => {
-        // Silently handle task fetch errors - don't spam console
-        // Task list failures are non-critical for UI functionality
-        if (process.env.NODE_ENV === 'development') {
-          console.debug('Tasks fetch failed (non-critical):', error);
-        }
-      },
-    }
-  );
+    refetchInterval: 60000, // Refresh every minute
+    retry: 1, // Retry once on failure
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    staleTime: 60000, // Consider data fresh for 60 seconds
+    throwOnError: false, // Don't throw errors - handle them in component
+  });
   
   const recentTasks = tasks || [];
 
@@ -222,7 +212,8 @@ const ChatInterfaceNew: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
-  const chatMutation = useMutation(chatAPI.sendMessage, {
+  const chatMutation = useMutation({
+    mutationFn: chatAPI.sendMessage,
     onSuccess: (response) => {
       console.log('Chat response received:', response);
       // Add message immediately so user sees it right away

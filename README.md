@@ -236,12 +236,6 @@ docker-compose -f deploy/compose/docker-compose.dev.yaml exec -T timescaledb psq
 docker-compose -f deploy/compose/docker-compose.dev.yaml exec -T timescaledb psql -U warehouse -d warehouse < data/postgres/004_inventory_movements_schema.sql
 docker-compose -f deploy/compose/docker-compose.dev.yaml exec -T timescaledb psql -U warehouse -d warehouse < scripts/setup/create_model_tracking_tables.sql
 
-# Option B: Using psql directly (alternative - requires PostgreSQL client installed)
-# PGPASSWORD=${POSTGRES_PASSWORD:-changeme} psql -h localhost -p 5435 -U warehouse -d warehouse -f data/postgres/000_schema.sql
-# PGPASSWORD=${POSTGRES_PASSWORD:-changeme} psql -h localhost -p 5435 -U warehouse -d warehouse -f data/postgres/001_equipment_schema.sql
-# docker-compose -f deploy/compose/docker-compose.dev.yaml exec -T timescaledb psql -U warehouse -d warehouse < data/postgres/002_document_schema.sql
-# docker-compose -f deploy/compose/docker-compose.dev.yaml exec -T timescaledb psql -U warehouse -d warehouse < data/postgres/004_inventory_movements_schema.sql
-# docker-compose -f deploy/compose/docker-compose.dev.yaml exec -T timescaledb psql -U warehouse -d warehouse < scripts/setup/create_model_tracking_tables.sql
 
 # 7. Create default users
 python scripts/setup/create_default_users.py

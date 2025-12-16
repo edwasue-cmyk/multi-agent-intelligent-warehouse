@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { Report as ReportIcon } from '@mui/icons-material';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { safetyAPI, SafetyIncident, userAPI, User } from '../services/api';
 
 const Safety: React.FC = () => {
@@ -28,28 +28,27 @@ const Safety: React.FC = () => {
   const [formData, setFormData] = useState<Partial<SafetyIncident>>({});
   const queryClient = useQueryClient();
 
-  const { data: incidents, isLoading, error } = useQuery(
-    'incidents',
-    safetyAPI.getIncidents
-  );
+  const { data: incidents, isLoading, error } = useQuery({
+    queryKey: ['incidents'],
+    queryFn: safetyAPI.getIncidents
+  });
 
-  const { data: policies } = useQuery(
-    'policies',
-    safetyAPI.getPolicies
-  );
+  const { data: policies } = useQuery({
+    queryKey: ['policies'],
+    queryFn: safetyAPI.getPolicies
+  });
 
-  const { data: users, isLoading: usersLoading, error: usersError } = useQuery(
-    'users',
-    userAPI.getUsers,
-    {
-      retry: 2,
-      staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    }
-  );
+  const { data: users, isLoading: usersLoading, error: usersError } = useQuery({
+    queryKey: ['users'],
+    queryFn: userAPI.getUsers,
+    retry: 2,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
 
-  const reportMutation = useMutation(safetyAPI.reportIncident, {
+  const reportMutation = useMutation({
+    mutationFn: safetyAPI.reportIncident,
     onSuccess: () => {
-      queryClient.invalidateQueries('incidents');
+      queryClient.invalidateQueries({ queryKey: ['incidents'] });
       setOpen(false);
       setFormData({});
     },
@@ -162,9 +161,13 @@ const Safety: React.FC = () => {
           rows={incidents || []}
           columns={columns}
           loading={isLoading}
-          pageSize={10}
-          rowsPerPageOptions={[10, 25, 50]}
-          disableSelectionOnClick
+          initialState={{
+            pagination: {
+              paginationModel: { pageSize: 10 },
+            },
+          }}
+          pageSizeOptions={[10, 25, 50]}
+          disableRowSelectionOnClick
         />
       </Paper>
 
@@ -233,7 +236,7 @@ const Safety: React.FC = () => {
           <Button
             onClick={handleSubmit}
             variant="contained"
-            disabled={reportMutation.isLoading}
+            disabled={reportMutation.isPending}
           >
             {selectedIncident ? 'Update' : 'Report'}
           </Button>

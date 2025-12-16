@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { } from '@mui/icons-material';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { operationsAPI, Task, userAPI, User } from '../services/api';
 
 const Operations: React.FC = () => {
@@ -28,33 +28,31 @@ const Operations: React.FC = () => {
   const [formData, setFormData] = useState<Partial<Task>>({});
   const queryClient = useQueryClient();
 
-  const { data: tasks, isLoading, error } = useQuery(
-    'tasks',
-    operationsAPI.getTasks
-  );
+  const { data: tasks, isLoading, error } = useQuery({
+    queryKey: ['tasks'],
+    queryFn: operationsAPI.getTasks
+  });
 
-  const { data: workforceStatus } = useQuery(
-    'workforce',
-    operationsAPI.getWorkforceStatus
-  );
+  const { data: workforceStatus } = useQuery({
+    queryKey: ['workforce'],
+    queryFn: operationsAPI.getWorkforceStatus
+  });
 
-  const { data: users } = useQuery(
-    'users',
-    userAPI.getUsers
-  );
+  const { data: users } = useQuery({
+    queryKey: ['users'],
+    queryFn: userAPI.getUsers
+  });
 
-  const assignMutation = useMutation(
-    ({ taskId, assignee }: { taskId: number; assignee: string }) =>
+  const assignMutation = useMutation({
+    mutationFn: ({ taskId, assignee }: { taskId: number; assignee: string }) =>
       operationsAPI.assignTask(taskId, assignee),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries('tasks');
-        setOpen(false);
-        setSelectedTask(null);
-        setFormData({});
-      },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      setOpen(false);
+      setSelectedTask(null);
+      setFormData({});
     }
-  );
+  });
 
   const handleOpen = (task?: Task) => {
     if (task) {
@@ -259,9 +257,13 @@ const Operations: React.FC = () => {
           rows={tasks || []}
           columns={columns}
           loading={isLoading}
-          pageSize={10}
-          rowsPerPageOptions={[10, 25, 50]}
-          disableSelectionOnClick
+          initialState={{
+            pagination: {
+              paginationModel: { pageSize: 10 },
+            },
+          }}
+          pageSizeOptions={[10, 25, 50]}
+          disableRowSelectionOnClick
         />
       </Paper>
 
@@ -322,7 +324,7 @@ const Operations: React.FC = () => {
           <Button
             onClick={handleSubmit}
             variant="contained"
-            disabled={assignMutation.isLoading}
+            disabled={assignMutation.isPending}
           >
             {selectedTask ? 'Assign' : 'Create'}
           </Button>

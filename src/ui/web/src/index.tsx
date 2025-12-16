@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import App from './App';
@@ -33,7 +33,7 @@ const queryClient = new QueryClient({
       // Increase default query timeout to prevent premature timeouts
       // Individual API calls can override this with their own timeout
       staleTime: 30000, // Consider data fresh for 30 seconds
-      cacheTime: 300000, // Keep in cache for 5 minutes
+      gcTime: 300000, // Keep in cache for 5 minutes (renamed from cacheTime in v5)
     },
   },
 });

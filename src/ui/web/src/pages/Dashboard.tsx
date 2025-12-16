@@ -13,14 +13,14 @@ import {
   Work as OperationsIcon,
   Security as SafetyIcon,
 } from '@mui/icons-material';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { healthAPI, equipmentAPI, operationsAPI, safetyAPI } from '../services/api';
 
 const Dashboard: React.FC = () => {
-  const { data: healthStatus } = useQuery('health', healthAPI.check);
-  const { data: equipmentAssets } = useQuery('equipment', equipmentAPI.getAllAssets);
-  const { data: tasks } = useQuery('tasks', operationsAPI.getTasks);
-  const { data: incidents } = useQuery('incidents', safetyAPI.getIncidents);
+  const { data: healthStatus } = useQuery({ queryKey: ['health'], queryFn: healthAPI.check });
+  const { data: equipmentAssets } = useQuery({ queryKey: ['equipment'], queryFn: equipmentAPI.getAllAssets });
+  const { data: tasks } = useQuery({ queryKey: ['tasks'], queryFn: operationsAPI.getTasks });
+  const { data: incidents } = useQuery({ queryKey: ['incidents'], queryFn: safetyAPI.getIncidents });
 
   // For equipment assets, we'll show assets that need maintenance instead of low stock
   const maintenanceNeeded = equipmentAssets?.filter(asset => 
