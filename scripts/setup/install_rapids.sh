@@ -87,7 +87,7 @@ echo "   2. Test GPU: python -c 'import cudf; df = cudf.DataFrame({\"a\": [1,2,3
 echo "   3. Run forecasting: python scripts/forecasting/rapids_gpu_forecasting.py"
 echo ""
 echo "🐳 Alternative: Use Docker with RAPIDS container:"
-echo "   docker-compose -f deploy/compose/docker-compose.rapids.yml up"
+echo "   docker compose -f deploy/compose/docker-compose.rapids.yml up"
 echo ""
 echo "📚 Documentation: https://docs.rapids.ai/"
 

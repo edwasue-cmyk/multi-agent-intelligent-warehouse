@@ -26,8 +26,17 @@ chmod 755 monitoring/alertmanager
 
 echo "🐳 Starting monitoring stack with Docker Compose..."
 
+# Choose compose flavor (docker compose V2 or docker-compose V1)
+if docker compose version >/dev/null 2>&1; then 
+    COMPOSE=(docker compose)
+    echo "Using docker compose (plugin)"
+else 
+    COMPOSE=(docker-compose)
+    echo "Using docker-compose (standalone)"
+fi
+
 # Start the monitoring stack
-docker-compose -f deploy/compose/docker-compose.monitoring.yaml up -d
+"${COMPOSE[@]}" -f deploy/compose/docker-compose.monitoring.yaml up -d
 
 echo " Waiting for services to start..."
 sleep 10
@@ -63,7 +72,7 @@ echo "  4. Configure alerting rules in Prometheus"
 echo "  5. Set up notification channels in Alertmanager"
 echo ""
 echo " To stop the monitoring stack:"
-echo "  docker-compose -f deploy/compose/docker-compose.monitoring.yaml down"
+echo "  ${COMPOSE[*]} -f deploy/compose/docker-compose.monitoring.yaml down"
 echo ""
 echo " To view logs:"
-echo "  docker-compose -f deploy/compose/docker-compose.monitoring.yaml logs -f"
+echo "  ${COMPOSE[*]} -f deploy/compose/docker-compose.monitoring.yaml logs -f"

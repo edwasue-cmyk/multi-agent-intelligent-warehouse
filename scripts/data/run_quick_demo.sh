@@ -35,7 +35,7 @@ pip install bcrypt psycopg[binary]
 echo "🔍 Checking PostgreSQL connection..."
 if ! pg_isready -h localhost -p 5435 -U warehouse_user > /dev/null 2>&1; then
     echo "❌ Error: PostgreSQL not running on port 5435"
-    echo "   Please start PostgreSQL: docker-compose up -d postgres"
+    echo "   Please start PostgreSQL: docker compose up -d postgres"
     exit 1
 fi
 

@@ -24,6 +24,6 @@ pip install cudf-cu12 cuml-cu12 --extra-index-url=https://pypi.nvidia.com
 
 echo "✅ RAPIDS setup complete!"
 echo "🎯 To use GPU acceleration:"
-echo "   1. Run: docker-compose -f docker-compose.rapids.yml up"
+echo "   1. Run: docker compose -f docker-compose.rapids.yml up"
 echo "   2. Or use the RAPIDS training script directly"
 echo "   3. Check GPU usage with: nvidia-smi"

@@ -37,14 +37,14 @@ echo "🔍 Checking database connections..."
 # Check PostgreSQL
 if ! pg_isready -h localhost -p 5435 -U warehouse_user > /dev/null 2>&1; then
     echo "❌ Error: PostgreSQL not running on port 5435"
-    echo "   Please start PostgreSQL: docker-compose up -d postgres"
+    echo "   Please start PostgreSQL: docker compose up -d postgres"
     exit 1
 fi
 
 # Check Redis
 if ! redis-cli -h localhost -p 6379 ping > /dev/null 2>&1; then
     echo "❌ Error: Redis not running on port 6379"
-    echo "   Please start Redis: docker-compose up -d redis"
+    echo "   Please start Redis: docker compose up -d redis"
     exit 1
 fi
 

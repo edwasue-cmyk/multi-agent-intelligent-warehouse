@@ -101,9 +101,9 @@ const DeploymentGuide: React.FC = () => {
       pros: ["Easy setup", "Single command deployment", "Good for development"],
       cons: ["Single node only", "Limited scalability", "No high availability"],
       commands: [
-        "docker-compose up -d",
-        "docker-compose logs -f",
-        "docker-compose down"
+        "docker compose up -d",
+        "docker compose logs -f",
+        "docker compose down"
       ],
       status: "✅ Available"
     },
@@ -564,13 +564,13 @@ const DeploymentGuide: React.FC = () => {
                     <ListItem>
                       <ListItemText 
                         primary="Check Service Status" 
-                        secondary="docker-compose ps or kubectl get pods"
+                        secondary="docker compose ps or kubectl get pods"
                       />
                     </ListItem>
                     <ListItem>
                       <ListItemText 
                         primary="View Logs" 
-                        secondary="docker-compose logs -f or kubectl logs -f"
+                        secondary="docker compose logs -f or kubectl logs -f"
                       />
                     </ListItem>
                     <ListItem>
