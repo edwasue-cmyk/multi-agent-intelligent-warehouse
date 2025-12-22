@@ -22,235 +22,116 @@ below.
 
 Packages under the MIT License with their respective copyright holders:
 
-  @emotion/react 11.10.0
+  @emotion/react 11.14.0
+  Copyright (c) 2024 Emotion Contributors
 
-  @emotion/styled 11.10.0
+  @emotion/styled 11.14.1
+  Copyright (c) 2025 tkh44
 
-  @mui/icons-material 5.10.0
+  @mui/icons-material 7.3.6
+  Copyright (c) 2025 MUI Team
 
-  @mui/material 5.18.0
+  @mui/material 7.3.6
+  Copyright (c) 2025 MUI Team
 
-  @mui/x-data-grid 7.22.0
+  @mui/x-data-grid 8.22.1
+  Copyright (c) 2025 MUI Team
 
   @tanstack/react-query 5.90.12
+  Copyright (c) 2025 tannerlinsley
 
   @testing-library/dom 10.4.1
+  Copyright (c) 2025 Kent C. Dodds
 
-  @testing-library/jest-dom 5.16.4
+  @testing-library/jest-dom 6.9.1
+  Copyright (c) 2025 Ernesto Garcia
 
-  @testing-library/react 16.0.0
+  @testing-library/react 16.3.1
+  Copyright (c) 2025 Kent C. Dodds
 
-  @testing-library/user-event 13.5.0
+  @testing-library/user-event 14.6.1
+  Copyright (c) 2025 Giorgio Polvara
 
-  @types/jest 27.5.2
+  @types/jest 30.0.0
+  Copyright (c) 2025 types
 
-  @types/node 16.11.56
+  @types/node 25.0.3
+  Copyright (c) 2025 types
 
-  @types/papaparse 5.5.1
+  @types/papaparse 5.5.2
+  Copyright (c) 2025 types
 
-  @types/react 19.0.0
+  @types/react 19.2.7
+  Copyright (c) 2025 types
 
   @types/react-copy-to-clipboard 5.0.7
+  Copyright (c) 2023 types
 
-  @types/react-dom 19.0.0
+  @types/react-dom 19.2.3
+  Copyright (c) 2025 types
 
   @uiw/react-json-view 2.0.0-alpha.39
+  Copyright (c) 2025 Kenny Wang
 
   aiohttp 3.13.2
+  Copyright (c) 2025 aiohttp Contributors
 
-  annotated-doc 0.0.4
+  axios 1.13.2
+  Copyright (c) 2025 Matt Zabriskie
 
-  annotated-types 0.7.0
+  bacpypes3 0.0.102
+  Copyright (c) 2025 Joel Bender
 
-  anyio 4.12.0
+  date-fns 4.1.0
+  Copyright (c) 2024 kossnocorp
 
-  argon2-cffi 25.1.0
-
-  argon2-cffi-bindings 25.1.0
-
-  async-lru 2.0.5
-
-  attrs 25.4.0
-
-  axios 1.8.3
-
-  beautifulsoup4 4.14.3
-
-  cachetools 6.2.4
-
-  cffi 2.0.0
-
-  charset-normalizer 3.4.4
-
-  coloredlogs 15.0.1
-
-  cupy-cuda12x 13.6.0
-
-  dataclasses-json 0.6.7
-
-  date-fns 2.29.0
-
-  debugpy 1.8.19
-
-  et_xmlfile 2.0.0
-
-  exceptiongroup 1.3.1
-
-  executing 2.2.1
-
-  fast-equals 5.4.0
-
-  fastapi 0.125.0
-
-  fastrlock 0.8.3
-
-  greenlet 3.3.0
-
-  h11 0.16.0
+  fast-equals 6.0.0
+  Copyright (c) 2025 Tony Quetano
 
   http-proxy-middleware 3.0.5
-
-  httptools 0.7.1
-
-  httpx-sse 0.4.3
-
-  humanfriendly 10.0
+  Copyright (c) 2025 Steven Chim
 
   identity-obj-proxy 3.0.0
+  Copyright (c) 2016 Keyan Zhang
 
-  jedi 0.19.2
+  langchain-core 1.2.4
+  Copyright (c) 2025 langchain-core Contributors
 
-  jsonschema 4.25.1
-
-  jsonschema-specifications 2025.9.1
-
-  langchain 1.2.0
-
-  langchain-classic 1.0.0
-
-  langchain-community 0.4.1
-
-  langchain-core 1.2.3
-
-  langchain-text-splitters 1.1.0
-
-  langgraph 1.0.5
-
-  langgraph-checkpoint 3.0.1
-
-  langgraph-prebuilt 1.0.5
-
-  langgraph-sdk 0.3.1
-
-  langsmith 0.5.0
-
-  lark 1.3.1
-
-  loguru 0.7.3
-
-  markdown-it-py 4.0.0
-
-  marshmallow 3.26.1
-
-  mdurl 0.1.2
-
-  mmh3 5.2.0
-
-  mypy_extensions 1.1.0
-
-  onnxruntime 1.23.2
-
-  openpyxl 3.1.5
-
-  orjson 3.11.5
-
-  ormsgpack 1.12.1
-
-  packageurl-python 0.17.6
+  pandas 2.3.3
+  Copyright (c) 2025 The Pandas Development Team
 
   papaparse 5.5.3
+  Copyright (c) 2025 Matthew Holt
 
-  parso 0.8.5
-
-  pillow 11.3.0
-
-  pip-requirements-parser 32.0.1
-
-  pipdeptree 2.30.0
-
-  platformdirs 4.5.1
-
-  pure_eval 0.2.3
-
-  pydantic 2.12.5
-
-  pydantic-settings 2.12.0
-
-  pydantic_core 2.41.5
+  pdf2image 1.17.0
+  Copyright (c) 2025 Edouard Belval
 
   PyJWT 2.10.1
-
-  pyparsing 3.2.5
-
-  pytz 2025.2
+  Copyright (c) 2025 Jose Padilla
 
   PyYAML 6.0.3
+  Copyright (c) 2025 Kirill Simonov
 
   react 19.2.3
+  Copyright (c) 2025 React Contributors
 
   react-copy-to-clipboard 5.1.0
+  Copyright (c) 2022 Nik Butenko
 
   react-dom 19.2.3
+  Copyright (c) 2025 React-Dom Contributors
 
-  react-router-dom 6.8.0
+  react-router-dom 7.11.0
+  Copyright (c) 2025 Remix Software
 
   react-scripts 5.0.1
+  Copyright (c) 2022 React-Scripts Contributors
 
-  recharts 2.5.0
-
-  redis 7.1.0
-
-  referencing 0.37.0
-
-  rfc3339-validator 0.1.4
-
-  rfc3986-validator 0.1.1
-
-  rfc3987-syntax 1.1.0
-
-  rich 14.2.0
-
-  rpds-py 0.30.0
-
-  simpleeval 1.0.3
-
-  six 1.17.0
-
-  soupsieve 2.8.1
-
-  SQLAlchemy 2.0.45
-
-  stack-data 0.6.3
+  recharts 3.6.0
+  Copyright (c) 2025 recharts group
 
   tiktoken 0.12.0
-
-  tomli_w 1.2.0
-
-  tqdm 4.67.1
-
-  typer 0.20.0
-
-  typing-inspect 0.9.0
-
-  typing-inspection 0.4.2
-
-  uri-template 1.3.0
-
-  urllib3 2.6.2
-
-  uvloop 0.22.1
-
-  watchfiles 1.1.1
+  Copyright (c) 2025 Shantanu Jain
 
 
 Full MIT License Text:
@@ -287,48 +168,19 @@ The Apache License, Version 2.0 is a permissive license that also provides an ex
 Packages under the Apache License, Version 2.0 with their respective copyright holders:
 
   @craco/craco 7.1.0
+  Copyright (c) 2023 Dilan Nair
 
-  annoy 1.17.3
+  requests 2.32.5
+  Copyright (c) 2025 Kenneth Reitz
 
-  asttokens 3.0.1
+  typescript 5.9.3
+  Copyright (c) 2025 Microsoft Corp.
 
-  asyncpg 0.31.0
+  web-vitals 5.1.0
+  Copyright (c) 2025 Philip Walton
 
-  CacheControl 0.14.4
-
-  cuda-core 0.3.2
-
-  cuda-pathfinder 1.3.3
-
-  cuml-cu12 25.12.0
-
-  frozenlist 1.8.0
-
-  hf-xet 1.2.0
-
-  libraft-cu12 25.12.0
-
-  license-expression 30.4.4
-
-  msgpack 1.1.2
-
-  multidict 6.7.0
-
-  overrides 7.7.0
-
-  prometheus_client 0.23.1
-
-  pylibraft-cu12 25.12.0
-
-  python-multipart 0.0.21
-
-  regex 2025.11.3
-
-  typescript 4.7.4
-
-  tzdata 2025.3
-
-  web-vitals 2.1.4
+  xgboost 3.1.2
+  Copyright (c) 2025 Hyunsu Cho
 
 
 Full Apache License, Version 2.0 Text:
@@ -408,39 +260,23 @@ The BSD License is a permissive license.
 
 Packages under the BSD 3-Clause License with their respective copyright holders:
 
-  click 8.3.1
-
-  fsspec 2025.12.0
-
-  httpcore 1.0.9
-
-  idna 3.11
-
-  ipykernel 7.1.0
-
-  joblib 1.5.3
-
-  jupyter_core 5.9.1
+  httpx 0.28.1
+  Copyright (c) 2025 Tom Christie
 
   license-checker 25.0.1
-
-  MarkupSafe 3.0.3
+  Copyright (c) 2019 Dav Glass
 
   paho-mqtt 2.1.0
-
-  protobuf 6.33.2
+  Copyright (c) 2025 Roger Light
 
   psutil 7.1.3
+  Copyright (c) 2025 Giampaolo Rodola
 
-  python-dotenv 1.2.1
+  pymodbus 3.11.4
+  Copyright (c) 2025 Galen Collins, Jan Iversen
 
-  scikit-learn 1.7.2
-
-  starlette 0.50.0
-
-  uvicorn 0.30.1
-
-  zstandard 0.25.0
+  websockets 15.0.1
+  Copyright (c) 2025 Aymeric Augustin
 
 
 Full BSD 3-Clause License Text:
@@ -465,39 +301,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 ------------------------------------------------------------
-BSD 2-Clause License
-------------------------------------------------------------
-
-The BSD License is a permissive license.
-
-
-Packages under the BSD 2-Clause License with their respective copyright holders:
-
-  boolean.py 5.0
-
-  numba-cuda 0.19.1
-
-
-Full BSD 2-Clause License Text:
-
---------------------------------------------------
-
-BSD 2-Clause License
-
-Copyright <YEAR> <COPYRIGHT HOLDER>
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
---------------------------------------------------
-
-
-------------------------------------------------------------
 BSD License
 ------------------------------------------------------------
 
@@ -506,121 +309,8 @@ The BSD License is a permissive license.
 
 Packages under the BSD License with their respective copyright holders:
 
-  babel 2.17.0
-
-  bacpypes3 0.0.102
-
-  comm 0.2.3
-
-  decorator 5.2.1
-
-  fastjsonschema 2.21.2
-
-  httpx 0.28.1
-
-  ipython 8.37.0
-
-  ipywidgets 8.1.8
-
-  Jinja2 3.1.6
-
-  jsonpatch 1.33
-
-  jsonpointer 3.0.0
-
-  jupyter 1.1.1
-
-  jupyter-console 6.6.3
-
-  jupyter-events 0.12.0
-
-  jupyter-lsp 2.3.0
-
-  jupyter_client 8.7.0
-
-  jupyter_server 2.17.0
-
-  jupyter_server_terminals 0.5.3
-
-  jupyterlab 4.5.1
-
-  jupyterlab_pygments 0.3.0
-
-  jupyterlab_server 2.28.0
-
-  jupyterlab_widgets 3.0.16
-
-  llvmlite 0.44.0
-
-  mistune 3.1.4
-
-  mpmath 1.3.0
-
-  nbclient 0.10.2
-
-  nbconvert 7.16.6
-
-  nbformat 5.10.4
-
-  nest-asyncio 1.6.0
-
-  notebook 7.5.1
-
-  notebook_shim 0.2.4
-
-  numba 0.61.2
-
-  numpy 2.2.6
-
-  packaging 25.0
-
-  pandas 2.3.3
-
-  pandocfilters 1.5.1
-
-  passlib 1.7.4
-
-  prompt_toolkit 3.0.52
-
-  pycparser 2.23
-
-  Pygments 2.19.2
-
-  pymodbus 3.11.4
-
   pyserial 3.5
-
-  python-dateutil 2.9.0.post0
-
-  python-json-logger 4.0.0
-
-  pyzmq 27.1.0
-
-  scipy 1.15.3
-
-  Send2Trash 1.8.3
-
-  sympy 1.14.0
-
-  terminado 0.18.1
-
-  threadpoolctl 3.6.0
-
-  tinycss2 1.4.0
-
-  traitlets 5.14.3
-
-  uuid_utils 0.12.0
-
-  webcolors 25.10.0
-
-  webencodings 0.5.1
-
-  websockets 15.0.1
-
-  widgetsnbextension 4.0.15
-
-  xxhash 3.6.0
+  Copyright (c) 2025 Chris Liechti
 
 
 Full BSD License Text:
@@ -645,218 +335,13 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 ------------------------------------------------------------
-GPL License
+LICENSE.md
 ------------------------------------------------------------
 
-Packages under the GPL License with their respective copyright holders:
-
-  PyMuPDF 1.26.7
-
-------------------------------------------------------------
-LGPL License
-------------------------------------------------------------
-
-Packages under the LGPL License with their respective copyright holders:
-
-  psycopg 3.3.2
-
-  psycopg-binary 3.3.2
-
-------------------------------------------------------------
-Python Software Foundation License
-------------------------------------------------------------
-
-Packages under the Python Software Foundation License with their respective copyright holders:
-
-  aiohappyeyeballs 2.6.1
-
-  defusedxml 0.7.1
-
-  typing_extensions 4.15.0
-
-------------------------------------------------------------
-Apache Software License
-------------------------------------------------------------
-
-The Apache License, Version 2.0 is a permissive license that also provides an express grant of patent rights.
-
-
-Packages under the Apache Software License with their respective copyright holders:
-
-  aiosignal 1.4.0
-
-  arrow 1.4.0
-
-  async-timeout 4.0.3
-
-  bcrypt 5.0.0
-
-  bleach 6.3.0
-
-  cudf-cu12 25.12.0
-
-  cyclonedx-python-lib 11.6.0
-
-  flatbuffers 25.9.23
-
-  grpcio 1.76.0
-
-  huggingface-hub 0.36.0
-
-  json5 0.12.1
-
-  libcudf-cu12 25.12.0
-
-  libcuml-cu12 25.12.0
-
-  libkvikio-cu12 25.12.0
-
-  librmm-cu12 25.12.0
-
-  nvtx 0.2.14
-
-  pip-api 0.0.34
-
-  pip_audit 2.10.0
-
-  propcache 0.4.1
-
-  py-serializable 2.1.0
-
-  pyarrow 22.0.0
-
-  pylibcudf-cu12 25.12.0
-
-  pymilvus 2.6.5
-
-  rapids-logger 0.2.3
-
-  requests 2.32.5
-
-  requests-toolbelt 1.0.0
-
-  rmm-cu12 25.12.0
-
-  sortedcontainers 2.4.0
-
-  tenacity 9.1.2
-
-  tokenizers 0.22.1
-
-  tornado 6.5.4
-
-  treelite 4.6.1
-
-  watchdog 6.0.0
-
-  websocket-client 1.9.0
-
-  xgboost 3.1.2
-
-  yarl 1.22.0
-
-------------------------------------------------------------
-Apache Software License; Other/Proprietary License
-------------------------------------------------------------
-
-The Apache License, Version 2.0 is a permissive license that also provides an express grant of patent rights.
-
-
-Packages under the Apache Software License; Other/Proprietary License with their respective copyright holders:
+Packages under the LICENSE.md with their respective copyright holders:
 
   nemoguardrails 0.19.0
-
-------------------------------------------------------------
-ISC License (ISCL)
-------------------------------------------------------------
-
-Packages under the ISC License (ISCL) with their respective copyright holders:
-
-  dnspython 2.8.0
-
-  isoduration 20.11.0
-
-  pexpect 4.9.0
-
-  ptyprocess 0.7.0
-
-  shellingham 1.5.4
-
-------------------------------------------------------------
-LicenseRef-NVIDIA-Proprietary
-------------------------------------------------------------
-
-Packages under the LicenseRef-NVIDIA-Proprietary with their respective copyright holders:
-
-  nvidia-nccl-cu12 2.28.9
-
-------------------------------------------------------------
-LicenseRef-NVIDIA-SOFTWARE-LICENSE
-------------------------------------------------------------
-
-Packages under the LicenseRef-NVIDIA-SOFTWARE-LICENSE with their respective copyright holders:
-
-  cuda-bindings 12.9.5
-
-  cuda-python 12.9.5
-
-------------------------------------------------------------
-Mozilla Public License 2.0 (MPL 2.0)
-------------------------------------------------------------
-
-Packages under the Mozilla Public License 2.0 (MPL 2.0) with their respective copyright holders:
-
-  certifi 2025.11.12
-
-  fqdn 1.5.1
-
-------------------------------------------------------------
-Other/Proprietary License
-------------------------------------------------------------
-
-Packages under the Other/Proprietary License with their respective copyright holders:
-
-  fastembed 0.6.0
-
-  nvidia-cublas-cu12 12.9.1.4
-
-  nvidia-cuda-cccl-cu12 12.9.27
-
-  nvidia-cuda-nvcc-cu12 12.9.86
-
-  nvidia-cuda-nvrtc-cu12 12.9.86
-
-  nvidia-cuda-runtime-cu12 12.9.79
-
-  nvidia-cufft-cu12 11.4.1.4
-
-  nvidia-curand-cu12 10.3.10.19
-
-  nvidia-cusolver-cu12 11.7.5.82
-
-  nvidia-cusparse-cu12 12.5.10.65
-
-  nvidia-nvjitlink-cu12 12.9.86
-
-------------------------------------------------------------
-The Unlicense (Unlicense)
-------------------------------------------------------------
-
-Packages under the The Unlicense (Unlicense) with their respective copyright holders:
-
-  email-validator 2.3.0
-
-------------------------------------------------------------
-Unknown License
-------------------------------------------------------------
-
-Packages under the Unknown License with their respective copyright holders:
-
-  cuda-toolkit 12.9.1
-
-  matplotlib-inline 0.2.1
-
-  py_rust_stemmers 0.1.5
+  Copyright (c) 2025 NVIDIA
 
 ------------------------------------------------------------
 Unlicense
@@ -864,7 +349,8 @@ Unlicense
 
 Packages under the Unlicense with their respective copyright holders:
 
-  filelock 3.20.1
+  email-validator 2.3.0
+  Copyright (c) 2025 Joshua Tauberer
 
 
 END OF THIRD-PARTY LICENSES

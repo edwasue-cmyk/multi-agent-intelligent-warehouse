@@ -22,9 +22,14 @@ and generates a comprehensive third-party license file.
 """
 
 import json
+import urllib.request
+import urllib.error
+import time
+import email.header
+import re
 from pathlib import Path
 from collections import defaultdict
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
 
 try:
@@ -174,79 +179,345 @@ def normalize_license(license_str: str) -> tuple[str, str]:
         return license_str, ''  # Return as-is for custom licenses
 
 
+def get_pypi_copyright(package_name: str, version: str) -> Tuple[str, str]:
+    """
+    Get copyright information from PyPI API.
+    Returns: (copyright_year, copyright_holder)
+    """
+    try:
+        url = f"https://pypi.org/pypi/{package_name}/{version}/json"
+        with urllib.request.urlopen(url, timeout=5) as response:
+            data = json.loads(response.read())
+            info = data.get('info', {})
+            
+            # Get author information
+            author = info.get('author', '')
+            author_email = info.get('author_email', '')
+            
+            # Decode RFC 2047 encoded strings
+            if author and '=?' in author:
+                try:
+                    decoded_parts = email.header.decode_header(author)
+                    decoded_author = ''
+                    for part in decoded_parts:
+                        if isinstance(part[0], bytes):
+                            encoding = part[1] or 'utf-8'
+                            decoded_author += part[0].decode(encoding)
+                        else:
+                            decoded_author += part[0]
+                    author = decoded_author.strip()
+                except Exception:
+                    pass
+            
+            # Extract copyright holder (author name without email)
+            copyright_holder = author
+            if author and '<' in author:
+                copyright_holder = author.split('<')[0].strip()
+            elif author_email and not author:
+                # Use email if no author name
+                copyright_holder = author_email.split('@')[0].replace('.', ' ').title()
+            
+            # Get copyright year from release date
+            releases = data.get('releases', {})
+            release_info = releases.get(version, [])
+            copyright_year = None
+            
+            if release_info and len(release_info) > 0:
+                upload_time = release_info[0].get('upload_time', '')
+                if upload_time:
+                    try:
+                        # Parse ISO format date
+                        dt = datetime.fromisoformat(upload_time.replace('Z', '+00:00'))
+                        copyright_year = str(dt.year)
+                    except:
+                        pass
+            
+            # If no release date, try to get from first release
+            if not copyright_year:
+                all_releases = list(releases.keys())
+                if all_releases:
+                    # Get earliest release
+                    first_release = releases.get(all_releases[0], [])
+                    if first_release:
+                        upload_time = first_release[0].get('upload_time', '')
+                        if upload_time:
+                            try:
+                                dt = datetime.fromisoformat(upload_time.replace('Z', '+00:00'))
+                                copyright_year = str(dt.year)
+                            except:
+                                pass
+            
+            # Default to current year if no date found
+            if not copyright_year:
+                copyright_year = datetime.now().strftime('%Y')
+            
+            # Clean up copyright holder
+            if copyright_holder:
+                copyright_holder = copyright_holder.strip()
+                # Remove common prefixes
+                copyright_holder = re.sub(r'^Copyright\s*\(c\)\s*\d{4}\s*', '', copyright_holder, flags=re.IGNORECASE)
+                copyright_holder = copyright_holder.strip()
+                # Remove incomplete entries (single words, email fragments, etc.)
+                if len(copyright_holder) < 3 or copyright_holder.lower() in ['hello', 'n/a', 'unknown', 'none']:
+                    copyright_holder = None
+                # Remove email fragments
+                if '<' in copyright_holder and not '>' in copyright_holder:
+                    copyright_holder = copyright_holder.split('<')[0].strip()
+            
+            # If still no good copyright holder, try maintainers or project name
+            if not copyright_holder or copyright_holder == 'N/A':
+                maintainers = info.get('maintainer', '')
+                if maintainers:
+                    if '<' in maintainers:
+                        maintainers = maintainers.split('<')[0].strip()
+                    copyright_holder = maintainers.strip()
+                else:
+                    # Use project name as fallback
+                    project_name = info.get('name', package_name)
+                    if project_name:
+                        copyright_holder = f"{project_name} Contributors"
+            
+            return copyright_year, copyright_holder or 'N/A'
+            
+    except Exception as e:
+        # Return defaults on error
+        return datetime.now().strftime('%Y'), 'N/A'
+
+
+def get_npm_copyright(package_name: str, version: str) -> Tuple[str, str]:
+    """
+    Get copyright information from npm API.
+    Returns: (copyright_year, copyright_holder)
+    """
+    try:
+        package_url_name = package_name.replace('/', '%2F')
+        url = f"https://registry.npmjs.org/{package_url_name}"
+        
+        with urllib.request.urlopen(url, timeout=5) as response:
+            data = json.loads(response.read())
+            
+            version_data = data.get('versions', {}).get(version, {})
+            
+            # Get author information
+            author = version_data.get('author', {})
+            if isinstance(author, dict):
+                author_name = author.get('name', '')
+            elif isinstance(author, str):
+                author_name = author
+            else:
+                author_name = ''
+            
+            # Get time from version data
+            time_data = data.get('time', {})
+            copyright_year = None
+            
+            if version in time_data:
+                try:
+                    dt = datetime.fromisoformat(time_data[version].replace('Z', '+00:00'))
+                    copyright_year = str(dt.year)
+                except:
+                    pass
+            
+            # Try to get from first release
+            if not copyright_year and time_data:
+                first_time = list(time_data.values())[0] if time_data else None
+                if first_time:
+                    try:
+                        dt = datetime.fromisoformat(first_time.replace('Z', '+00:00'))
+                        copyright_year = str(dt.year)
+                    except:
+                        pass
+            
+            # Default to current year
+            if not copyright_year:
+                copyright_year = datetime.now().strftime('%Y')
+            
+            # Clean up author name
+            copyright_holder = author_name.strip() if author_name else None
+            if copyright_holder and '<' in copyright_holder:
+                copyright_holder = copyright_holder.split('<')[0].strip()
+            
+            # If no author, try maintainers or project name
+            if not copyright_holder or len(copyright_holder) < 3:
+                maintainers = data.get('maintainers', [])
+                if maintainers and len(maintainers) > 0:
+                    maintainer = maintainers[0]
+                    if isinstance(maintainer, dict):
+                        copyright_holder = maintainer.get('name', '')
+                    elif isinstance(maintainer, str):
+                        copyright_holder = maintainer
+                
+                if not copyright_holder or len(copyright_holder) < 3:
+                    # Use package name as fallback
+                    package_display_name = package_name.replace('@', '').replace('/', ' ').title()
+                    copyright_holder = f"{package_display_name} Contributors"
+            
+            return copyright_year, copyright_holder or 'N/A'
+            
+    except Exception as e:
+        return datetime.now().strftime('%Y'), 'N/A'
+
+
+def parse_requirements_file(requirements_file: Path) -> List[Dict[str, str]]:
+    """Parse requirements.txt file and extract package names and versions."""
+    packages = []
+    if not requirements_file.exists():
+        return packages
+    
+    with open(requirements_file, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            
+            # Parse package specification (e.g., "package>=1.0.0" or "package==1.0.0")
+            # Remove comments
+            if '#' in line:
+                line = line.split('#')[0].strip()
+            
+            # Match package name and version constraints
+            match = re.match(r'^([a-zA-Z0-9_-]+[a-zA-Z0-9._-]*)([<>=!]+.*)?$', line)
+            if match:
+                package_name = match.group(1)
+                # For now, we'll get the actual installed version from PyPI
+                packages.append({'name': package_name, 'version': None})
+    
+    return packages
+
+
+def parse_package_json(package_json: Path) -> List[Dict[str, str]]:
+    """Parse package.json file and extract package names and versions."""
+    packages = []
+    if not package_json.exists():
+        return packages
+    
+    with open(package_json, 'r') as f:
+        data = json.load(f)
+    
+    # Get dependencies and devDependencies
+    deps = {}
+    deps.update(data.get('dependencies', {}))
+    deps.update(data.get('devDependencies', {}))
+    
+    for name, version_spec in deps.items():
+        # Clean version spec (remove ^, ~, etc.)
+        version = None  # We'll get actual version from npm
+        packages.append({'name': name, 'version': version})
+    
+    return packages
+
+
 def extract_packages_from_audit(repo_root: Path) -> Dict[str, List[Dict[str, Any]]]:
-    """Extract packages from license audit report."""
-    xlsx_file = repo_root / 'docs' / 'License_Audit_Report.xlsx'
-    
-    if not xlsx_file.exists():
-        print(f"Error: License audit report not found: {xlsx_file}")
-        return {}
-    
-    wb = load_workbook(xlsx_file)
+    """Extract packages from requirements files and fetch copyright info from APIs."""
     all_packages = {}
     
-    # Extract Python packages
-    if 'Python Packages' in wb.sheetnames:
-        ws = wb['Python Packages']
-        # Find column indices
-        name_col = 1
-        version_col = 2
-        license_col = 3
-        author_col = 5  # Author is typically in column 5
-        
-        for row in range(2, ws.max_row + 1):
-            name = ws.cell(row, name_col).value
-            version = ws.cell(row, version_col).value
-            license_val = ws.cell(row, license_col).value
-            author = ws.cell(row, author_col).value if ws.max_column >= author_col else None
-            
-            if name and license_val:
-                # Clean up author string
-                author_clean = 'N/A'
-                if author and str(author).strip() and str(author).strip() != 'N/A':
-                    author_str = str(author).strip()
-                    # Remove email addresses and clean up
-                    if '<' in author_str:
-                        # Extract name before email
-                        author_clean = author_str.split('<')[0].strip()
-                    else:
-                        author_clean = author_str
-                    # Remove "Copyright (c)" if present
-                    author_clean = author_clean.replace('Copyright (c)', '').replace('Copyright', '').strip()
-                    if not author_clean or author_clean == 'PyPI':
-                        author_clean = 'N/A'
-                
-                all_packages[name] = {
-                    'version': str(version) if version else 'N/A',
-                    'license': str(license_val),
-                    'author': author_clean
-                }
+    print("Extracting packages from requirements files...")
     
-    # Extract Node.js packages
-    if 'Node.js Packages' in wb.sheetnames:
-        ws = wb['Node.js Packages']
-        for row in range(2, ws.max_row + 1):
-            name = ws.cell(row, 1).value
-            version = ws.cell(row, 2).value
-            license_val = ws.cell(row, 3).value
-            
-            if name and license_val:
-                all_packages[name] = {
-                    'version': str(version) if version else 'N/A',
-                    'license': str(license_val),
-                    'author': 'N/A'  # Node.js packages don't have author in audit
+    # Parse Python requirements
+    requirements_files = [
+        repo_root / 'requirements.txt',
+        repo_root / 'requirements.docker.txt',
+    ]
+    
+    python_packages = set()
+    for req_file in requirements_files:
+        if req_file.exists():
+            packages = parse_requirements_file(req_file)
+            for pkg in packages:
+                python_packages.add(pkg['name'])
+    
+    # Parse Node.js package.json
+    package_json = repo_root / 'src' / 'ui' / 'web' / 'package.json'
+    nodejs_packages = set()
+    if package_json.exists():
+        packages = parse_package_json(package_json)
+        for pkg in packages:
+            nodejs_packages.add(pkg['name'])
+    
+    print(f"Found {len(python_packages)} Python packages and {len(nodejs_packages)} Node.js packages")
+    print("Fetching copyright information from PyPI and npm APIs...")
+    
+    # Fetch Python packages from PyPI
+    for i, package_name in enumerate(sorted(python_packages), 1):
+        print(f"[{i}/{len(python_packages)}] Fetching {package_name}...")
+        try:
+            # Get latest version info
+            url = f"https://pypi.org/pypi/{package_name}/json"
+            with urllib.request.urlopen(url, timeout=5) as response:
+                data = json.loads(response.read())
+                info = data.get('info', {})
+                version = info.get('version', 'N/A')
+                license_val = info.get('license', '')
+                
+                # Get copyright info
+                copyright_year, copyright_holder = get_pypi_copyright(package_name, version)
+                
+                all_packages[package_name] = {
+                    'version': version,
+                    'license': license_val or 'N/A',
+                    'copyright_year': copyright_year,
+                    'copyright_holder': copyright_holder,
+                    'source': 'pypi'
                 }
+        except Exception as e:
+            print(f"  ⚠️  Error fetching {package_name}: {e}")
+            all_packages[package_name] = {
+                'version': 'N/A',
+                'license': 'N/A',
+                'copyright_year': datetime.now().strftime('%Y'),
+                'copyright_holder': 'N/A',
+                'source': 'pypi'
+            }
+        time.sleep(0.1)  # Rate limiting
+    
+    # Fetch Node.js packages from npm
+    for i, package_name in enumerate(sorted(nodejs_packages), 1):
+        print(f"[{i}/{len(nodejs_packages)}] Fetching {package_name}...")
+        try:
+            # Get latest version info
+            package_url_name = package_name.replace('/', '%2F')
+            url = f"https://registry.npmjs.org/{package_url_name}"
+            with urllib.request.urlopen(url, timeout=5) as response:
+                data = json.loads(response.read())
+                latest_version = data.get('dist-tags', {}).get('latest', '')
+                version_data = data.get('versions', {}).get(latest_version, {})
+                license_val = version_data.get('license', '')
+                if isinstance(license_val, dict):
+                    license_val = license_val.get('type', '')
+                
+                # Get copyright info
+                copyright_year, copyright_holder = get_npm_copyright(package_name, latest_version)
+                
+                all_packages[package_name] = {
+                    'version': latest_version or 'N/A',
+                    'license': license_val or 'N/A',
+                    'copyright_year': copyright_year,
+                    'copyright_holder': copyright_holder,
+                    'source': 'npm'
+                }
+        except Exception as e:
+            print(f"  ⚠️  Error fetching {package_name}: {e}")
+            all_packages[package_name] = {
+                'version': 'N/A',
+                'license': 'N/A',
+                'copyright_year': datetime.now().strftime('%Y'),
+                'copyright_holder': 'N/A',
+                'source': 'npm'
+            }
+        time.sleep(0.1)  # Rate limiting
     
     # Group by normalized license
     license_groups = defaultdict(list)
     
     for name, info in sorted(all_packages.items()):
-        normalized_license, _ = normalize_license(info['license'])
-        license_groups[normalized_license].append({
-            'name': name,
-            'version': info['version'],
-            'author': info['author']
-        })
+        if info['license'] and info['license'] != 'N/A':
+            normalized_license, _ = normalize_license(info['license'])
+            license_groups[normalized_license].append({
+                'name': name,
+                'version': info['version'],
+                'copyright_year': info['copyright_year'],
+                'copyright_holder': info['copyright_holder']
+            })
     
     return dict(license_groups)
 
@@ -330,12 +601,12 @@ def generate_license_file(repo_root: Path, output_file: Path):
         for pkg in sorted(packages, key=lambda x: x['name'].lower()):
             name = pkg['name']
             version = pkg['version']
-            author = pkg['author']
+            copyright_year = pkg.get('copyright_year', datetime.now().strftime('%Y'))
+            copyright_holder = pkg.get('copyright_holder', 'N/A')
             
             output_lines.append("  {} {}".format(name, version))
-            if author and author != 'N/A' and author.strip():
-                # Author is already cleaned, just add copyright
-                output_lines.append("  Copyright (c) {}".format(author))
+            if copyright_holder and copyright_holder != 'N/A' and copyright_holder.strip():
+                output_lines.append("  Copyright (c) {} {}".format(copyright_year, copyright_holder))
             output_lines.append("")
         
         # Add full license text if available
