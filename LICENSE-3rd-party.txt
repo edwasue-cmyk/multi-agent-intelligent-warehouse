@@ -1,3 +1,6 @@
+Retail & CPG Multi-Agent-Intelligent-Warehouse Third-Party Licenses
+===================================================================
+
 This file contains third-party license information and copyright notices for software packages
 used in this project. The licenses below apply to one or more packages included in this project.
 
