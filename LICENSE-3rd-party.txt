@@ -1,0 +1,870 @@
+This file contains third-party license information and copyright notices for software packages
+used in this project. The licenses below apply to one or more packages included in this project.
+
+For each license type, we list the packages that are distributed under it along with their
+respective copyright holders and include the full license text.
+
+
+IMPORTANT: This file includes both the copyright information and license details as required by
+most open-source licenses to ensure proper attribution and legal compliance.
+
+
+------------------------------------------------------------
+
+------------------------------------------------------------
+MIT License
+------------------------------------------------------------
+
+The MIT License is a permissive free software license. Many of the packages used in this
+project are distributed under the MIT License. The full text of the MIT License is provided
+below.
+
+
+Packages under the MIT License with their respective copyright holders:
+
+  @emotion/react 11.10.0
+
+  @emotion/styled 11.10.0
+
+  @mui/icons-material 5.10.0
+
+  @mui/material 5.18.0
+
+  @mui/x-data-grid 7.22.0
+
+  @tanstack/react-query 5.90.12
+
+  @testing-library/dom 10.4.1
+
+  @testing-library/jest-dom 5.16.4
+
+  @testing-library/react 16.0.0
+
+  @testing-library/user-event 13.5.0
+
+  @types/jest 27.5.2
+
+  @types/node 16.11.56
+
+  @types/papaparse 5.5.1
+
+  @types/react 19.0.0
+
+  @types/react-copy-to-clipboard 5.0.7
+
+  @types/react-dom 19.0.0
+
+  @uiw/react-json-view 2.0.0-alpha.39
+
+  aiohttp 3.13.2
+
+  annotated-doc 0.0.4
+
+  annotated-types 0.7.0
+
+  anyio 4.12.0
+
+  argon2-cffi 25.1.0
+
+  argon2-cffi-bindings 25.1.0
+
+  async-lru 2.0.5
+
+  attrs 25.4.0
+
+  axios 1.8.3
+
+  beautifulsoup4 4.14.3
+
+  cachetools 6.2.4
+
+  cffi 2.0.0
+
+  charset-normalizer 3.4.4
+
+  coloredlogs 15.0.1
+
+  cupy-cuda12x 13.6.0
+
+  dataclasses-json 0.6.7
+
+  date-fns 2.29.0
+
+  debugpy 1.8.19
+
+  et_xmlfile 2.0.0
+
+  exceptiongroup 1.3.1
+
+  executing 2.2.1
+
+  fast-equals 5.4.0
+
+  fastapi 0.125.0
+
+  fastrlock 0.8.3
+
+  greenlet 3.3.0
+
+  h11 0.16.0
+
+  http-proxy-middleware 3.0.5
+
+  httptools 0.7.1
+
+  httpx-sse 0.4.3
+
+  humanfriendly 10.0
+
+  identity-obj-proxy 3.0.0
+
+  jedi 0.19.2
+
+  jsonschema 4.25.1
+
+  jsonschema-specifications 2025.9.1
+
+  langchain 1.2.0
+
+  langchain-classic 1.0.0
+
+  langchain-community 0.4.1
+
+  langchain-core 1.2.3
+
+  langchain-text-splitters 1.1.0
+
+  langgraph 1.0.5
+
+  langgraph-checkpoint 3.0.1
+
+  langgraph-prebuilt 1.0.5
+
+  langgraph-sdk 0.3.1
+
+  langsmith 0.5.0
+
+  lark 1.3.1
+
+  loguru 0.7.3
+
+  markdown-it-py 4.0.0
+
+  marshmallow 3.26.1
+
+  mdurl 0.1.2
+
+  mmh3 5.2.0
+
+  mypy_extensions 1.1.0
+
+  onnxruntime 1.23.2
+
+  openpyxl 3.1.5
+
+  orjson 3.11.5
+
+  ormsgpack 1.12.1
+
+  packageurl-python 0.17.6
+
+  papaparse 5.5.3
+
+  parso 0.8.5
+
+  pillow 11.3.0
+
+  pip-requirements-parser 32.0.1
+
+  pipdeptree 2.30.0
+
+  platformdirs 4.5.1
+
+  pure_eval 0.2.3
+
+  pydantic 2.12.5
+
+  pydantic-settings 2.12.0
+
+  pydantic_core 2.41.5
+
+  PyJWT 2.10.1
+
+  pyparsing 3.2.5
+
+  pytz 2025.2
+
+  PyYAML 6.0.3
+
+  react 19.2.3
+
+  react-copy-to-clipboard 5.1.0
+
+  react-dom 19.2.3
+
+  react-router-dom 6.8.0
+
+  react-scripts 5.0.1
+
+  recharts 2.5.0
+
+  redis 7.1.0
+
+  referencing 0.37.0
+
+  rfc3339-validator 0.1.4
+
+  rfc3986-validator 0.1.1
+
+  rfc3987-syntax 1.1.0
+
+  rich 14.2.0
+
+  rpds-py 0.30.0
+
+  simpleeval 1.0.3
+
+  six 1.17.0
+
+  soupsieve 2.8.1
+
+  SQLAlchemy 2.0.45
+
+  stack-data 0.6.3
+
+  tiktoken 0.12.0
+
+  tomli_w 1.2.0
+
+  tqdm 4.67.1
+
+  typer 0.20.0
+
+  typing-inspect 0.9.0
+
+  typing-inspection 0.4.2
+
+  uri-template 1.3.0
+
+  urllib3 2.6.2
+
+  uvloop 0.22.1
+
+  watchfiles 1.1.1
+
+
+Full MIT License Text:
+
+--------------------------------------------------
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
+and associated documentation files (the "Software"), to deal in the Software without restriction, 
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or 
+substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING 
+BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE 
+OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+--------------------------------------------------
+
+
+------------------------------------------------------------
+Apache License, Version 2.0
+------------------------------------------------------------
+
+The Apache License, Version 2.0 is a permissive license that also provides an express grant of patent rights.
+
+
+Packages under the Apache License, Version 2.0 with their respective copyright holders:
+
+  @craco/craco 7.1.0
+
+  annoy 1.17.3
+
+  asttokens 3.0.1
+
+  asyncpg 0.31.0
+
+  CacheControl 0.14.4
+
+  cuda-core 0.3.2
+
+  cuda-pathfinder 1.3.3
+
+  cuml-cu12 25.12.0
+
+  frozenlist 1.8.0
+
+  hf-xet 1.2.0
+
+  libraft-cu12 25.12.0
+
+  license-expression 30.4.4
+
+  msgpack 1.1.2
+
+  multidict 6.7.0
+
+  overrides 7.7.0
+
+  prometheus_client 0.23.1
+
+  pylibraft-cu12 25.12.0
+
+  python-multipart 0.0.21
+
+  regex 2025.11.3
+
+  typescript 4.7.4
+
+  tzdata 2025.3
+
+  web-vitals 2.1.4
+
+
+Full Apache License, Version 2.0 Text:
+
+--------------------------------------------------
+
+Apache License
+Version 2.0, January 2004
+http://www.apache.org/licenses/
+
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+1. Definitions.
+
+   "License" shall mean the terms and conditions for use, reproduction, and distribution as defined in this document.
+   "Licensor" shall mean the copyright owner or entity authorized by the copyright owner that is granting the License.
+   "Legal Entity" shall mean the union of the acting entity and all other entities that control, are controlled by, or are under common control with that entity.
+   "You" (or "Your") shall mean an individual or Legal Entity exercising permissions granted by this License.
+   "Source" form shall mean the preferred form for making modifications, including but not limited to software source code, documentation source, and configuration files.
+   "Object" form shall mean any form resulting from mechanical transformation or translation of a Source form, including but not limited to compiled object code, generated documentation, and conversions to other media types.
+   "Work" shall mean the work of authorship, whether in Source or Object form, made available under the License, as indicated by a copyright notice that is included in or attached to the work.
+   "Derivative Works" shall mean any work, whether in Source or Object form, that is based on (or derived from) the Work and for which the modifications represent, as a whole, an original work of authorship.
+   "Contribution" shall mean any work of authorship, including the original version of the Work and any modifications or additions to that Work or Derivative Works thereof, that is intentionally submitted to Licensor for inclusion in the Work.
+   "Contributor" shall mean Licensor and any individual or Legal Entity on behalf of whom a Contribution has been received by Licensor and subsequently incorporated within the Work.
+
+2. Grant of Copyright License.
+
+   Subject to the terms and conditions of this License, each Contributor hereby grants to You a perpetual, worldwide, non-exclusive, 
+   no-charge, royalty-free, irrevocable copyright license to reproduce, prepare Derivative Works of, 
+   publicly display, publicly perform, sublicense, and distribute the Work and such Derivative Works.
+
+3. Grant of Patent License.
+
+   Subject to the terms and conditions of this License, each Contributor hereby grants to You a perpetual, worldwide, non-exclusive, 
+   no-charge, royalty-free, irrevocable (except as stated in this section) patent license to make, have made, use, offer to sell, 
+   sell, import, and otherwise transfer the Work, where such license applies only to those patent claims licensable by such Contributor 
+   that are necessarily infringed by their Contribution(s) alone or by combination of their Contribution(s) with the Work.
+
+4. Redistribution.
+
+   You may reproduce and distribute copies of the Work or Derivative Works thereof in any medium, with or without modifications, 
+   and in Source or Object form, provided that You meet the following conditions:
+     (a) You must give any other recipients of the Work or Derivative Works a copy of this License; and
+     (b) You must cause any modified files to carry prominent notices stating that You changed the files; and
+     (c) You must retain, in the Source form of any Derivative Works that You distribute, all copyright, patent, trademark, 
+         and attribution notices from the Source form of the Work; and
+     (d) If the Work includes a "NOTICE" text file as part of its distribution, then any Derivative Works that You distribute 
+         must include a readable copy of the attribution notices contained within such NOTICE file.
+
+5. Submission of Contributions.
+
+   Unless You explicitly state otherwise, any Contribution submitted for inclusion in the Work shall be under the terms and conditions of this License.
+
+6. Trademarks.
+
+   This License does not grant permission to use the trade names, trademarks, service marks, or product names of the Licensor.
+
+7. Disclaimer of Warranty.
+
+   The Work is provided on an "AS IS" basis, without warranties or conditions of any kind, either express or implied.
+
+8. Limitation of Liability.
+
+   In no event shall any Contributor be liable for any damages arising from the use of the Work.
+
+END OF TERMS AND CONDITIONS
+
+--------------------------------------------------
+
+
+------------------------------------------------------------
+BSD 3-Clause License
+------------------------------------------------------------
+
+The BSD License is a permissive license.
+
+
+Packages under the BSD 3-Clause License with their respective copyright holders:
+
+  click 8.3.1
+
+  fsspec 2025.12.0
+
+  httpcore 1.0.9
+
+  idna 3.11
+
+  ipykernel 7.1.0
+
+  joblib 1.5.3
+
+  jupyter_core 5.9.1
+
+  license-checker 25.0.1
+
+  MarkupSafe 3.0.3
+
+  paho-mqtt 2.1.0
+
+  protobuf 6.33.2
+
+  psutil 7.1.3
+
+  python-dotenv 1.2.1
+
+  scikit-learn 1.7.2
+
+  starlette 0.50.0
+
+  uvicorn 0.30.1
+
+  zstandard 0.25.0
+
+
+Full BSD 3-Clause License Text:
+
+--------------------------------------------------
+
+BSD 3-Clause License
+
+Copyright <YEAR> <COPYRIGHT HOLDER>
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------------
+
+
+------------------------------------------------------------
+BSD 2-Clause License
+------------------------------------------------------------
+
+The BSD License is a permissive license.
+
+
+Packages under the BSD 2-Clause License with their respective copyright holders:
+
+  boolean.py 5.0
+
+  numba-cuda 0.19.1
+
+
+Full BSD 2-Clause License Text:
+
+--------------------------------------------------
+
+BSD 2-Clause License
+
+Copyright <YEAR> <COPYRIGHT HOLDER>
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------------
+
+
+------------------------------------------------------------
+BSD License
+------------------------------------------------------------
+
+The BSD License is a permissive license.
+
+
+Packages under the BSD License with their respective copyright holders:
+
+  babel 2.17.0
+
+  bacpypes3 0.0.102
+
+  comm 0.2.3
+
+  decorator 5.2.1
+
+  fastjsonschema 2.21.2
+
+  httpx 0.28.1
+
+  ipython 8.37.0
+
+  ipywidgets 8.1.8
+
+  Jinja2 3.1.6
+
+  jsonpatch 1.33
+
+  jsonpointer 3.0.0
+
+  jupyter 1.1.1
+
+  jupyter-console 6.6.3
+
+  jupyter-events 0.12.0
+
+  jupyter-lsp 2.3.0
+
+  jupyter_client 8.7.0
+
+  jupyter_server 2.17.0
+
+  jupyter_server_terminals 0.5.3
+
+  jupyterlab 4.5.1
+
+  jupyterlab_pygments 0.3.0
+
+  jupyterlab_server 2.28.0
+
+  jupyterlab_widgets 3.0.16
+
+  llvmlite 0.44.0
+
+  mistune 3.1.4
+
+  mpmath 1.3.0
+
+  nbclient 0.10.2
+
+  nbconvert 7.16.6
+
+  nbformat 5.10.4
+
+  nest-asyncio 1.6.0
+
+  notebook 7.5.1
+
+  notebook_shim 0.2.4
+
+  numba 0.61.2
+
+  numpy 2.2.6
+
+  packaging 25.0
+
+  pandas 2.3.3
+
+  pandocfilters 1.5.1
+
+  passlib 1.7.4
+
+  prompt_toolkit 3.0.52
+
+  pycparser 2.23
+
+  Pygments 2.19.2
+
+  pymodbus 3.11.4
+
+  pyserial 3.5
+
+  python-dateutil 2.9.0.post0
+
+  python-json-logger 4.0.0
+
+  pyzmq 27.1.0
+
+  scipy 1.15.3
+
+  Send2Trash 1.8.3
+
+  sympy 1.14.0
+
+  terminado 0.18.1
+
+  threadpoolctl 3.6.0
+
+  tinycss2 1.4.0
+
+  traitlets 5.14.3
+
+  uuid_utils 0.12.0
+
+  webcolors 25.10.0
+
+  webencodings 0.5.1
+
+  websockets 15.0.1
+
+  widgetsnbextension 4.0.15
+
+  xxhash 3.6.0
+
+
+Full BSD License Text:
+
+--------------------------------------------------
+
+BSD 3-Clause License
+
+Copyright <YEAR> <COPYRIGHT HOLDER>
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------------
+
+
+------------------------------------------------------------
+GPL License
+------------------------------------------------------------
+
+Packages under the GPL License with their respective copyright holders:
+
+  PyMuPDF 1.26.7
+
+------------------------------------------------------------
+LGPL License
+------------------------------------------------------------
+
+Packages under the LGPL License with their respective copyright holders:
+
+  psycopg 3.3.2
+
+  psycopg-binary 3.3.2
+
+------------------------------------------------------------
+Python Software Foundation License
+------------------------------------------------------------
+
+Packages under the Python Software Foundation License with their respective copyright holders:
+
+  aiohappyeyeballs 2.6.1
+
+  defusedxml 0.7.1
+
+  typing_extensions 4.15.0
+
+------------------------------------------------------------
+Apache Software License
+------------------------------------------------------------
+
+The Apache License, Version 2.0 is a permissive license that also provides an express grant of patent rights.
+
+
+Packages under the Apache Software License with their respective copyright holders:
+
+  aiosignal 1.4.0
+
+  arrow 1.4.0
+
+  async-timeout 4.0.3
+
+  bcrypt 5.0.0
+
+  bleach 6.3.0
+
+  cudf-cu12 25.12.0
+
+  cyclonedx-python-lib 11.6.0
+
+  flatbuffers 25.9.23
+
+  grpcio 1.76.0
+
+  huggingface-hub 0.36.0
+
+  json5 0.12.1
+
+  libcudf-cu12 25.12.0
+
+  libcuml-cu12 25.12.0
+
+  libkvikio-cu12 25.12.0
+
+  librmm-cu12 25.12.0
+
+  nvtx 0.2.14
+
+  pip-api 0.0.34
+
+  pip_audit 2.10.0
+
+  propcache 0.4.1
+
+  py-serializable 2.1.0
+
+  pyarrow 22.0.0
+
+  pylibcudf-cu12 25.12.0
+
+  pymilvus 2.6.5
+
+  rapids-logger 0.2.3
+
+  requests 2.32.5
+
+  requests-toolbelt 1.0.0
+
+  rmm-cu12 25.12.0
+
+  sortedcontainers 2.4.0
+
+  tenacity 9.1.2
+
+  tokenizers 0.22.1
+
+  tornado 6.5.4
+
+  treelite 4.6.1
+
+  watchdog 6.0.0
+
+  websocket-client 1.9.0
+
+  xgboost 3.1.2
+
+  yarl 1.22.0
+
+------------------------------------------------------------
+Apache Software License; Other/Proprietary License
+------------------------------------------------------------
+
+The Apache License, Version 2.0 is a permissive license that also provides an express grant of patent rights.
+
+
+Packages under the Apache Software License; Other/Proprietary License with their respective copyright holders:
+
+  nemoguardrails 0.19.0
+
+------------------------------------------------------------
+ISC License (ISCL)
+------------------------------------------------------------
+
+Packages under the ISC License (ISCL) with their respective copyright holders:
+
+  dnspython 2.8.0
+
+  isoduration 20.11.0
+
+  pexpect 4.9.0
+
+  ptyprocess 0.7.0
+
+  shellingham 1.5.4
+
+------------------------------------------------------------
+LicenseRef-NVIDIA-Proprietary
+------------------------------------------------------------
+
+Packages under the LicenseRef-NVIDIA-Proprietary with their respective copyright holders:
+
+  nvidia-nccl-cu12 2.28.9
+
+------------------------------------------------------------
+LicenseRef-NVIDIA-SOFTWARE-LICENSE
+------------------------------------------------------------
+
+Packages under the LicenseRef-NVIDIA-SOFTWARE-LICENSE with their respective copyright holders:
+
+  cuda-bindings 12.9.5
+
+  cuda-python 12.9.5
+
+------------------------------------------------------------
+Mozilla Public License 2.0 (MPL 2.0)
+------------------------------------------------------------
+
+Packages under the Mozilla Public License 2.0 (MPL 2.0) with their respective copyright holders:
+
+  certifi 2025.11.12
+
+  fqdn 1.5.1
+
+------------------------------------------------------------
+Other/Proprietary License
+------------------------------------------------------------
+
+Packages under the Other/Proprietary License with their respective copyright holders:
+
+  fastembed 0.6.0
+
+  nvidia-cublas-cu12 12.9.1.4
+
+  nvidia-cuda-cccl-cu12 12.9.27
+
+  nvidia-cuda-nvcc-cu12 12.9.86
+
+  nvidia-cuda-nvrtc-cu12 12.9.86
+
+  nvidia-cuda-runtime-cu12 12.9.79
+
+  nvidia-cufft-cu12 11.4.1.4
+
+  nvidia-curand-cu12 10.3.10.19
+
+  nvidia-cusolver-cu12 11.7.5.82
+
+  nvidia-cusparse-cu12 12.5.10.65
+
+  nvidia-nvjitlink-cu12 12.9.86
+
+------------------------------------------------------------
+The Unlicense (Unlicense)
+------------------------------------------------------------
+
+Packages under the The Unlicense (Unlicense) with their respective copyright holders:
+
+  email-validator 2.3.0
+
+------------------------------------------------------------
+Unknown License
+------------------------------------------------------------
+
+Packages under the Unknown License with their respective copyright holders:
+
+  cuda-toolkit 12.9.1
+
+  matplotlib-inline 0.2.1
+
+  py_rust_stemmers 0.1.5
+
+------------------------------------------------------------
+Unlicense
+------------------------------------------------------------
+
+Packages under the Unlicense with their respective copyright holders:
+
+  filelock 3.20.1
+
+
+END OF THIRD-PARTY LICENSES
