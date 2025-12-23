@@ -198,20 +198,34 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography 
-            variant="h6" 
-            noWrap 
-            component="div" 
-            sx={{ 
-              flexGrow: 1,
-              fontWeight: 600,
-              fontSize: '1.125rem',
-              color: 'text.primary',
-              letterSpacing: '0.01em',
-            }}
-          >
-                    Multi-Agent-Intelligent-Warehouse (MAIW)
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
+            <Box
+              component="img"
+              src="/nvlogo.png"
+              alt="NVIDIA"
+              sx={{
+                height: 24,
+                width: 'auto',
+                display: { xs: 'none', sm: 'block' },
+              }}
+              onError={(e: any) => {
+                e.target.style.display = 'none';
+              }}
+            />
+            <Typography 
+              variant="h6" 
+              noWrap 
+              component="div" 
+              sx={{ 
+                fontWeight: 600,
+                fontSize: '1.125rem',
+                color: 'text.primary',
+                letterSpacing: '0.01em',
+              }}
+            >
+              Multi-Agent-Intelligent-Warehouse (MAIW)
+            </Typography>
+          </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Typography 
               variant="body2" 
