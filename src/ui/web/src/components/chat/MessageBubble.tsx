@@ -385,11 +385,26 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         {/* Avatar */}
         {!isUser && (
           <Avatar
+            src="/assistant-avatar.png"
+            alt="Assistant Avatar"
             sx={{
               width: 32,
               height: 32,
-              backgroundColor: getAgentColor(message.route),
-              border: `2px solid ${getAgentColor(message.route)}`,
+              border: '2px solid',
+              borderColor: 'primary.main',
+              '& .MuiAvatar-img': {
+                objectFit: 'cover',
+              },
+            }}
+            onError={(e) => {
+              // Fallback to emoji icon if image fails to load
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              const parent = target.parentElement;
+              if (parent) {
+                parent.textContent = getAgentIcon(message.route);
+                parent.style.backgroundColor = getAgentColor(message.route);
+              }
             }}
           >
             {getAgentIcon(message.route)}
