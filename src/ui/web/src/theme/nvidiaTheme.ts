@@ -37,13 +37,11 @@ export const nvidiaTheme = createTheme({
     background: {
       default: '#0A0E13', // Very dark background (almost black)
       paper: '#151920', // Card/surface background
-      elevated: '#1C2128', // Elevated surfaces (modals, dropdowns)
     },
     text: {
       primary: '#E6EDF3', // Primary text - high contrast
       secondary: '#8B949E', // Secondary text - medium contrast
       disabled: '#484F58', // Disabled text
-      hint: '#6E7681', // Hint text
     },
     divider: '#21262D', // Subtle dividers
     error: {
@@ -388,7 +386,7 @@ export const nvidiaTheme = createTheme({
     MuiDialog: {
       styleOverrides: {
         paper: {
-          backgroundColor: '#1C2128',
+          backgroundColor: '#1C2128', // Elevated surface color
           border: '1px solid #30363D',
           borderRadius: 16,
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
