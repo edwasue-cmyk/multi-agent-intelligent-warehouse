@@ -480,14 +480,15 @@ const ForecastingPage: React.FC = () => {
           {(dashboardData as any)?.model_performance?.map((model: any, index: number) => (
             <Grid item xs={12} sm={6} md={4} key={index}>
               <Card sx={{ 
-                border: model.model_name === 'XGBoost' ? '2px solid #1976d2' : '1px solid #e0e0e0',
-                backgroundColor: model.model_name === 'XGBoost' ? '#f3f8ff' : 'white'
+                border: model.model_name === 'XGBoost' ? '2px solid' : '1px solid',
+                borderColor: model.model_name === 'XGBoost' ? 'primary.main' : 'divider',
+                backgroundColor: model.model_name === 'XGBoost' ? 'background.paper' : 'background.paper'
               }}>
                 <CardContent>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Typography variant="h6" component="div" sx={{ 
                       fontWeight: 'bold',
-                      color: model.model_name === 'XGBoost' ? '#1976d2' : 'inherit'
+                      color: model.model_name === 'XGBoost' ? 'primary.main' : 'text.primary'
                     }}>
                       {model.model_name}
                     </Typography>
@@ -575,7 +576,7 @@ const ForecastingPage: React.FC = () => {
               <TableBody>
                 {(dashboardData as any).model_performance.map((model: any, index: number) => (
                   <TableRow key={index} sx={{ 
-                    backgroundColor: model.model_name === 'XGBoost' ? '#f8f9ff' : 'inherit'
+                    backgroundColor: model.model_name === 'XGBoost' ? 'background.paper' : 'inherit'
                   }}>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
