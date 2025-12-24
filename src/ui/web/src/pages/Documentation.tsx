@@ -56,7 +56,16 @@ const ArchitectureDiagramDisplay: React.FC = () => {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           To display the architecture diagram, please add the image file to:
         </Typography>
-        <Paper sx={{ p: 2, mb: 2, bgcolor: 'grey.100', fontFamily: 'monospace', fontSize: '0.875rem' }}>
+        <Paper sx={{ 
+          p: 2, 
+          mb: 2, 
+          backgroundColor: 'background.default', 
+          fontFamily: 'monospace', 
+          fontSize: '0.875rem',
+          border: '1px solid',
+          borderColor: 'divider',
+          color: 'text.primary'
+        }}>
           src/ui/web/public/architecture-diagram.png
         </Paper>
         <Button 
