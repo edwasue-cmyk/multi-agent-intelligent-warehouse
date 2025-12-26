@@ -54,7 +54,8 @@ class AllSKUForecastingEngine:
             'XGBoost': None,  # Will be set if available
             'Gradient Boosting': GradientBoostingRegressor(n_estimators=100, random_state=42),
             'Linear Regression': LinearRegression(),
-            'Ridge Regression': Ridge(alpha=1.0),
+            # Note: Ridge is deterministic but random_state is included for consistency and SonarQube compliance
+            'Ridge Regression': Ridge(alpha=1.0, random_state=42),
             'Support Vector Regression': SVR(kernel='rbf', C=1.0, gamma='scale', random_state=42)
         }
         
