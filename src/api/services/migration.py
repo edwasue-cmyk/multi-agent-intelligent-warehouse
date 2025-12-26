@@ -24,13 +24,44 @@ import os
 import asyncio
 import asyncpg
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Set
 from pathlib import Path
 import logging
 import hashlib
 import json
+from contextlib import asynccontextmanager
 
 logger = logging.getLogger(__name__)
+
+
+# Helper functions to reduce duplication
+def _read_file(file_path: Path) -> str:
+    """Read file content with consistent encoding."""
+    with open(file_path, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+def _write_file(file_path: Path, content: str) -> None:
+    """Write file content with consistent encoding."""
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+
+@asynccontextmanager
+async def _get_db_connection(database_url: str):
+    """Context manager for database connections."""
+    async with asyncpg.connect(database_url) as conn:
+        yield conn
+
+
+def _get_applied_versions(applied_migrations: List) -> Set[str]:
+    """Extract set of applied migration versions."""
+    return {m.version for m in applied_migrations}
+
+
+def _log_dry_run(action: str, version: str, name: str) -> None:
+    """Log dry run action consistently."""
+    logger.info(f"[DRY RUN] Would {action} migration {version}: {name}")
 
 
 class MigrationRecord:
@@ -102,8 +133,7 @@ class DatabaseMigrator:
 
         for migration_file in sorted(self.migrations_dir.glob("*.sql")):
             try:
-                with open(migration_file, "r", encoding="utf-8") as f:
-                    content = f.read()
+                content = _read_file(migration_file)
 
                 # Extract version and name from filename (e.g., "001_initial_schema.sql")
                 filename = migration_file.stem
@@ -122,8 +152,7 @@ class DatabaseMigrator:
                 rollback_file = migration_file.with_suffix(".rollback.sql")
                 rollback_sql = None
                 if rollback_file.exists():
-                    with open(rollback_file, "r", encoding="utf-8") as f:
-                        rollback_sql = f.read()
+                    rollback_sql = _read_file(rollback_file)
 
                 migrations.append(
                     {
@@ -171,9 +200,7 @@ class DatabaseMigrator:
         """Apply a single migration."""
         try:
             if dry_run:
-                logger.info(
-                    f"[DRY RUN] Would apply migration {migration['version']}: {migration['name']}"
-                )
+                _log_dry_run("apply", migration['version'], migration['name'])
                 return True
 
             # Start transaction
@@ -229,9 +256,7 @@ class DatabaseMigrator:
                 return False
 
             if dry_run:
-                logger.info(
-                    f"[DRY RUN] Would rollback migration {version}: {row['name']}"
-                )
+                _log_dry_run("rollback", version, row['name'])
                 return True
 
             # Start transaction
@@ -255,7 +280,7 @@ class DatabaseMigrator:
     ) -> bool:
         """Run database migrations up to target version."""
         try:
-            async with asyncpg.connect(self.database_url) as conn:
+            async with _get_db_connection(self.database_url) as conn:
                 # Initialize migration table
                 await self.initialize_migration_table(conn)
 
@@ -267,7 +292,7 @@ class DatabaseMigrator:
 
                 # Get applied migrations
                 applied_migrations = await self.get_applied_migrations(conn)
-                applied_versions = {m.version for m in applied_migrations}
+                applied_versions = _get_applied_versions(applied_migrations)
 
                 # Find migrations to apply
                 migrations_to_apply = []
@@ -312,7 +337,7 @@ class DatabaseMigrator:
     async def get_migration_status(self) -> Dict[str, Any]:
         """Get current migration status."""
         try:
-            async with asyncpg.connect(self.database_url) as conn:
+            async with _get_db_connection(self.database_url) as conn:
                 await self.initialize_migration_table(conn)
 
                 # Get applied migrations
@@ -322,7 +347,7 @@ class DatabaseMigrator:
                 available_migrations = self.load_migration_files()
 
                 # Find pending migrations
-                applied_versions = {m.version for m in applied_migrations}
+                applied_versions = _get_applied_versions(applied_migrations)
                 pending_migrations = [
                     m
                     for m in available_migrations
@@ -374,53 +399,20 @@ class DatabaseMigrator:
         file_path = self.migrations_dir / filename
 
         # Write migration file
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(sql_content)
+        _write_file(file_path, sql_content)
 
         # Write rollback file if provided
         if rollback_sql:
             rollback_filename = f"{next_version}_{safe_name}.rollback.sql"
             rollback_path = self.migrations_dir / rollback_filename
-            with open(rollback_path, "w", encoding="utf-8") as f:
-                f.write(rollback_sql)
+            _write_file(rollback_path, rollback_sql)
 
         logger.info(f"Created migration: {file_path}")
         return str(file_path)
 
 
-def _get_database_url() -> str:
-    """
-    Get database URL from environment variables.
-    
-    Constructs DATABASE_URL from individual components if not directly set.
-    Requires POSTGRES_PASSWORD to be set (no hardcoded defaults).
-    
-    Returns:
-        str: Database connection URL
-        
-    Raises:
-        ValueError: If required environment variables are not set
-    """
-    # First, try to get DATABASE_URL directly
-    database_url = os.getenv("DATABASE_URL")
-    if database_url:
-        return database_url
-    
-    # If not set, construct from individual environment variables
-    # SECURITY: Do not hardcode passwords - require POSTGRES_PASSWORD to be set
-    postgres_user = os.getenv("POSTGRES_USER", "warehouse")
-    postgres_password = os.getenv("POSTGRES_PASSWORD")
-    postgres_db = os.getenv("POSTGRES_DB", "warehouse")
-    postgres_host = os.getenv("DB_HOST", "localhost")
-    postgres_port = os.getenv("DB_PORT", "5435")
-    
-    if not postgres_password:
-        raise ValueError(
-            "POSTGRES_PASSWORD environment variable is required. "
-            "Set it in your .env file or environment."
-        )
-    
-    return f"postgresql://{postgres_user}:{postgres_password}@{postgres_host}:{postgres_port}/{postgres_db}"
+# Import shared database URL function to avoid duplication
+from .database import _get_database_url
 
 
 # Global migrator instance
