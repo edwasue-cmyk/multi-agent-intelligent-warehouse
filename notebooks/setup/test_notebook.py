@@ -207,12 +207,7 @@ def test_file_paths(nb: Dict, notebook_dir: Path) -> Tuple[bool, List[str]]:
         if matches:
             # Check if files exist
             for match in set(matches):
-                if match.startswith('.'):
-                    file_path = project_root / match
-                elif '/' in match:
-                    file_path = project_root / match
-                else:
-                    file_path = project_root / match
+                file_path = project_root / match
                 
                 if not file_path.exists() and not file_path.is_dir():
                     issues.append(f"Referenced file/directory not found: {match}")
