@@ -43,6 +43,160 @@ from src.api.services.mcp.base import MCPManager
 logger = logging.getLogger(__name__)
 
 
+# Constants for agent timeouts
+AGENT_INIT_TIMEOUT = 5.0  # 5 seconds for agent initialization
+AGENT_TIMEOUT_REASONING = 90.0  # 90s for reasoning queries
+AGENT_TIMEOUT_COMPLEX = 50.0  # 50s for complex queries
+AGENT_TIMEOUT_SIMPLE = 45.0  # 45s for simple queries
+
+# Constants for complex query detection
+COMPLEX_QUERY_KEYWORDS = [
+    "optimize", "optimization", "optimizing", "analyze", "analysis", "analyzing",
+    "relationship", "between", "compare", "evaluate", "correlation", "impact",
+    "effect", "factors", "consider", "considering", "recommend", "recommendation",
+    "strategy", "strategies", "improve", "improvement", "best practices"
+]
+
+COMPLEX_QUERY_ACTIONS = ["create", "dispatch", "assign", "show", "list", "get", "check"]
+COMPLEX_QUERY_WORD_COUNT_THRESHOLD = 15
+
+
+def _extract_message_text(state: MCPWarehouseState) -> Optional[str]:
+    """Helper to extract text content from the latest message in state."""
+    if not state.get("messages"):
+        return None
+    
+    latest_message = state["messages"][-1]
+    if isinstance(latest_message, HumanMessage):
+        return latest_message.content
+    return str(latest_message.content)
+
+
+def _detect_complex_query(message_text: str) -> bool:
+    """Helper to detect if a query is complex and needs more processing time."""
+    message_lower = message_text.lower()
+    return (
+        any(keyword in message_lower for keyword in COMPLEX_QUERY_KEYWORDS) or
+        (message_lower.count(" and ") > 0 and any(action in message_lower for action in COMPLEX_QUERY_ACTIONS)) or
+        len(message_text.split()) > COMPLEX_QUERY_WORD_COUNT_THRESHOLD
+    )
+
+
+def _calculate_agent_timeout(enable_reasoning: bool, is_complex_query: bool) -> float:
+    """Helper to calculate agent timeout based on query characteristics."""
+    if enable_reasoning:
+        return AGENT_TIMEOUT_REASONING
+    elif is_complex_query:
+        return AGENT_TIMEOUT_COMPLEX
+    return AGENT_TIMEOUT_SIMPLE
+
+
+def _convert_response_to_dict(response: Any, default_response_type: str) -> Dict[str, Any]:
+    """Helper to convert agent response (dict or object) to standardized dict format."""
+    if isinstance(response, dict):
+        return response
+    
+    # Convert response object to dict
+    return {
+        "natural_language": response.natural_language if hasattr(response, "natural_language") else str(response),
+        "data": response.data if hasattr(response, "data") else {},
+        "recommendations": response.recommendations if hasattr(response, "recommendations") else [],
+        "confidence": response.confidence if hasattr(response, "confidence") else 0.0,
+        "response_type": response.response_type if hasattr(response, "response_type") else default_response_type,
+        "mcp_tools_used": response.mcp_tools_used or [] if hasattr(response, "mcp_tools_used") else [],
+        "tool_execution_results": response.tool_execution_results or {} if hasattr(response, "tool_execution_results") else {},
+        "actions_taken": response.actions_taken or [] if hasattr(response, "actions_taken") else [],
+        "reasoning_chain": response.reasoning_chain if hasattr(response, "reasoning_chain") else None,
+        "reasoning_steps": response.reasoning_steps if hasattr(response, "reasoning_steps") else None,
+    }
+
+
+def _create_error_response(agent_name: str, message_text: str, error: Exception, is_timeout: bool = False) -> Dict[str, Any]:
+    """Helper to create standardized error response for agents."""
+    if is_timeout:
+        return {
+            "natural_language": f"I received your {agent_name} query: '{message_text}'. The system is taking longer than expected to process it. Please try again or rephrase your question.",
+            "data": {"error": "timeout", "message": str(error)},
+            "recommendations": [],
+            "confidence": 0.3,
+            "response_type": "timeout",
+            "mcp_tools_used": [],
+            "tool_execution_results": {},
+        }
+    return {
+        "natural_language": f"I received your {agent_name} query: '{message_text}'. However, I encountered an error processing it: {str(error)[:100]}. Please try rephrasing your question.",
+        "data": {"error": str(error)[:200]},
+        "recommendations": [],
+        "confidence": 0.3,
+        "response_type": "error",
+        "mcp_tools_used": [],
+        "tool_execution_results": {},
+    }
+
+
+def _convert_reasoning_chain_to_dict(reasoning_chain: Any) -> Optional[Dict[str, Any]]:
+    """Helper to convert ReasoningChain dataclass to dict, avoiding recursion."""
+    from dataclasses import is_dataclass
+    
+    if not is_dataclass(reasoning_chain):
+        return reasoning_chain if isinstance(reasoning_chain, dict) else None
+    
+    try:
+        reasoning_chain_dict = {
+            "chain_id": getattr(reasoning_chain, "chain_id", ""),
+            "query": getattr(reasoning_chain, "query", ""),
+            "reasoning_type": getattr(reasoning_chain, "reasoning_type", ""),
+            "final_conclusion": getattr(reasoning_chain, "final_conclusion", ""),
+            "overall_confidence": float(getattr(reasoning_chain, "overall_confidence", 0.0)),
+            "execution_time": float(getattr(reasoning_chain, "execution_time", 0.0)),
+        }
+        
+        # Convert enum to string
+        if hasattr(reasoning_chain_dict["reasoning_type"], "value"):
+            reasoning_chain_dict["reasoning_type"] = reasoning_chain_dict["reasoning_type"].value
+        
+        # Convert datetime
+        if hasattr(reasoning_chain, "created_at"):
+            created_at = getattr(reasoning_chain, "created_at")
+            if hasattr(created_at, "isoformat"):
+                reasoning_chain_dict["created_at"] = created_at.isoformat()
+            else:
+                reasoning_chain_dict["created_at"] = str(created_at)
+        
+        # Convert steps
+        if hasattr(reasoning_chain, "steps") and reasoning_chain.steps:
+            converted_steps = []
+            for step in reasoning_chain.steps:
+                if is_dataclass(step):
+                    step_dict = {
+                        "step_id": getattr(step, "step_id", ""),
+                        "step_type": getattr(step, "step_type", ""),
+                        "description": getattr(step, "description", ""),
+                        "reasoning": getattr(step, "reasoning", ""),
+                        "confidence": float(getattr(step, "confidence", 0.0)),
+                    }
+                    if hasattr(step, "timestamp"):
+                        timestamp = getattr(step, "timestamp")
+                        if hasattr(timestamp, "isoformat"):
+                            step_dict["timestamp"] = timestamp.isoformat()
+                        else:
+                            step_dict["timestamp"] = str(timestamp)
+                    step_dict["input_data"] = {}
+                    step_dict["output_data"] = {}
+                    step_dict["dependencies"] = []
+                    converted_steps.append(step_dict)
+                else:
+                    converted_steps.append(step)
+            reasoning_chain_dict["steps"] = converted_steps
+        else:
+            reasoning_chain_dict["steps"] = []
+        
+        return reasoning_chain_dict
+    except Exception as e:
+        logger.error(f"Error converting reasoning_chain to dict: {e}", exc_info=True)
+        return None
+
+
 class MCPWarehouseState(TypedDict):
     """Enhanced state management for MCP-enabled warehouse assistant workflow."""
 
@@ -556,16 +710,11 @@ class MCPPlannerGraph:
         """Route user message using MCP-enhanced intent classification with semantic routing."""
         try:
             # Get the latest user message
-            if not state["messages"]:
+            message_text = _extract_message_text(state)
+            if not message_text:
                 state["user_intent"] = "general"
                 state["routing_decision"] = "general"
                 return state
-
-            latest_message = state["messages"][-1]
-            if isinstance(latest_message, HumanMessage):
-                message_text = latest_message.content
-            else:
-                message_text = str(latest_message.content)
 
             # Use MCP-enhanced intent classification (keyword-based)
             intent_result = await self.intent_classifier.classify_intent_with_mcp(message_text)
@@ -649,14 +798,9 @@ class MCPPlannerGraph:
     ) -> MCPWarehouseState:
         """Handle ambiguous queries with clarifying questions."""
         try:
-            if not state["messages"]:
+            message_text = _extract_message_text(state)
+            if not message_text:
                 return state
-
-            latest_message = state["messages"][-1]
-            if isinstance(latest_message, HumanMessage):
-                message_text = latest_message.content
-            else:
-                message_text = str(latest_message.content)
 
             message_lower = message_text.lower()
 
@@ -754,8 +898,9 @@ class MCPPlannerGraph:
                 get_mcp_equipment_agent,
             )
 
-            # Get the latest user message
-            if not state["messages"]:
+            # Extract message text
+            message_text = _extract_message_text(state)
+            if not message_text:
                 state["agent_responses"]["equipment"] = {
                     "natural_language": "No message to process",
                     "data": {},
@@ -765,12 +910,6 @@ class MCPPlannerGraph:
                 }
                 return state
 
-            latest_message = state["messages"][-1]
-            if isinstance(latest_message, HumanMessage):
-                message_text = latest_message.content
-            else:
-                message_text = str(latest_message.content)
-
             # Get session ID from context
             session_id = state.get("session_id", "default")
 
@@ -778,7 +917,7 @@ class MCPPlannerGraph:
             try:
                 mcp_equipment_agent = await asyncio.wait_for(
                     get_mcp_equipment_agent(),
-                    timeout=5.0  # 5 second timeout for agent initialization
+                    timeout=AGENT_INIT_TIMEOUT
                 )
             except asyncio.TimeoutError:
                 logger.error("MCP equipment agent initialization timed out")
@@ -791,29 +930,9 @@ class MCPPlannerGraph:
             enable_reasoning = state.get("enable_reasoning", False)
             reasoning_types = state.get("reasoning_types")
             
-            # Detect complex queries that need more processing time
-            message_lower = message_text.lower()
-            # Detect complex queries: analysis keywords, multiple actions, or long queries
-            is_complex_query = (
-                any(keyword in message_lower for keyword in [
-                    "optimize", "optimization", "optimizing", "analyze", "analysis", "analyzing",
-                    "relationship", "between", "compare", "evaluate", "correlation", "impact",
-                    "effect", "factors", "consider", "considering", "recommend", "recommendation",
-                    "strategy", "strategies", "improve", "improvement", "best practices"
-                ]) or 
-                # Multiple action keywords (create + dispatch, show + list, etc.)
-                (message_lower.count(" and ") > 0 and any(action in message_lower for action in ["create", "dispatch", "assign", "show", "list", "get", "check"])) or
-                len(message_text.split()) > 15
-            )
-            
-            # Process with MCP equipment agent with timeout
-            # Increase timeout for complex queries and reasoning queries
-            if enable_reasoning:
-                agent_timeout = 90.0  # 90s for reasoning queries
-            elif is_complex_query:
-                agent_timeout = 50.0  # 50s for complex queries (was 20s)
-            else:
-                agent_timeout = 45.0  # 45s for simple queries (increased from 30s to prevent timeouts)
+            # Detect complex queries and calculate timeout
+            is_complex_query = _detect_complex_query(message_text)
+            agent_timeout = _calculate_agent_timeout(enable_reasoning, is_complex_query)
             
             logger.info(f"Equipment agent timeout: {agent_timeout}s (complex: {is_complex_query}, reasoning: {enable_reasoning})")
             
@@ -837,49 +956,18 @@ class MCPPlannerGraph:
                 raise
 
             # Store the response (handle both dict and object responses)
-            if isinstance(response, dict):
-                state["agent_responses"]["equipment"] = response
-            else:
-                # Convert response object to dict
-                state["agent_responses"]["equipment"] = {
-                    "natural_language": response.natural_language if hasattr(response, "natural_language") else str(response),
-                    "data": response.data if hasattr(response, "data") else {},
-                    "recommendations": response.recommendations if hasattr(response, "recommendations") else [],
-                    "confidence": response.confidence if hasattr(response, "confidence") else 0.0,
-                    "response_type": response.response_type if hasattr(response, "response_type") else "equipment_info",
-                    "mcp_tools_used": response.mcp_tools_used or [] if hasattr(response, "mcp_tools_used") else [],
-                    "tool_execution_results": response.tool_execution_results or {} if hasattr(response, "tool_execution_results") else {},
-                    "actions_taken": response.actions_taken or [] if hasattr(response, "actions_taken") else [],
-                    "reasoning_chain": response.reasoning_chain if hasattr(response, "reasoning_chain") else None,
-                    "reasoning_steps": response.reasoning_steps if hasattr(response, "reasoning_steps") else None,
-                }
+            state["agent_responses"]["equipment"] = _convert_response_to_dict(response, "equipment_info")
 
             logger.info(
-                f"MCP Equipment agent processed request with confidence: {response.confidence}"
+                f"MCP Equipment agent processed request with confidence: {response.confidence if hasattr(response, 'confidence') else state['agent_responses']['equipment'].get('confidence', 0.0)}"
             )
 
         except asyncio.TimeoutError as e:
             logger.error(f"Timeout in MCP equipment agent: {e}")
-            state["agent_responses"]["equipment"] = {
-                "natural_language": f"I received your equipment query: '{message_text}'. The system is taking longer than expected to process it. Please try again or rephrase your question.",
-                "data": {"error": "timeout", "message": str(e)},
-                "recommendations": [],
-                "confidence": 0.3,
-                "response_type": "timeout",
-                "mcp_tools_used": [],
-                "tool_execution_results": {},
-            }
+            state["agent_responses"]["equipment"] = _create_error_response("equipment", message_text, e, is_timeout=True)
         except Exception as e:
             logger.error(f"Error in MCP equipment agent: {e}", exc_info=True)
-            state["agent_responses"]["equipment"] = {
-                "natural_language": f"I received your equipment query: '{message_text}'. However, I encountered an error processing it: {str(e)[:100]}. Please try rephrasing your question.",
-                "data": {"error": str(e)[:200]},
-                "recommendations": [],
-                "confidence": 0.3,
-                "response_type": "error",
-                "mcp_tools_used": [],
-                "tool_execution_results": {},
-            }
+            state["agent_responses"]["equipment"] = _create_error_response("equipment", message_text, e, is_timeout=False)
 
         return state
 
@@ -892,16 +980,11 @@ class MCPPlannerGraph:
                 get_mcp_operations_agent,
             )
 
-            # Get the latest user message
-            if not state["messages"]:
+            # Extract message text
+            message_text = _extract_message_text(state)
+            if not message_text:
                 state["agent_responses"]["operations"] = "No message to process"
                 return state
-
-            latest_message = state["messages"][-1]
-            if isinstance(latest_message, HumanMessage):
-                message_text = latest_message.content
-            else:
-                message_text = str(latest_message.content)
 
             # Get session ID from context
             session_id = state.get("session_id", "default")
@@ -910,7 +993,7 @@ class MCPPlannerGraph:
             try:
                 mcp_operations_agent = await asyncio.wait_for(
                     get_mcp_operations_agent(),
-                    timeout=5.0  # 5 second timeout for agent initialization
+                    timeout=AGENT_INIT_TIMEOUT
                 )
             except asyncio.TimeoutError:
                 logger.error("MCP operations agent initialization timed out")
@@ -923,29 +1006,9 @@ class MCPPlannerGraph:
             enable_reasoning = state.get("enable_reasoning", False)
             reasoning_types = state.get("reasoning_types")
             
-            # Detect complex queries that need more processing time
-            message_lower = message_text.lower()
-            # Detect complex queries: analysis keywords, multiple actions, or long queries
-            is_complex_query = (
-                any(keyword in message_lower for keyword in [
-                    "optimize", "optimization", "optimizing", "analyze", "analysis", "analyzing",
-                    "relationship", "between", "compare", "evaluate", "correlation", "impact",
-                    "effect", "factors", "consider", "considering", "recommend", "recommendation",
-                    "strategy", "strategies", "improve", "improvement", "best practices"
-                ]) or 
-                # Multiple action keywords (create + dispatch, show + list, etc.)
-                (message_lower.count(" and ") > 0 and any(action in message_lower for action in ["create", "dispatch", "assign", "show", "list", "get", "check"])) or
-                len(message_text.split()) > 15
-            )
-            
-            # Process with MCP operations agent with timeout
-            # Increase timeout for complex queries and reasoning queries
-            if enable_reasoning:
-                agent_timeout = 90.0  # 90s for reasoning queries
-            elif is_complex_query:
-                agent_timeout = 50.0  # 50s for complex queries
-            else:
-                agent_timeout = 45.0  # 45s for simple queries (increased from 30s to prevent timeouts)
+            # Detect complex queries and calculate timeout
+            is_complex_query = _detect_complex_query(message_text)
+            agent_timeout = _calculate_agent_timeout(enable_reasoning, is_complex_query)
             
             logger.info(f"Operations agent timeout: {agent_timeout}s (complex: {is_complex_query}, reasoning: {enable_reasoning})")
             
@@ -969,38 +1032,15 @@ class MCPPlannerGraph:
                 raise
 
             # Store the response (handle both dict and object responses)
-            if isinstance(response, dict):
-                state["agent_responses"]["operations"] = response
-            else:
-                # Convert response object to dict
-                state["agent_responses"]["operations"] = {
-                    "natural_language": response.natural_language if hasattr(response, "natural_language") else str(response),
-                    "data": response.data if hasattr(response, "data") else {},
-                    "recommendations": response.recommendations if hasattr(response, "recommendations") else [],
-                    "confidence": response.confidence if hasattr(response, "confidence") else 0.0,
-                    "response_type": response.response_type if hasattr(response, "response_type") else "operations_info",
-                    "mcp_tools_used": response.mcp_tools_used or [] if hasattr(response, "mcp_tools_used") else [],
-                    "tool_execution_results": response.tool_execution_results or {} if hasattr(response, "tool_execution_results") else {},
-                    "actions_taken": response.actions_taken or [] if hasattr(response, "actions_taken") else [],
-                    "reasoning_chain": response.reasoning_chain if hasattr(response, "reasoning_chain") else None,
-                    "reasoning_steps": response.reasoning_steps if hasattr(response, "reasoning_steps") else None,
-                }
+            state["agent_responses"]["operations"] = _convert_response_to_dict(response, "operations_info")
 
             logger.info(
-                f"MCP Operations agent processed request with confidence: {response.confidence}"
+                f"MCP Operations agent processed request with confidence: {response.confidence if hasattr(response, 'confidence') else state['agent_responses']['operations'].get('confidence', 0.0)}"
             )
 
         except Exception as e:
             logger.error(f"Error in MCP operations agent: {e}")
-            state["agent_responses"]["operations"] = {
-                "natural_language": f"Error processing operations request: {str(e)}",
-                "data": {"error": str(e)},
-                "recommendations": [],
-                "confidence": 0.0,
-                "response_type": "error",
-                "mcp_tools_used": [],
-                "tool_execution_results": {},
-            }
+            state["agent_responses"]["operations"] = _create_error_response("operations", message_text or "", e, is_timeout=False)
 
         return state
 
@@ -1009,8 +1049,9 @@ class MCPPlannerGraph:
         try:
             from src.api.agents.safety.mcp_safety_agent import get_mcp_safety_agent
 
-            # Get the latest user message
-            if not state["messages"]:
+            # Extract message text
+            message_text = _extract_message_text(state)
+            if not message_text:
                 state["agent_responses"]["safety"] = {
                     "natural_language": "No message to process",
                     "data": {},
@@ -1020,12 +1061,6 @@ class MCPPlannerGraph:
                 }
                 return state
 
-            latest_message = state["messages"][-1]
-            if isinstance(latest_message, HumanMessage):
-                message_text = latest_message.content
-            else:
-                message_text = str(latest_message.content)
-
             # Get session ID from context
             session_id = state.get("session_id", "default")
 
@@ -1033,7 +1068,7 @@ class MCPPlannerGraph:
             try:
                 mcp_safety_agent = await asyncio.wait_for(
                     get_mcp_safety_agent(),
-                    timeout=5.0  # 5 second timeout for agent initialization
+                    timeout=AGENT_INIT_TIMEOUT
                 )
             except asyncio.TimeoutError:
                 logger.error("MCP safety agent initialization timed out")
@@ -1046,29 +1081,9 @@ class MCPPlannerGraph:
             enable_reasoning = state.get("enable_reasoning", False)
             reasoning_types = state.get("reasoning_types")
             
-            # Detect complex queries that need more processing time
-            message_lower = message_text.lower()
-            # Detect complex queries: analysis keywords, multiple actions, or long queries
-            is_complex_query = (
-                any(keyword in message_lower for keyword in [
-                    "optimize", "optimization", "optimizing", "analyze", "analysis", "analyzing",
-                    "relationship", "between", "compare", "evaluate", "correlation", "impact",
-                    "effect", "factors", "consider", "considering", "recommend", "recommendation",
-                    "strategy", "strategies", "improve", "improvement", "best practices"
-                ]) or 
-                # Multiple action keywords (create + dispatch, show + list, etc.)
-                (message_lower.count(" and ") > 0 and any(action in message_lower for action in ["create", "dispatch", "assign", "show", "list", "get", "check"])) or
-                len(message_text.split()) > 15
-            )
-            
-            # Process with MCP safety agent with timeout
-            # Increase timeout for complex queries and reasoning queries
-            if enable_reasoning:
-                agent_timeout = 90.0  # 90s for reasoning queries
-            elif is_complex_query:
-                agent_timeout = 50.0  # 50s for complex queries (was 20s)
-            else:
-                agent_timeout = 45.0  # 45s for simple queries (increased from 30s to prevent timeouts)
+            # Detect complex queries and calculate timeout
+            is_complex_query = _detect_complex_query(message_text)
+            agent_timeout = _calculate_agent_timeout(enable_reasoning, is_complex_query)
             
             logger.info(f"Safety agent timeout: {agent_timeout}s (complex: {is_complex_query}, reasoning: {enable_reasoning})")
             
@@ -1092,49 +1107,18 @@ class MCPPlannerGraph:
                 raise
 
             # Store the response (handle both dict and object responses)
-            if isinstance(response, dict):
-                state["agent_responses"]["safety"] = response
-            else:
-                # Convert response object to dict
-                state["agent_responses"]["safety"] = {
-                    "natural_language": response.natural_language if hasattr(response, "natural_language") else str(response),
-                    "data": response.data if hasattr(response, "data") else {},
-                    "recommendations": response.recommendations if hasattr(response, "recommendations") else [],
-                    "confidence": response.confidence if hasattr(response, "confidence") else 0.0,
-                    "response_type": response.response_type if hasattr(response, "response_type") else "safety_info",
-                    "mcp_tools_used": response.mcp_tools_used or [] if hasattr(response, "mcp_tools_used") else [],
-                    "tool_execution_results": response.tool_execution_results or {} if hasattr(response, "tool_execution_results") else {},
-                    "actions_taken": response.actions_taken or [] if hasattr(response, "actions_taken") else [],
-                    "reasoning_chain": response.reasoning_chain if hasattr(response, "reasoning_chain") else None,
-                    "reasoning_steps": response.reasoning_steps if hasattr(response, "reasoning_steps") else None,
-                }
+            state["agent_responses"]["safety"] = _convert_response_to_dict(response, "safety_info")
 
             logger.info(
-                f"MCP Safety agent processed request with confidence: {response.confidence}"
+                f"MCP Safety agent processed request with confidence: {response.confidence if hasattr(response, 'confidence') else state['agent_responses']['safety'].get('confidence', 0.0)}"
             )
 
         except asyncio.TimeoutError as e:
             logger.error(f"Timeout in MCP safety agent: {e}")
-            state["agent_responses"]["safety"] = {
-                "natural_language": f"I received your safety query: '{message_text}'. The system is taking longer than expected to process it. Please try again or rephrase your question.",
-                "data": {"error": "timeout", "message": str(e)},
-                "recommendations": [],
-                "confidence": 0.3,
-                "response_type": "timeout",
-                "mcp_tools_used": [],
-                "tool_execution_results": {},
-            }
+            state["agent_responses"]["safety"] = _create_error_response("safety", message_text, e, is_timeout=True)
         except Exception as e:
             logger.error(f"Error in MCP safety agent: {e}", exc_info=True)
-            state["agent_responses"]["safety"] = {
-                "natural_language": f"I received your safety query: '{message_text}'. However, I encountered an error processing it: {str(e)[:100]}. Please try rephrasing your question.",
-                "data": {"error": str(e)[:200]},
-                "recommendations": [],
-                "confidence": 0.3,
-                "response_type": "error",
-                "mcp_tools_used": [],
-                "tool_execution_results": {},
-            }
+            state["agent_responses"]["safety"] = _create_error_response("safety", message_text, e, is_timeout=False)
 
         return state
 
@@ -1145,16 +1129,11 @@ class MCPPlannerGraph:
                 get_forecasting_agent,
             )
 
-            # Get the latest user message
-            if not state["messages"]:
+            # Extract message text
+            message_text = _extract_message_text(state)
+            if not message_text:
                 state["agent_responses"]["forecasting"] = "No message to process"
                 return state
-
-            latest_message = state["messages"][-1]
-            if isinstance(latest_message, HumanMessage):
-                message_text = latest_message.content
-            else:
-                message_text = str(latest_message.content)
 
             # Get session ID from context
             session_id = state.get("session_id", "default")
@@ -1211,16 +1190,11 @@ class MCPPlannerGraph:
     async def _mcp_document_agent(self, state: MCPWarehouseState) -> MCPWarehouseState:
         """Handle document-related queries with MCP tool discovery."""
         try:
-            # Get the latest user message
-            if not state["messages"]:
+            # Extract message text
+            message_text = _extract_message_text(state)
+            if not message_text:
                 state["agent_responses"]["document"] = "No message to process"
                 return state
-
-            latest_message = state["messages"][-1]
-            if isinstance(latest_message, HumanMessage):
-                message_text = latest_message.content
-            else:
-                message_text = str(latest_message.content)
 
             # Use MCP document agent
             try:
@@ -1281,16 +1255,11 @@ class MCPPlannerGraph:
     async def _mcp_general_agent(self, state: MCPWarehouseState) -> MCPWarehouseState:
         """Handle general queries with MCP tool discovery."""
         try:
-            # Get the latest user message
-            if not state["messages"]:
+            # Extract message text
+            message_text = _extract_message_text(state)
+            if not message_text:
                 state["agent_responses"]["general"] = "No message to process"
                 return state
-
-            latest_message = state["messages"][-1]
-            if isinstance(latest_message, HumanMessage):
-                message_text = latest_message.content
-            else:
-                message_text = str(latest_message.content)
 
             # Use MCP tools to help with general queries
             if self.tool_discovery and len(self.tool_discovery.discovered_tools) > 0:
@@ -1391,63 +1360,14 @@ class MCPPlannerGraph:
                     if "reasoning_chain" in agent_response_dict:
                         reasoning_chain = agent_response_dict["reasoning_chain"]
                         logger.info(f"🔗 Found reasoning_chain in agent_response_dict: {reasoning_chain is not None}, type: {type(reasoning_chain)}")
-                        state["context"]["reasoning_chain"] = reasoning_chain
-                        state["reasoning_chain"] = reasoning_chain
-                        # Convert ReasoningChain to dict if needed (avoid recursion)
-                        from dataclasses import is_dataclass
-                        if is_dataclass(reasoning_chain):
-                            try:
-                                # Manual conversion to avoid recursion
-                                reasoning_chain_dict = {
-                                    "chain_id": getattr(reasoning_chain, "chain_id", ""),
-                                    "query": getattr(reasoning_chain, "query", ""),
-                                    "reasoning_type": getattr(reasoning_chain, "reasoning_type", ""),
-                                    "final_conclusion": getattr(reasoning_chain, "final_conclusion", ""),
-                                    "overall_confidence": float(getattr(reasoning_chain, "overall_confidence", 0.0)),
-                                    "execution_time": float(getattr(reasoning_chain, "execution_time", 0.0)),
-                                }
-                                # Convert enum to string
-                                if hasattr(reasoning_chain_dict["reasoning_type"], "value"):
-                                    reasoning_chain_dict["reasoning_type"] = reasoning_chain_dict["reasoning_type"].value
-                                # Convert datetime
-                                if hasattr(reasoning_chain, "created_at"):
-                                    created_at = getattr(reasoning_chain, "created_at")
-                                    if hasattr(created_at, "isoformat"):
-                                        reasoning_chain_dict["created_at"] = created_at.isoformat()
-                                    else:
-                                        reasoning_chain_dict["created_at"] = str(created_at)
-                                # Convert steps
-                                if hasattr(reasoning_chain, "steps") and reasoning_chain.steps:
-                                    converted_steps = []
-                                    for step in reasoning_chain.steps:
-                                        if is_dataclass(step):
-                                            step_dict = {
-                                                "step_id": getattr(step, "step_id", ""),
-                                                "step_type": getattr(step, "step_type", ""),
-                                                "description": getattr(step, "description", ""),
-                                                "reasoning": getattr(step, "reasoning", ""),
-                                                "confidence": float(getattr(step, "confidence", 0.0)),
-                                            }
-                                            if hasattr(step, "timestamp"):
-                                                timestamp = getattr(step, "timestamp")
-                                                if hasattr(timestamp, "isoformat"):
-                                                    step_dict["timestamp"] = timestamp.isoformat()
-                                                else:
-                                                    step_dict["timestamp"] = str(timestamp)
-                                            step_dict["input_data"] = {}
-                                            step_dict["output_data"] = {}
-                                            step_dict["dependencies"] = []
-                                            converted_steps.append(step_dict)
-                                        else:
-                                            converted_steps.append(step)
-                                    reasoning_chain_dict["steps"] = converted_steps
-                                else:
-                                    reasoning_chain_dict["steps"] = []
-                                state["context"]["reasoning_chain"] = reasoning_chain_dict
-                                logger.info(f"✅ Converted reasoning_chain to dict with {len(reasoning_chain_dict.get('steps', []))} steps")
-                            except Exception as e:
-                                logger.error(f"Error converting reasoning_chain to dict: {e}", exc_info=True)
-                                state["context"]["reasoning_chain"] = reasoning_chain
+                        reasoning_chain_dict = _convert_reasoning_chain_to_dict(reasoning_chain)
+                        if reasoning_chain_dict:
+                            state["context"]["reasoning_chain"] = reasoning_chain_dict
+                            state["reasoning_chain"] = reasoning_chain_dict
+                            logger.info(f"✅ Converted reasoning_chain to dict with {len(reasoning_chain_dict.get('steps', []))} steps")
+                        else:
+                            state["context"]["reasoning_chain"] = reasoning_chain
+                            state["reasoning_chain"] = reasoning_chain
                     if "reasoning_steps" in agent_response_dict:
                         reasoning_steps = agent_response_dict["reasoning_steps"]
                         logger.info(f"🔗 Found reasoning_steps in agent_response_dict: {reasoning_steps is not None}, count: {len(reasoning_steps) if reasoning_steps else 0}")
@@ -1483,65 +1403,13 @@ class MCPPlannerGraph:
                     if "reasoning_chain" in agent_response:
                         reasoning_chain = agent_response["reasoning_chain"]
                         logger.info(f"🔗 Found reasoning_chain in agent_response dict: {reasoning_chain is not None}, type: {type(reasoning_chain)}")
-                        # Convert if it's a dataclass
-                        from dataclasses import is_dataclass
-                        if is_dataclass(reasoning_chain):
-                            try:
-                                # Manual conversion to avoid recursion
-                                reasoning_chain_dict = {
-                                    "chain_id": getattr(reasoning_chain, "chain_id", ""),
-                                    "query": getattr(reasoning_chain, "query", ""),
-                                    "reasoning_type": getattr(reasoning_chain, "reasoning_type", ""),
-                                    "final_conclusion": getattr(reasoning_chain, "final_conclusion", ""),
-                                    "overall_confidence": float(getattr(reasoning_chain, "overall_confidence", 0.0)),
-                                    "execution_time": float(getattr(reasoning_chain, "execution_time", 0.0)),
-                                }
-                                # Convert enum to string
-                                if hasattr(reasoning_chain_dict["reasoning_type"], "value"):
-                                    reasoning_chain_dict["reasoning_type"] = reasoning_chain_dict["reasoning_type"].value
-                                # Convert datetime
-                                if hasattr(reasoning_chain, "created_at"):
-                                    created_at = getattr(reasoning_chain, "created_at")
-                                    if hasattr(created_at, "isoformat"):
-                                        reasoning_chain_dict["created_at"] = created_at.isoformat()
-                                    else:
-                                        reasoning_chain_dict["created_at"] = str(created_at)
-                                # Convert steps
-                                if hasattr(reasoning_chain, "steps") and reasoning_chain.steps:
-                                    converted_steps = []
-                                    for step in reasoning_chain.steps:
-                                        if is_dataclass(step):
-                                            step_dict = {
-                                                "step_id": getattr(step, "step_id", ""),
-                                                "step_type": getattr(step, "step_type", ""),
-                                                "description": getattr(step, "description", ""),
-                                                "reasoning": getattr(step, "reasoning", ""),
-                                                "confidence": float(getattr(step, "confidence", 0.0)),
-                                            }
-                                            if hasattr(step, "timestamp"):
-                                                timestamp = getattr(step, "timestamp")
-                                                if hasattr(timestamp, "isoformat"):
-                                                    step_dict["timestamp"] = timestamp.isoformat()
-                                                else:
-                                                    step_dict["timestamp"] = str(timestamp)
-                                            step_dict["input_data"] = {}
-                                            step_dict["output_data"] = {}
-                                            step_dict["dependencies"] = []
-                                            converted_steps.append(step_dict)
-                                        else:
-                                            converted_steps.append(step)
-                                    reasoning_chain_dict["steps"] = converted_steps
-                                else:
-                                    reasoning_chain_dict["steps"] = []
-                                state["context"]["reasoning_chain"] = reasoning_chain_dict
-                                state["reasoning_chain"] = reasoning_chain_dict
-                                logger.info(f"✅ Converted reasoning_chain to dict with {len(reasoning_chain_dict.get('steps', []))} steps")
-                            except Exception as e:
-                                logger.error(f"Error converting reasoning_chain to dict: {e}", exc_info=True)
-                                state["context"]["reasoning_chain"] = reasoning_chain
-                                state["reasoning_chain"] = reasoning_chain
+                        reasoning_chain_dict = _convert_reasoning_chain_to_dict(reasoning_chain)
+                        if reasoning_chain_dict:
+                            state["context"]["reasoning_chain"] = reasoning_chain_dict
+                            state["reasoning_chain"] = reasoning_chain_dict
+                            logger.info(f"✅ Converted reasoning_chain to dict with {len(reasoning_chain_dict.get('steps', []))} steps")
                         else:
-                            # Already a dict, use as-is
+                            # Already a dict or conversion failed, use as-is
                             state["context"]["reasoning_chain"] = reasoning_chain
                             state["reasoning_chain"] = reasoning_chain
                     if "reasoning_steps" in agent_response:
