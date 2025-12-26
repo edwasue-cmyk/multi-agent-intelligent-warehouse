@@ -43,6 +43,12 @@ import xgboost as xgb
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Database connection constants
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = int(os.getenv("DB_PORT", "5435"))
+DB_USER = os.getenv("POSTGRES_USER", "warehouse")
+DB_NAME = os.getenv("POSTGRES_DB", "warehouse")
+
 @dataclass
 class ForecastingConfig:
     """Configuration for demand forecasting"""
@@ -89,25 +95,37 @@ class RAPIDSForecastingAgent:
         """Initialize database connection"""
         try:
             self.pg_conn = await asyncpg.connect(
-                host="localhost",
-                port=5435,
-                user="warehouse",
+                host=DB_HOST,
+                port=DB_PORT,
+                user=DB_USER,
                 password=os.getenv("POSTGRES_PASSWORD", ""),
-                database="warehouse"
+                database=DB_NAME
             )
             logger.info("✅ Connected to PostgreSQL")
         except Exception as e:
             logger.error(f"❌ Failed to connect to PostgreSQL: {e}")
             raise
 
-    async def get_all_skus(self) -> List[str]:
-        """Get all SKUs from the inventory"""
+    async def _fetch_sku_list(self, query: str) -> List[str]:
+        """
+        Helper method to fetch SKU list from database.
+        
+        Args:
+            query: SQL query that returns rows with 'sku' column
+            
+        Returns:
+            List of SKU strings
+        """
         if not self.pg_conn:
             await self.initialize_connection()
         
-        query = "SELECT sku FROM inventory_items ORDER BY sku"
         rows = await self.pg_conn.fetch(query)
-        skus = [row['sku'] for row in rows]
+        return [row['sku'] for row in rows]
+
+    async def get_all_skus(self) -> List[str]:
+        """Get all SKUs from the inventory"""
+        query = "SELECT sku FROM inventory_items ORDER BY sku"
+        skus = await self._fetch_sku_list(query)
         logger.info(f"📦 Retrieved {len(skus)} SKUs from database")
         return skus
 
@@ -396,6 +414,19 @@ class RAPIDSForecastingAgent:
             }
         return results_summary
     
+    def _write_json_file(self, file_path: str, data: Dict) -> None:
+        """
+        Helper method to write JSON data to file.
+        
+        Args:
+            file_path: Path to output file
+            data: Dictionary to serialize as JSON
+        """
+        path = Path(file_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, 'w') as f:
+            json.dump(data, f, indent=2, default=str)
+
     def _save_forecast_results(
         self, 
         results_summary: Dict, 
@@ -411,13 +442,10 @@ class RAPIDSForecastingAgent:
             sample_file: Path to sample/reference file
         """
         # Save to root for runtime use
-        with open(output_file, 'w') as f:
-            json.dump(results_summary, f, indent=2, default=str)
+        self._write_json_file(output_file, results_summary)
         
         # Also save to data/sample/forecasts/ for reference
-        sample_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(sample_file, 'w') as f:
-            json.dump(results_summary, f, indent=2, default=str)
+        self._write_json_file(str(sample_file), results_summary)
     
     def _time_series_forecast(self, ts_model: Dict, horizon_days: int) -> List[float]:
         """Generate time series forecast"""
@@ -487,8 +515,7 @@ class RAPIDSForecastingAgent:
             # Get SKUs to forecast
             if skus is None:
                 query = "SELECT DISTINCT sku FROM inventory_movements WHERE movement_type = 'outbound' LIMIT 10"
-                sku_results = await self.pg_conn.fetch(query)
-                skus = [row['sku'] for row in sku_results]
+                skus = await self._fetch_sku_list(query)
             
             logger.info(f"📈 Forecasting demand for {len(skus)} SKUs")
             
@@ -499,7 +526,6 @@ class RAPIDSForecastingAgent:
             results_summary = self._create_forecast_summary(forecasts)
             
             # Save to both root (for runtime) and data/sample/forecasts/ (for reference)
-            from pathlib import Path
             output_file = 'phase1_phase2_forecasts.json'
             sample_file = Path("data/sample/forecasts") / "phase1_phase2_forecasts.json"
             
