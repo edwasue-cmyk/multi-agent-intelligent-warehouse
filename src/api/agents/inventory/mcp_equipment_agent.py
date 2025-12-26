@@ -1003,9 +1003,22 @@ ABSOLUTELY CRITICAL:
             response_text = response.content.strip()
             
             # Try to extract JSON if response contains extra text
-            json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text, re.DOTALL)
-            if json_match:
-                response_text = json_match.group(0)
+            # Use brace counting instead of regex to avoid catastrophic backtracking
+            # This prevents DoS vulnerabilities from nested quantifiers
+            first_brace = response_text.find('{')
+            if first_brace != -1:
+                # Count braces to find matching closing brace (linear time, no backtracking)
+                brace_count = 0
+                for i in range(first_brace, len(response_text)):
+                    if response_text[i] == '{':
+                        brace_count += 1
+                    elif response_text[i] == '}':
+                        brace_count -= 1
+                        if brace_count == 0:
+                            # Found matching closing brace
+                            response_text = response_text[first_brace:i+1]
+                            break
+                # If no matching brace found, try direct JSON parsing (will fail gracefully)
             
             try:
                 response_data = json.loads(response_text)
