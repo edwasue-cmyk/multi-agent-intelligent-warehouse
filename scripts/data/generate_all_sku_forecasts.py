@@ -17,12 +17,19 @@
 """
 Generate demand forecasts for all 38 SKUs in the warehouse system.
 This script creates comprehensive forecasts using multiple ML models.
+
+Security Note: This script uses numpy.random (PRNG) for generating
+forecast variations and noise. This is appropriate for data science purposes.
+For security-sensitive operations (tokens, keys, passwords, session IDs), the
+secrets module (CSPRNG) should be used instead.
 """
 
 import asyncio
 import asyncpg
 import json
 import os
+# Security: Using np.random is appropriate here - generating forecast variations only
+# For security-sensitive values (tokens, keys, passwords), use secrets module instead
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
