@@ -505,48 +505,24 @@ Return only valid JSON.""",
                 # First, get safety procedures for the incident type
                 procedures_tool = next((t for t in tools if t.tool_id == "get_safety_procedures"), None)
                 if procedures_tool:
-                    execution_plan.append({
-                        "tool_id": procedures_tool.tool_id,
-                        "tool_name": procedures_tool.name,
-                        "arguments": self._prepare_tool_arguments(procedures_tool, query),
-                        "priority": 1,
-                        "required": True,
-                    })
+                    execution_plan.append(self._create_execution_plan_entry(procedures_tool, query, priority=1, required=True))
                 
                 # Then, try to log the incident if we have required entities
                 if query.entities.get("severity") and query.entities.get("description"):
                     log_incident_tool = next((t for t in tools if t.tool_id == "log_incident"), None)
                     if log_incident_tool:
-                        execution_plan.append({
-                            "tool_id": log_incident_tool.tool_id,
-                            "tool_name": log_incident_tool.name,
-                            "arguments": self._prepare_tool_arguments(log_incident_tool, query),
-                            "priority": 2,
-                            "required": False,  # Not required if missing entities
-                        })
+                        execution_plan.append(self._create_execution_plan_entry(log_incident_tool, query, priority=2, required=False))
                 
                 # For critical incidents, also broadcast alert
                 if query.entities.get("severity") == "critical" and query.entities.get("message"):
                     broadcast_tool = next((t for t in tools if t.tool_id == "broadcast_alert"), None)
                     if broadcast_tool:
-                        execution_plan.append({
-                            "tool_id": broadcast_tool.tool_id,
-                            "tool_name": broadcast_tool.name,
-                            "arguments": self._prepare_tool_arguments(broadcast_tool, query),
-                            "priority": 3,
-                            "required": False,
-                        })
+                        execution_plan.append(self._create_execution_plan_entry(broadcast_tool, query, priority=3, required=False))
             elif query.intent == "policy_lookup":
                 # For policy lookup, use get_safety_procedures
                 procedures_tool = next((t for t in tools if t.tool_id == "get_safety_procedures"), None)
                 if procedures_tool:
-                    execution_plan.append({
-                        "tool_id": procedures_tool.tool_id,
-                        "tool_name": procedures_tool.name,
-                        "arguments": self._prepare_tool_arguments(procedures_tool, query),
-                        "priority": 1,
-                        "required": True,
-                    })
+                    execution_plan.append(self._create_execution_plan_entry(procedures_tool, query, priority=1, required=True))
             else:
                 # For other intents, use the original logic
                 intent_config = {
@@ -566,13 +542,7 @@ Return only valid JSON.""",
             # If no tools were added, add any available safety tools as fallback
             if not execution_plan and tools:
                 for tool in tools[:3]:
-                    execution_plan.append({
-                        "tool_id": tool.tool_id,
-                        "tool_name": tool.name,
-                        "arguments": self._prepare_tool_arguments(tool, query),
-                        "priority": 5,
-                        "required": False,
-                    })
+                    execution_plan.append(self._create_execution_plan_entry(tool, query, priority=5, required=False))
 
             # Sort by priority
             execution_plan.sort(key=lambda x: x["priority"])
@@ -706,16 +676,9 @@ Return only valid JSON.""",
                 if "location" in query.entities:
                     arguments[param_name] = query.entities["location"]
                 else:
-                    # Extract location from query
-                    zone_match = re.search(r'zone\s+([a-z])', query_lower)
-                    if zone_match:
-                        arguments[param_name] = f"Zone {zone_match.group(1).upper()}"
-                    else:
-                        dock_match = re.search(r'dock\s+([a-z0-9]+)', query_lower)
-                        if dock_match:
-                            arguments[param_name] = f"Dock {dock_match.group(1).upper()}"
-                        else:
-                            arguments[param_name] = "Unknown Location"
+                    # Extract location from query using helper method
+                    extracted_location = self._extract_location_from_query(query_lower)
+                    arguments[param_name] = extracted_location if extracted_location else "Unknown Location"
             # Intelligent parameter extraction for incident_type
             elif param_name == "incident_type":
                 if "incident_type" in query.entities:
@@ -740,14 +703,10 @@ Return only valid JSON.""",
         query_lower = query.lower()
         entities = {}
         
-        # Extract location (re is already imported at module level)
-        zone_match = re.search(r'zone\s+([a-z])', query_lower)
-        if zone_match:
-            entities["location"] = f"Zone {zone_match.group(1).upper()}"
-        
-        dock_match = re.search(r'dock\s+([a-z0-9]+)', query_lower)
-        if dock_match:
-            entities["location"] = f"Dock {dock_match.group(1).upper()}"
+        # Extract location using helper method
+        extracted_location = self._extract_location_from_query(query_lower)
+        if extracted_location:
+            entities["location"] = extracted_location
         
         # Extract incident type
         if "flooding" in query_lower or "flood" in query_lower:
@@ -933,10 +892,8 @@ ABSOLUTELY CRITICAL:
             # Parse JSON response - try to extract JSON from response if it contains extra text
             response_text = response.content.strip()
             
-            # Try to extract JSON if response contains extra text
-            json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', response_text, re.DOTALL)
-            if json_match:
-                response_text = json_match.group(0)
+            # Try to extract JSON if response contains extra text - use safe brace counting
+            response_text = self._extract_json_safely(response_text)
             
             try:
                 response_data = json.loads(response_text)
@@ -946,10 +903,8 @@ ABSOLUTELY CRITICAL:
                 logger.warning(f"Raw LLM response: {response.content[:500]}")
                 # Fallback response - use the text content but clean it
                 natural_lang = response.content
-                # Remove any JSON-like structures from the text
-                natural_lang = re.sub(r"\{[^{}]*'tool_execution_results'[^{}]*\}", "", natural_lang)
-                natural_lang = re.sub(r"'tool_execution_results':\s*\{\}", "", natural_lang)
-                natural_lang = re.sub(r"tool_execution_results:\s*\{\}", "", natural_lang)
+                # Remove any JSON-like structures from the text - use safe method
+                natural_lang = self._remove_tool_execution_results_safely(natural_lang)
                 natural_lang = natural_lang.strip()
                 
                 response_data = {
@@ -1111,13 +1066,37 @@ Do not include any other text, just the JSON array."""
                         max_tokens=500
                     )
                     rec_text = rec_response.content.strip()
-                    # Try to extract JSON array (re is already imported at module level)
-                    json_match = re.search(r'\[.*?\]', rec_text, re.DOTALL)
-                    if json_match:
-                        recommendations = json.loads(json_match.group(0))
+                    # Try to extract JSON array - use safe bracket counting to avoid quadratic runtime
+                    start_idx = rec_text.find('[')
+                    if start_idx != -1:
+                        # Find matching ']' by counting brackets (safe, no backtracking)
+                        bracket_count = 1
+                        end_idx = start_idx + 1
+                        while end_idx < len(rec_text) and bracket_count > 0:
+                            if rec_text[end_idx] == '[':
+                                bracket_count += 1
+                            elif rec_text[end_idx] == ']':
+                                bracket_count -= 1
+                            end_idx += 1
+                        
+                        if bracket_count == 0:
+                            # Found matching brackets, extract JSON array
+                            json_str = rec_text[start_idx:end_idx]
+                            try:
+                                recommendations = json.loads(json_str)
+                            except json.JSONDecodeError:
+                                recommendations = None
+                        else:
+                            recommendations = None
+                    else:
+                        recommendations = None
+                    
+                    if recommendations:
+                        # Successfully parsed JSON array
+                        pass
                     else:
                         # Fallback: split by lines if not JSON
-                        recommendations = [line.strip() for line in rec_text.split('\n') if line.strip() and line.strip().startswith('-') or line.strip().startswith('•')]
+                        recommendations = [line.strip() for line in rec_text.split('\n') if line.strip() and (line.strip().startswith('-') or line.strip().startswith('•'))]
                         if not recommendations:
                             recommendations = [rec_text]
                     logger.info(f"LLM generated {len(recommendations)} recommendations")
@@ -1397,6 +1376,183 @@ Do not include any other text, just the JSON array."""
                 reasoning_types.append(ReasoningType.CAUSAL)
         
         return reasoning_types
+    
+    def _extract_json_safely(self, text: str) -> str:
+        """
+        Safely extract JSON from text using brace counting, avoiding regex backtracking.
+        
+        Args:
+            text: Input text that may contain JSON wrapped in extra text
+            
+        Returns:
+            Extracted JSON string or original text if no valid JSON found
+        """
+        if not text:
+            return text
+        
+        # Find first '{' character
+        start_idx = text.find('{')
+        if start_idx == -1:
+            return text
+        
+        # Use brace counting to find matching closing brace
+        brace_count = 1
+        end_idx = start_idx + 1
+        text_len = len(text)
+        
+        while end_idx < text_len and brace_count > 0:
+            if text[end_idx] == '{':
+                brace_count += 1
+            elif text[end_idx] == '}':
+                brace_count -= 1
+            end_idx += 1
+        
+        if brace_count == 0:
+            # Found matching braces, extract JSON
+            return text[start_idx:end_idx]
+        
+        # No valid JSON found, return original text
+        return text
+    
+    def _remove_tool_execution_results_safely(self, text: str) -> str:
+        """
+        Safely remove tool_execution_results patterns from text without regex backtracking.
+        
+        Uses a brace-counting algorithm to find and remove JSON-like structures containing
+        'tool_execution_results', avoiding catastrophic backtracking vulnerabilities.
+        
+        Args:
+            text: Input text that may contain tool_execution_results patterns
+            
+        Returns:
+            Text with tool_execution_results patterns removed
+        """
+        if not text:
+            return text
+        
+        # First, handle simple patterns with string replacement (safe, no backtracking)
+        # Pattern: 'tool_execution_results': {}
+        while "'tool_execution_results':" in text:
+            idx = text.find("'tool_execution_results':")
+            if idx == -1:
+                break
+            # Find the end of this pattern (skip whitespace and empty braces)
+            end_idx = idx + 22  # Length of "'tool_execution_results':"
+            # Skip whitespace
+            while end_idx < len(text) and text[end_idx] in ' \t\n\r':
+                end_idx += 1
+            # Skip empty braces {}
+            if end_idx < len(text) and text[end_idx] == '{':
+                end_idx += 1
+                while end_idx < len(text) and text[end_idx] in ' \t\n\r':
+                    end_idx += 1
+                if end_idx < len(text) and text[end_idx] == '}':
+                    end_idx += 1
+            text = text[:idx] + text[end_idx:]
+        
+        # Pattern: tool_execution_results: {}
+        while "tool_execution_results:" in text:
+            idx = text.find("tool_execution_results:")
+            if idx == -1:
+                break
+            # Find the end of this pattern (skip whitespace and empty braces)
+            end_idx = idx + 21  # Length of "tool_execution_results:"
+            # Skip whitespace
+            while end_idx < len(text) and text[end_idx] in ' \t\n\r':
+                end_idx += 1
+            # Skip empty braces {}
+            if end_idx < len(text) and text[end_idx] == '{':
+                end_idx += 1
+                while end_idx < len(text) and text[end_idx] in ' \t\n\r':
+                    end_idx += 1
+                if end_idx < len(text) and text[end_idx] == '}':
+                    end_idx += 1
+            text = text[:idx] + text[end_idx:]
+        
+        # Now handle complex pattern: {...'tool_execution_results'...} using brace counting
+        if "'tool_execution_results'" not in text:
+            return text
+        
+        result = []
+        i = 0
+        text_len = len(text)
+        
+        while i < text_len:
+            if text[i] == '{':
+                # Use brace counting to find matching closing brace
+                brace_count = 1
+                start_pos = i
+                i += 1
+                contains_pattern = False
+                
+                # Scan forward to find matching brace
+                while i < text_len and brace_count > 0:
+                    if text[i] == '{':
+                        brace_count += 1
+                    elif text[i] == '}':
+                        brace_count -= 1
+                    elif i + 22 <= text_len and text[i:i+22] == "'tool_execution_results'":
+                        contains_pattern = True
+                    i += 1
+                
+                # If brace block contains pattern, skip it; otherwise include it
+                if brace_count == 0 and contains_pattern:
+                    # Skip the entire block
+                    continue
+                else:
+                    # Include the brace and continue from after it
+                    result.append(text[start_pos])
+                    i = start_pos + 1
+            else:
+                result.append(text[i])
+                i += 1
+        
+        return ''.join(result)
+    
+    def _create_execution_plan_entry(
+        self, tool: DiscoveredTool, query: MCPSafetyQuery, priority: int, required: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Create an execution plan entry for a tool.
+        
+        Args:
+            tool: The tool to add to the execution plan
+            query: The safety query object
+            priority: Priority level for execution
+            required: Whether the tool is required
+            
+        Returns:
+            Execution plan entry dictionary
+        """
+        return {
+            "tool_id": tool.tool_id,
+            "tool_name": tool.name,
+            "arguments": self._prepare_tool_arguments(tool, query),
+            "priority": priority,
+            "required": required,
+        }
+    
+    def _extract_location_from_query(self, query_lower: str) -> Optional[str]:
+        """
+        Extract location from query using safe string matching.
+        
+        Args:
+            query_lower: Lowercase query string
+            
+        Returns:
+            Extracted location string or None
+        """
+        # Extract zone
+        zone_match = re.search(r'zone\s+([a-z])', query_lower)
+        if zone_match:
+            return f"Zone {zone_match.group(1).upper()}"
+        
+        # Extract dock
+        dock_match = re.search(r'dock\s+([a-z0-9]+)', query_lower)
+        if dock_match:
+            return f"Dock {dock_match.group(1).upper()}"
+        
+        return None
 
 
 # Global MCP safety agent instance
