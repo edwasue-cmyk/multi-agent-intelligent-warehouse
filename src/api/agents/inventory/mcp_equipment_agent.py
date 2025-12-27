@@ -1034,9 +1034,8 @@ ABSOLUTELY CRITICAL:
                 # Fallback response - use the text content but clean it
                 natural_lang = response.content
                 # Remove any JSON-like structures from the text
-                natural_lang = re.sub(r"\{[^{}]*'tool_execution_results'[^{}]*\}", "", natural_lang)
-                natural_lang = re.sub(r"'tool_execution_results':\s*\{\}", "", natural_lang)
-                natural_lang = re.sub(r"tool_execution_results:\s*\{\}", "", natural_lang)
+                # Use safe string-based approach to avoid regex backtracking vulnerabilities
+                natural_lang = self._remove_tool_execution_results_safely(natural_lang)
                 natural_lang = natural_lang.strip()
                 
                 response_data = {
@@ -1262,10 +1261,35 @@ Do not include any other text, just the JSON array."""
                         max_tokens=500
                     )
                     rec_text = rec_response.content.strip()
-                    # Try to extract JSON array
-                    json_match = re.search(r'\[.*?\]', rec_text, re.DOTALL)
-                    if json_match:
-                        recommendations = json.loads(json_match.group(0))
+                    # Try to extract JSON array - use bounded pattern to avoid quadratic runtime
+                    # Find first '[' and last ']' to extract JSON array safely
+                    start_idx = rec_text.find('[')
+                    if start_idx != -1:
+                        # Find matching ']' by counting brackets (safe, no backtracking)
+                        bracket_count = 1
+                        end_idx = start_idx + 1
+                        while end_idx < len(rec_text) and bracket_count > 0:
+                            if rec_text[end_idx] == '[':
+                                bracket_count += 1
+                            elif rec_text[end_idx] == ']':
+                                bracket_count -= 1
+                            end_idx += 1
+                        
+                        if bracket_count == 0:
+                            # Found matching brackets, extract JSON array
+                            json_str = rec_text[start_idx:end_idx]
+                            try:
+                                recommendations = json.loads(json_str)
+                            except json.JSONDecodeError:
+                                recommendations = None
+                        else:
+                            recommendations = None
+                    else:
+                        recommendations = None
+                    
+                    if recommendations:
+                        # Successfully parsed JSON array
+                        pass
                     else:
                         # Fallback: split by lines if not JSON
                         recommendations = [line.strip() for line in rec_text.split('\n') if line.strip() and (line.strip().startswith('-') or line.strip().startswith('•'))]
@@ -1403,6 +1427,101 @@ Do not include any other text, just the JSON array."""
                 else None
             ),
         }
+    
+    def _remove_tool_execution_results_safely(self, text: str) -> str:
+        """
+        Safely remove tool_execution_results patterns from text without regex backtracking.
+        
+        Uses a brace-counting algorithm to find and remove JSON-like structures containing
+        'tool_execution_results', avoiding catastrophic backtracking vulnerabilities.
+        
+        Args:
+            text: Input text that may contain tool_execution_results patterns
+            
+        Returns:
+            Text with tool_execution_results patterns removed
+        """
+        if not text:
+            return text
+        
+        # First, handle simple patterns with string replacement (safe, no backtracking)
+        # Pattern: 'tool_execution_results': {}
+        while "'tool_execution_results':" in text:
+            idx = text.find("'tool_execution_results':")
+            if idx == -1:
+                break
+            # Find the end of this pattern (skip whitespace and empty braces)
+            end_idx = idx + 22  # Length of "'tool_execution_results':"
+            # Skip whitespace
+            while end_idx < len(text) and text[end_idx] in ' \t\n\r':
+                end_idx += 1
+            # Skip empty braces {}
+            if end_idx < len(text) and text[end_idx] == '{':
+                end_idx += 1
+                while end_idx < len(text) and text[end_idx] in ' \t\n\r':
+                    end_idx += 1
+                if end_idx < len(text) and text[end_idx] == '}':
+                    end_idx += 1
+            text = text[:idx] + text[end_idx:]
+        
+        # Pattern: tool_execution_results: {}
+        while "tool_execution_results:" in text:
+            idx = text.find("tool_execution_results:")
+            if idx == -1:
+                break
+            # Find the end of this pattern (skip whitespace and empty braces)
+            end_idx = idx + 21  # Length of "tool_execution_results:"
+            # Skip whitespace
+            while end_idx < len(text) and text[end_idx] in ' \t\n\r':
+                end_idx += 1
+            # Skip empty braces {}
+            if end_idx < len(text) and text[end_idx] == '{':
+                end_idx += 1
+                while end_idx < len(text) and text[end_idx] in ' \t\n\r':
+                    end_idx += 1
+                if end_idx < len(text) and text[end_idx] == '}':
+                    end_idx += 1
+            text = text[:idx] + text[end_idx:]
+        
+        # Now handle complex pattern: {...'tool_execution_results'...} using brace counting
+        if "'tool_execution_results'" not in text:
+            return text
+        
+        result = []
+        i = 0
+        text_len = len(text)
+        
+        while i < text_len:
+            if text[i] == '{':
+                # Use brace counting to find matching closing brace
+                brace_count = 1
+                start_pos = i
+                i += 1
+                contains_pattern = False
+                
+                # Scan forward to find matching brace
+                while i < text_len and brace_count > 0:
+                    if text[i] == '{':
+                        brace_count += 1
+                    elif text[i] == '}':
+                        brace_count -= 1
+                    elif i + 22 <= text_len and text[i:i+22] == "'tool_execution_results'":
+                        contains_pattern = True
+                    i += 1
+                
+                # If brace block contains pattern, skip it; otherwise include it
+                if brace_count == 0 and contains_pattern:
+                    # Skip the entire block
+                    continue
+                else:
+                    # Include the brace and continue from after it
+                    result.append(text[start_pos])
+                    i = start_pos + 1
+            else:
+                result.append(text[i])
+                i += 1
+        
+        return ''.join(result)
     
     def _is_complex_query(self, query: str) -> bool:
         """Determine if a query is complex enough to require reasoning."""
