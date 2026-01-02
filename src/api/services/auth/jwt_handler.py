@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
 import jwt
 import bcrypt
@@ -159,7 +159,7 @@ class JWTHandler:
         - Never allows 'none' algorithm
         """
         to_encode = data.copy()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         if expires_delta:
             expire = now + expires_delta
@@ -187,7 +187,7 @@ class JWTHandler:
         - Never allows 'none' algorithm
         """
         to_encode = data.copy()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expire = now + timedelta(days=self.refresh_token_expire_days)
         
         # Always include exp and iat for proper validation
