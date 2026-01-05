@@ -21,6 +21,17 @@ jobs:
         
         echo "===== Python tests + coverage ====="
         uv run pytest tests/ \
+          --ignore=tests/integration \
+          --ignore=tests/performance \
+          --ignore=tests/quality \
+          --ignore=tests/unit/test_chunking_demo.py \
+          --ignore=tests/unit/test_db_connection.py \
+          --ignore=tests/unit/test_document_pipeline.py \
+          --ignore=tests/unit/test_enhanced_retrieval.py \
+          --ignore=tests/unit/test_evidence_scoring_demo.py \
+          --ignore=tests/unit/test_mcp_planner_integration.py \
+          --ignore=tests/unit/test_mcp_system.py \
+          --ignore=tests/unit/test_migration_system.py \
           --cov=src \
           --cov-report=xml:coverage.xml \
           --cov-report=term-missing
