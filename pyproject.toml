@@ -14,13 +14,13 @@ requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "fastapi>=0.104.0",
+    "fastapi>=0.120.0",
     "uvicorn[standard]>=0.24.0",
     "pydantic>=2.0.0",
     "langchain>=0.1.11",  # Security: CVE-2024-28088 fixed in 0.1.11+. Note: We use langchain-core>=1.2.6 directly (includes CVE-2025-68664 fix)

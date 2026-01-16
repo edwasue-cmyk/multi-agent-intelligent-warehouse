@@ -94,7 +94,7 @@ python scripts/data/generate_historical_demand.py
 #   - NVIDIA GPU with CUDA 12.x support
 #   - CUDA Compute Capability 7.0+ (Volta, Turing, Ampere, Ada, Hopper)
 #   - 16GB+ GPU memory recommended
-#   - Python 3.9-3.11
+#   - Python 3.11+ (required)
 #
 # Installation:
 ./scripts/setup/install_rapids.sh
@@ -131,7 +131,7 @@ npm start
 - 20GB+ disk space
 
 ### Common Prerequisites
-- Python 3.9+ (for local development)
+- Python 3.11+ (for local development)
 - **Node.js 20.0.0+** (LTS recommended) and npm (for frontend)
   - **Minimum**: Node.js 18.17.0+ (required for `node:path` protocol support)
   - **Recommended**: Node.js 20.x LTS for best compatibility
@@ -894,7 +894,7 @@ With RAPIDS enabled, you can expect:
 - Ensure GPU has compute capability 7.0+
 
 **RAPIDS installation failed?**
-- Check Python version (3.9-3.11 supported)
+- Check Python version (3.11+ required)
 - Verify CUDA toolkit is installed
 - Try manual installation: `pip install --extra-index-url=https://pypi.nvidia.com cudf-cu12 cuml-cu12`
 

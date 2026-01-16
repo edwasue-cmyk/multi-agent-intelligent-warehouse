@@ -207,9 +207,9 @@ See the [Local Development Setup](#local-development-setup) section below for ma
 ### Prerequisites
 
 - **Python 3.11+** (check with `python3 --version`)
-- **Node.js 20.0.0+** (LTS recommended) and npm (check with `node --version` and `npm --version`)
+- **Node.js** and npm (check with `node --version` and `npm --version`)
   - **Minimum**: Node.js 18.17.0+ (required for `node:path` protocol support)
-  - **Recommended**: Node.js 20.x LTS for best compatibility
+  - **Recommended**: Node.js 20.x LTS for best compatibility and performance
   - **Note**: Node.js 18.0.0 - 18.16.x will fail with `Cannot find module 'node:path'` error
 - **Docker** and Docker Compose
 - **Git** (to clone the repository)
