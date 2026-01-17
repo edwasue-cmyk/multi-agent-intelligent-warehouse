@@ -99,12 +99,12 @@ graph TB
     end
 
     subgraph CHAT_SVC["Chat Enhancement Services - Production Ready"]
-        PARAM_VALIDATOR["Parameter Validation Service<br/>MCP Tool Parameter Validation<br/>Implemented"]
-        RESPONSE_FORMATTER["Response Formatting Engine<br/>Clean User-Friendly Responses<br/>Implemented"]
-        CONVERSATION_MEMORY["Conversation Memory Service<br/>Persistent Context Management<br/>Implemented"]
-        EVIDENCE_COLLECTOR["Evidence Collection Service<br/>Context Source Attribution<br/>Implemented"]
-        QUICK_ACTIONS["Smart Quick Actions Service<br/>Contextual Action Suggestions<br/>Implemented"]
-        RESPONSE_VALIDATOR["Response Validation Service<br/>Quality Assurance Enhancement<br/>Implemented"]
+        PARAM_VALIDATOR["Parameter Validation Service<br/>MCPParameterValidator<br/>MCP Tool Parameter Validation<br/>Implemented"]
+        RESPONSE_FORMATTER["Response Formatting Engine<br/>ResponseEnhancer<br/>Clean User-Friendly Responses<br/>Implemented"]
+        CONVERSATION_MEMORY["Conversation Memory Service<br/>ConversationMemoryService<br/>Persistent Context Management<br/>Implemented"]
+        EVIDENCE_COLLECTOR["Evidence Collection Service<br/>EvidenceCollector<br/>Context Source Attribution<br/>Implemented"]
+        QUICK_ACTIONS["Smart Quick Actions Service<br/>SmartQuickActions<br/>Contextual Action Suggestions<br/>Implemented"]
+        RESPONSE_VALIDATOR["Response Validation Service<br/>ResponseValidator<br/>Quality Assurance Enhancement<br/>Implemented"]
         MCP_TESTING["Enhanced MCP Testing Dashboard<br/>Advanced Testing Interface<br/>Implemented"]
     end
 
@@ -439,7 +439,7 @@ sequenceDiagram
 
 | Component | Status | Technology | Port | Description |
 |-----------|--------|------------|------|-------------|
-| **React Web App** | Complete | React 18, Material-UI, CRACO | 3001 | Real-time chat, dashboard, authentication (binds to 0.0.0.0:3001) |
+| **React Web App** | Complete | React 19.2.3, Material-UI, CRACO | 3001 | Real-time chat, dashboard, authentication (binds to 0.0.0.0:3001) |
 | **FastAPI Gateway** | Complete | FastAPI, Pydantic v2 | 8001 | REST API with OpenAPI/Swagger |
 | **JWT Authentication** | Complete | PyJWT, bcrypt | - | 5 user roles, RBAC permissions |
 | **NeMo Guardrails** | Complete | NeMo Guardrails | - | Content safety, compliance checks |
@@ -447,10 +447,10 @@ sequenceDiagram
 | **MCP Server** | Complete | Python, async | - | Tool registration, discovery, execution |
 | **MCP Client** | Complete | Python, async | - | Multi-server communication |
 | **Planner Agent** | Complete | LangGraph + MCP | - | Intent classification, routing |
-| **Equipment & Asset Operations Agent** | Complete | Python, async + MCP | - | MCP-enabled equipment management |
-| **Operations Agent** | Complete | Python, async + MCP | - | MCP-enabled operations management |
-| **Safety Agent** | Complete | Python, async + MCP | - | MCP-enabled safety management |
-| **Forecasting Agent** | Complete | Python, async + MCP | - | Demand forecasting, reorder recommendations |
+| **Equipment & Asset Operations Agent** | Complete | Python, async + MCP | - | MCP-enabled equipment management (MCP version is primary; non-MCP version also exists) |
+| **Operations Agent** | Complete | Python, async + MCP | - | MCP-enabled operations management (MCP version is primary; non-MCP version also exists) |
+| **Safety Agent** | Complete | Python, async + MCP | - | MCP-enabled safety management (MCP version is primary; non-MCP version also exists) |
+| **Forecasting Agent** | Complete | Python, async + MCP | - | Demand forecasting, reorder recommendations (MCP version is primary) |
 | **Document Extraction Agent** | Complete | Python, async + NVIDIA NeMo | - | 6-stage document processing pipeline |
 | **Memory Manager** | Complete | PostgreSQL, Redis | - | Session context, conversation history |
 | **NVIDIA NIMs** | Complete | Llama 3.3 Nemotron Super 49B, llama-3_2-nv-embedqa-1b-v2 | - | AI-powered responses |
@@ -506,7 +506,7 @@ sequenceDiagram
 
 | Component | Status | Technology | Port | Purpose |
 |-----------|--------|------------|------|---------|
-| **PostgreSQL/TimescaleDB** | Running | Port 5435 | Structured data, time-series |
+| **PostgreSQL/TimescaleDB** | Running | Port 5435 | Structured data, time-series (PostgreSQL 14-16 varies by deployment) |
 | **Milvus** | Running | Port 19530 | Vector database, semantic search |
 | **Redis** | Running | Port 6379 | Cache, sessions, pub/sub |
 | **Apache Kafka** | Running | Port 9092 | Event streaming, data pipeline |
@@ -653,6 +653,91 @@ The Document Extraction Agent implements a comprehensive **6-stage pipeline** us
 - **Purpose**: Quality-based routing and result optimization
 - **Capabilities**: Result routing, quality optimization, final output generation
 
+## Deployment-Specific Configurations
+
+The system supports multiple deployment configurations with different component versions:
+
+### PostgreSQL/TimescaleDB Versions by Deployment
+
+| Deployment File | PostgreSQL Version | TimescaleDB Version | Use Case |
+|----------------|-------------------|---------------------|----------|
+| `docker-compose.versioned.yaml` | PostgreSQL 14 | Latest TimescaleDB | Versioned/production deployments |
+| `docker-compose.ci.yaml` | PostgreSQL 14 | Latest TimescaleDB | CI/CD pipeline testing |
+| `docker-compose.gpu.yaml` | PostgreSQL 15 | Latest TimescaleDB | GPU-accelerated deployments |
+| `docker-compose.rapids.yml` | PostgreSQL 15 | Latest TimescaleDB | RAPIDS forecasting deployments |
+| `docker-compose.dev.yaml` | PostgreSQL 16 | TimescaleDB 2.15.2 | Development environment |
+
+**Note**: All deployments use TimescaleDB for time-series data capabilities. The PostgreSQL version varies based on deployment requirements and compatibility needs.
+
+### Component Implementation References
+
+Key implementation files for major components:
+
+- **MCP Services**: `src/api/services/mcp/`
+  - Server: `src/api/services/mcp/server.py`
+  - Client: `src/api/services/mcp/client.py`
+  - Tool Discovery: `src/api/services/mcp/tool_discovery.py`
+  - Tool Binding: `src/api/services/mcp/tool_binding.py`
+  - Tool Routing: `src/api/services/mcp/tool_routing.py`
+  - Tool Validation: `src/api/services/mcp/tool_validation.py`
+  - Service Discovery: `src/api/services/mcp/service_discovery.py`
+  - Monitoring: `src/api/services/mcp/monitoring.py`
+  - Rollback: `src/api/services/mcp/rollback.py`
+
+- **Agents**: `src/api/agents/`
+  - Equipment: `src/api/agents/inventory/equipment_agent.py` (non-MCP), `src/api/agents/inventory/mcp_equipment_agent.py` (MCP)
+  - Operations: `src/api/agents/operations/operations_agent.py` (non-MCP), `src/api/agents/operations/mcp_operations_agent.py` (MCP)
+  - Safety: `src/api/agents/safety/safety_agent.py`
+  - Forecasting: `src/api/agents/forecasting/forecasting_agent.py`
+  - Document: `src/api/agents/document/document_extraction_agent.py`
+
+- **Chat Enhancement Services**: `src/api/services/`
+  - Parameter Validation: `src/api/services/mcp/parameter_validator.py` (`MCPParameterValidator`)
+  - Response Formatting: `src/api/services/validation/response_enhancer.py` (`ResponseEnhancer`)
+  - Conversation Memory: `src/api/services/memory/conversation_memory.py` (`ConversationMemoryService`)
+  - Evidence Collection: `src/api/services/evidence/evidence_collector.py` (`EvidenceCollector`)
+  - Quick Actions: `src/api/services/quick_actions/smart_quick_actions.py` (`SmartQuickActions`)
+  - Response Validation: `src/api/services/validation/response_validator.py` (`ResponseValidator`)
+
+- **Planner Graphs**: `src/api/graphs/`
+  - MCP Integrated Planner: `src/api/graphs/mcp_integrated_planner_graph.py`
+  - MCP Planner: `src/api/graphs/mcp_planner_graph.py`
+  - Standard Planner: `src/api/graphs/planner_graph.py`
+
+- **API Routers**: `src/api/routers/`
+  - All endpoints: `src/api/routers/*.py`
+  - Main app: `src/api/app.py`
+
+- **Retrieval Services**: `src/retrieval/`
+  - Hybrid Retriever: `src/retrieval/hybrid_retriever.py`
+  - GPU Hybrid Retriever: `src/retrieval/gpu_hybrid_retriever.py`
+  - Structured Retriever: `src/retrieval/structured/`
+  - Vector Retriever: `src/retrieval/vector/`
+
+- **MCP Adapters**: `src/api/services/mcp/adapters/`
+  - ERP: `src/api/services/mcp/adapters/erp_adapter.py`
+  - WMS: `src/api/services/mcp/adapters/wms_adapter.py`
+  - IoT: `src/api/services/mcp/adapters/iot_adapter.py`
+  - RFID/Barcode: `src/api/services/mcp/adapters/rfid_barcode_adapter.py`
+  - Time Attendance: `src/api/services/mcp/adapters/time_attendance_adapter.py`
+  - Forecasting: `src/api/services/mcp/adapters/forecasting_adapter.py`
+
+## Version History
+
+### 2025-01-XX - Architecture Documentation Update
+- **React**: Updated from 18.2+ to 19.2.3 (security patches and latest stable)
+- **FastAPI**: Updated from 0.119+ to >=0.120.0 (latest stable with security fixes)
+- **aiohttp**: Updated from 3.13.2 to >=3.13.3 (security: zip bomb DoS vulnerability fix)
+- **PostgreSQL**: Clarified version range (14-16) varies by deployment configuration
+- **LangGraph**: Updated to >=1.0.5 (security: CVE-2025-8709 fix)
+- **LangGraph Checkpoint**: Added >=3.0.0 (security: CVE-2025-64439 RCE fix)
+- **LangChain Core**: Added >=1.2.6 (security: CVE-2025-68664 fix)
+- **Documentation**: Added implementation file references and deployment-specific configuration notes
+- **Documentation**: Added service class names to diagram labels for clarity
+
+### Previous Versions
+- Initial architecture documentation with React 18, FastAPI 0.119+, and PostgreSQL 15+
+
 ## System Capabilities
 
 ### Fully Operational Features
@@ -682,17 +767,21 @@ The Document Extraction Agent implements a comprehensive **6-stage pipeline** us
 
 | Layer | Technology | Version | Status | Purpose |
 |-------|------------|---------|--------|---------|
-| **Frontend** | React | 18.2+ | Complete | Web UI with Material-UI |
+| **Frontend** | React | 19.2.3 | Complete | Web UI with Material-UI |
 | **Frontend** | Node.js | 20.0+ (18.17+ min) | Complete | Runtime environment (LTS recommended) |
 | **Frontend** | CRACO | 7.1+ | Complete | Webpack configuration override |
 | **Frontend** | React Native | - | Pending | Mobile app for field operations |
-| **API Gateway** | FastAPI | 0.119+ | Complete | REST API with OpenAPI/Swagger |
-| **API Gateway** | Pydantic | v2.7+ | Complete | Data validation & serialization |
-| **Orchestration** | LangGraph | Latest | Complete | Multi-agent coordination |
+| **API Gateway** | FastAPI | >=0.120.0 | Complete | REST API with OpenAPI/Swagger |
+| **API Gateway** | Pydantic | >=2.0.0 | Complete | Data validation & serialization |
+| **Orchestration** | LangGraph | >=1.0.5 | Complete | Multi-agent coordination (in-memory state, no SQLite checkpoint) |
+| **Orchestration** | LangGraph Checkpoint | >=3.0.0 | Complete | Checkpoint management (pinned for security, but using in-memory state) |
+| **Orchestration** | LangChain | >=0.1.11 | Complete | LLM framework integration |
+| **Orchestration** | LangChain Core | >=1.2.6 | Complete | Core LangChain functionality |
 | **AI/LLM** | NVIDIA NIM | Latest | Complete | Llama 3.3 Nemotron Super 49B + Embeddings |
-| **Database** | PostgreSQL | 15+ | Complete | Structured data storage |
-| **Database** | TimescaleDB | 2.11+ | Complete | Time-series data |
-| **Vector DB** | Milvus | 2.3+ | Complete | Semantic search & embeddings |
+| **Database** | PostgreSQL | 14-16 (varies by deployment) | Complete | Structured data storage (pg14: versioned/ci, pg15: gpu/rapids, pg16: dev) |
+| **Database** | TimescaleDB | 2.11+ (varies by deployment) | Complete | Time-series data |
+| **Vector DB** | Milvus | >=2.3.0 (pymilvus) | Complete | Semantic search & embeddings |
+| **Database Driver** | psycopg | >=3.1.0 | Complete | PostgreSQL async driver |
 | **Cache** | Redis | 7+ | Complete | Session management & caching |
 | **Streaming** | Apache Kafka | 3.5+ | Complete | Event streaming & messaging |
 | **Storage** | MinIO | Latest | Complete | Object storage for files |
@@ -703,7 +792,7 @@ The Document Extraction Agent implements a comprehensive **6-stage pipeline** us
 | **Security** | NeMo Guardrails | Latest | Complete | Content safety & compliance |
 | **Security** | JWT/PyJWT | 2.8+ | Complete | Authentication & authorization (key validation enforced) |
 | **Security** | bcrypt | Latest | Complete | Password hashing |
-| **Security** | aiohttp | 3.13.2 | Complete | HTTP client (client-only, C extensions enabled) |
+| **Security** | aiohttp | >=3.13.3 | Complete | HTTP client (client-only, C extensions enabled, security: zip bomb DoS fix) |
 | **ML/AI** | XGBoost | 1.6+ | Complete | Gradient boosting for forecasting |
 | **ML/AI** | scikit-learn | 1.5+ | Complete | Machine learning models |
 | **ML/AI** | RAPIDS cuML | Latest | Complete | GPU-accelerated ML (optional) |
