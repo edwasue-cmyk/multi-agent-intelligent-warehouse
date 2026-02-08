@@ -24,6 +24,7 @@
 - [Monitoring & Observability](#monitoring--observability)
 - [NeMo Guardrails](#nemo-guardrails)
 - [Development Guide](#development-guide)
+  - [GitHub Copilot Integration](#github-copilot-integration-)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -627,6 +628,37 @@ The detailed guide includes:
 - Legacy YAML: `data/config/guardrails/rails.yaml`
 
 ## Development Guide
+
+### GitHub Copilot Integration 🤖
+
+This project includes comprehensive GitHub Copilot support for AI-assisted development:
+
+- **`.github/copilot-instructions.md`** - Codebase patterns and best practices for Copilot
+- **`.vscode/`** - Pre-configured VS Code settings and recommended extensions
+- **`.devcontainer/`** - Complete dev container setup with all services
+
+**Quick Start with Dev Container (Recommended):**
+
+1. Install [VS Code](https://code.visualstudio.com/) and [Docker Desktop](https://www.docker.com/products/docker-desktop)
+2. Install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension
+3. Open this repository in VS Code
+4. Click "Reopen in Container" when prompted
+5. Everything will be automatically configured with GitHub Copilot ready!
+
+**Manual Setup:**
+
+See [COPILOT_SETUP.md](COPILOT_SETUP.md) for detailed instructions on:
+- Installing and configuring GitHub Copilot
+- Using Copilot Chat for codebase questions
+- Best practices for AI-assisted development
+- Troubleshooting common issues
+
+The dev container includes:
+- Python 3.11 with all dependencies
+- Node.js 18 for frontend development  
+- PostgreSQL, Milvus, and Redis services
+- GitHub Copilot and development extensions
+- Automatic setup and configuration
 
 ### Repository Layout
 
