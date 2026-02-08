@@ -25,6 +25,7 @@ import logging
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 from enum import Enum
+from functools import lru_cache
 import asyncio
 
 logger = logging.getLogger(__name__)
@@ -97,6 +98,10 @@ class QueryPreprocessor:
         
         # Pre-compile regex patterns for performance
         self._compile_regex_patterns()
+        
+        # Cache for normalized queries (LRU cache with max 1000 entries)
+        self._normalize_cache: Dict[str, str] = {}
+        self._normalize_cache_max = 1000
         
         # Intent patterns
         self.intent_patterns = {
@@ -252,7 +257,11 @@ class QueryPreprocessor:
             )
     
     def _normalize_query(self, query: str) -> str:
-        """Normalize query for consistent processing."""
+        """Normalize query for consistent processing - cached for performance."""
+        # Check cache first
+        if query in self._normalize_cache:
+            return self._normalize_cache[query]
+        
         # Convert to lowercase
         normalized = query.lower().strip()
         
@@ -274,6 +283,12 @@ class QueryPreprocessor:
         
         # Clean up extra spaces
         normalized = self.whitespace_pattern.sub(' ', normalized).strip()
+        
+        # Cache the result (with size limit to prevent unbounded growth)
+        if len(self._normalize_cache) >= self._normalize_cache_max:
+            # Remove oldest entry (simple FIFO, not true LRU but good enough)
+            self._normalize_cache.pop(next(iter(self._normalize_cache)))
+        self._normalize_cache[query] = normalized
         
         return normalized
     
