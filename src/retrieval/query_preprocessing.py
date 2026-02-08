@@ -95,6 +95,9 @@ class QueryPreprocessor:
             'last month': ['last month', 'previous month']
         }
         
+        # Pre-compile regex patterns for performance
+        self._compile_regex_patterns()
+        
         # Intent patterns
         self.intent_patterns = {
             QueryIntent.LOOKUP: [
@@ -138,6 +141,48 @@ class QueryPreprocessor:
             'safety': [r'\b(?:safety|incident|accident|hazard|risk)\b'],
             'performance': [r'\b(?:performance|efficiency|productivity|optimization)\b']
         }
+    
+    def _compile_regex_patterns(self):
+        """Pre-compile regex patterns for better performance."""
+        # Pre-compile abbreviation patterns
+        self.abbreviation_patterns = {
+            'qty': re.compile(r'\b(?:qty\.?)\b'),
+            'amt': re.compile(r'\b(?:amt\.?)\b'),
+            'loc': re.compile(r'\b(?:loc\.?)\b'),
+            'eq': re.compile(r'\b(?:eq\.?)\b'),
+            'maint': re.compile(r'\b(?:maint\.?)\b'),
+            'ops': re.compile(r'\b(?:ops\.?)\b')
+        }
+        
+        self.abbreviation_replacements = {
+            'qty': 'quantity',
+            'amt': 'amount',
+            'loc': 'location',
+            'eq': 'equipment',
+            'maint': 'maintenance',
+            'ops': 'operations'
+        }
+        
+        # Pre-compile terminology replacement patterns
+        self.terminology_patterns = {}
+        for standard_term, variants in self.terminology_map.items():
+            for variant in variants:
+                if variant != standard_term:
+                    pattern = re.compile(r'\b' + re.escape(variant) + r'\b')
+                    self.terminology_patterns[pattern] = standard_term
+        
+        # Pre-compile filler word patterns
+        self.filler_patterns = {
+            'please': re.compile(r'\bplease\b'),
+            'can you': re.compile(r'\bcan you\b'),
+            'could you': re.compile(r'\bcould you\b'),
+            'i need': re.compile(r'\bi need\b'),
+            'i want': re.compile(r'\bi want\b'),
+            'i would like': re.compile(r'\bi would like\b')
+        }
+        
+        # Pre-compile whitespace pattern
+        self.whitespace_pattern = re.compile(r'\s+')
     
     async def preprocess_query(
         self, 
@@ -212,40 +257,23 @@ class QueryPreprocessor:
         normalized = query.lower().strip()
         
         # Remove extra whitespace
-        normalized = re.sub(r'\s+', ' ', normalized)
+        normalized = self.whitespace_pattern.sub(' ', normalized)
         
-        # Normalize common abbreviations
-        abbreviations = {
-            'qty': 'quantity',
-            'qty.': 'quantity',
-            'amt': 'amount',
-            'amt.': 'amount',
-            'loc': 'location',
-            'loc.': 'location',
-            'eq': 'equipment',
-            'eq.': 'equipment',
-            'maint': 'maintenance',
-            'maint.': 'maintenance',
-            'ops': 'operations',
-            'ops.': 'operations'
-        }
+        # Normalize common abbreviations using pre-compiled patterns
+        for key, pattern in self.abbreviation_patterns.items():
+            replacement = self.abbreviation_replacements[key]
+            normalized = pattern.sub(replacement, normalized)
         
-        for abbrev, full in abbreviations.items():
-            normalized = re.sub(r'\b' + re.escape(abbrev) + r'\b', full, normalized)
+        # Normalize equipment terminology using pre-compiled patterns
+        for pattern, replacement in self.terminology_patterns.items():
+            normalized = pattern.sub(replacement, normalized)
         
-        # Normalize equipment terminology
-        for standard_term, variants in self.terminology_map.items():
-            for variant in variants:
-                if variant != standard_term:
-                    normalized = re.sub(r'\b' + re.escape(variant) + r'\b', standard_term, normalized)
-        
-        # Remove common filler words
-        filler_words = ['please', 'can you', 'could you', 'i need', 'i want', 'i would like']
-        for filler in filler_words:
-            normalized = re.sub(r'\b' + re.escape(filler) + r'\b', '', normalized)
+        # Remove common filler words using pre-compiled patterns
+        for pattern in self.filler_patterns.values():
+            normalized = pattern.sub('', normalized)
         
         # Clean up extra spaces
-        normalized = re.sub(r'\s+', ' ', normalized).strip()
+        normalized = self.whitespace_pattern.sub(' ', normalized).strip()
         
         return normalized
     
