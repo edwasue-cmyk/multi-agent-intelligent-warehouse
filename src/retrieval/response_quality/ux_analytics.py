@@ -28,6 +28,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 import json
 import statistics
+from collections import defaultdict
 
 from .response_validator import UserRole, ConfidenceLevel, ResponseQuality
 
@@ -91,8 +92,9 @@ class UXAnalyticsService:
     - Automated recommendations generation
     """
     
-    def __init__(self):
+    def __init__(self, max_metrics: int = 10000):
         self.metrics: List[UXMetric] = []
+        self.max_metrics = max_metrics  # Prevent unbounded memory growth
         self.session_data: Dict[str, List[UXMetric]] = {}
         self.role_performance: Dict[UserRole, List[float]] = {
             role: [] for role in UserRole
@@ -124,6 +126,10 @@ class UXAnalyticsService:
             )
             
             self.metrics.append(metric)
+            
+            # Prevent unbounded memory growth - prune oldest metrics
+            if len(self.metrics) > self.max_metrics:
+                self.metrics = self.metrics[-self.max_metrics:]
             
             # Update role performance
             if user_role not in self.role_performance:
@@ -333,26 +339,36 @@ class UXAnalyticsService:
                 trend = await self.generate_trend_analysis(metric_type, "hour", hours)
                 trends.append(trend)
             
-            # Calculate role performance
+            # Calculate role performance - Optimized O(n) using groupby
             role_performance = {}
+            # Group metrics by role
+            role_groups = defaultdict(list)
+            for m in recent_metrics:
+                role_groups[m.user_role].append(m.value)
+            
             for role in UserRole:
-                role_metrics = [m for m in recent_metrics if m.user_role == role]
-                if role_metrics:
-                    role_performance[role.value] = statistics.mean([m.value for m in role_metrics])
+                if role in role_groups and role_groups[role]:
+                    role_performance[role.value] = statistics.mean(role_groups[role])
             
-            # Calculate agent performance
+            # Calculate agent performance - Optimized O(n)
             agent_performance = {}
-            for agent_name in set(m.agent_name for m in recent_metrics):
-                agent_metrics = [m for m in recent_metrics if m.agent_name == agent_name]
-                if agent_metrics:
-                    agent_performance[agent_name] = statistics.mean([m.value for m in agent_metrics])
+            agent_groups = defaultdict(list)
+            for m in recent_metrics:
+                agent_groups[m.agent_name].append(m.value)
             
-            # Calculate intent performance
+            for agent_name, values in agent_groups.items():
+                if values:
+                    agent_performance[agent_name] = statistics.mean(values)
+            
+            # Calculate intent performance - Optimized O(n)
             intent_performance = {}
-            for intent in set(m.query_intent for m in recent_metrics):
-                intent_metrics = [m for m in recent_metrics if m.query_intent == intent]
-                if intent_metrics:
-                    intent_performance[intent] = statistics.mean([m.value for m in intent_metrics])
+            intent_groups = defaultdict(list)
+            for m in recent_metrics:
+                intent_groups[m.query_intent].append(m.value)
+            
+            for intent, values in intent_groups.items():
+                if values:
+                    intent_performance[intent] = statistics.mean(values)
             
             # Calculate overall score
             overall_score = statistics.mean([m.value for m in recent_metrics])

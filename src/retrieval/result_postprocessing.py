@@ -80,6 +80,9 @@ class ResultPostProcessor:
             'last_updated': ['last_updated', 'updated_at', 'modified_at', 'timestamp']
         }
         
+        # Create inverse mapping for O(1) lookup - Performance optimization
+        self._build_inverse_field_mapping()
+        
         # Data quality thresholds
         self.quality_thresholds = {
             'completeness': 0.8,  # 80% of required fields present
@@ -87,6 +90,13 @@ class ResultPostProcessor:
             'accuracy': 0.9,      # 90% accuracy in data values
             'timeliness': 0.6     # 60% of data is recent
         }
+    
+    def _build_inverse_field_mapping(self):
+        """Build inverse mapping for O(1) field name lookup."""
+        self.inverse_field_mapping = {}
+        for standard_field, variants in self.field_mappings.items():
+            for variant in variants:
+                self.inverse_field_mapping[variant] = standard_field
     
     async def process_result(
         self,
@@ -325,22 +335,21 @@ class ResultPostProcessor:
         self, 
         data: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
-        """Standardize field names across different data sources."""
+        """Standardize field names across different data sources - Optimized O(n)."""
         standardized = []
         
         for record in data:
             standardized_record = {}
             
-            for standard_field, variants in self.field_mappings.items():
-                for variant in variants:
-                    if variant in record:
-                        standardized_record[standard_field] = record[variant]
-                        break
-            
-            # Keep any unmapped fields
-            for key, value in record.items():
-                if key not in standardized_record:
-                    standardized_record[key] = value
+            # Use inverse mapping for O(1) lookup instead of O(n*m) nested loops
+            for field_name, field_value in record.items():
+                if field_name in self.inverse_field_mapping:
+                    standard_field = self.inverse_field_mapping[field_name]
+                    if standard_field not in standardized_record:  # Keep first occurrence
+                        standardized_record[standard_field] = field_value
+                else:
+                    # Keep unmapped fields as-is
+                    standardized_record[field_name] = field_value
             
             standardized.append(standardized_record)
         
