@@ -25,7 +25,6 @@ import logging
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 from enum import Enum
-from functools import lru_cache
 import asyncio
 
 logger = logging.getLogger(__name__)
@@ -99,7 +98,7 @@ class QueryPreprocessor:
         # Pre-compile regex patterns for performance
         self._compile_regex_patterns()
         
-        # Cache for normalized queries (LRU cache with max 1000 entries)
+        # Cache for normalized queries (FIFO cache with max 1000 entries)
         self._normalize_cache: Dict[str, str] = {}
         self._normalize_cache_max = 1000
         
