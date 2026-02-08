@@ -340,7 +340,6 @@ class ResultPostProcessor:
         
         for record in data:
             standardized_record = {}
-            mapped_fields = set()
             
             # Use inverse mapping for O(1) lookup instead of O(n*m) nested loops
             for field_name, field_value in record.items():
@@ -348,7 +347,6 @@ class ResultPostProcessor:
                     standard_field = self.inverse_field_mapping[field_name]
                     if standard_field not in standardized_record:  # Keep first occurrence
                         standardized_record[standard_field] = field_value
-                        mapped_fields.add(field_name)
                 else:
                     # Keep unmapped fields as-is
                     standardized_record[field_name] = field_value

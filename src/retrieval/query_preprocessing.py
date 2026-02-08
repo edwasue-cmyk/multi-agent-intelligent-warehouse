@@ -285,8 +285,9 @@ class QueryPreprocessor:
         normalized = self.whitespace_pattern.sub(' ', normalized).strip()
         
         # Cache the result (with size limit to prevent unbounded growth)
+        # Note: This is FIFO (First In First Out), not true LRU
         if len(self._normalize_cache) >= self._normalize_cache_max:
-            # Remove oldest entry (simple FIFO, not true LRU but good enough)
+            # Remove oldest entry (FIFO eviction policy)
             self._normalize_cache.pop(next(iter(self._normalize_cache)))
         self._normalize_cache[query] = normalized
         

@@ -29,7 +29,6 @@ from enum import Enum
 import json
 import statistics
 from collections import defaultdict
-from itertools import groupby
 
 from .response_validator import UserRole, ConfidenceLevel, ResponseQuality
 
