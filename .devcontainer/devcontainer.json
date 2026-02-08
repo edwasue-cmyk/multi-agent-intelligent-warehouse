@@ -1,0 +1,108 @@
+{
+  "name": "Multi-Agent Intelligent Warehouse",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "github.copilot",
+        "github.copilot-chat",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-python.mypy-type-checker",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg",
+        "humao.rest-client",
+        "eamodio.gitlens",
+        "yzhang.markdown-all-in-one",
+        "redhat.vscode-yaml",
+        "ms-toolsai.jupyter"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.flake8Enabled": true,
+        "python.formatting.provider": "black",
+        "python.testing.pytestEnabled": true,
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  
+  "forwardPorts": [
+    8000,
+    3000,
+    5432,
+    19530,
+    6379,
+    9090,
+    3001
+  ],
+  
+  "portsAttributes": {
+    "8000": {
+      "label": "FastAPI Backend",
+      "onAutoForward": "notify"
+    },
+    "3000": {
+      "label": "React Frontend",
+      "onAutoForward": "openBrowser"
+    },
+    "5432": {
+      "label": "PostgreSQL Database"
+    },
+    "19530": {
+      "label": "Milvus Vector DB"
+    },
+    "6379": {
+      "label": "Redis Cache"
+    },
+    "9090": {
+      "label": "Prometheus Metrics"
+    },
+    "3001": {
+      "label": "Grafana Dashboards"
+    }
+  },
+  
+  "containerEnv": {
+    "PYTHONPATH": "/workspace",
+    "ENVIRONMENT": "development",
+    "DEBUG": "true"
+  },
+  
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "18"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest"
+    }
+  },
+  
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postAttachCommand": "echo '🚀 Dev container ready! Run: python -m uvicorn src.api.app:app --reload'",
+  "postStartCommand": "git config --global --add safe.directory /workspace",
+  
+  "remoteUser": "vscode",
+  
+  "mounts": [
+    "source=${localWorkspaceFolder}/.env.example,target=/workspace/.env,type=bind,consistency=cached"
+  ]
+}
