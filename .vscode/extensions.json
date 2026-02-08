@@ -1,0 +1,79 @@
+{
+  "recommendations": [
+    // GitHub Copilot (AI pair programmer)
+    "github.copilot",
+    "github.copilot-chat",
+    
+    // Python Development
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.black-formatter",
+    "ms-python.isort",
+    "ms-python.mypy-type-checker",
+    
+    // TypeScript/JavaScript Development
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    
+    // Docker Support
+    "ms-azuretools.vscode-docker",
+    "ms-vscode-remote.remote-containers",
+    
+    // Database Tools
+    "mtxr.sqltools",
+    "mtxr.sqltools-driver-pg",
+    
+    // API Development
+    "humao.rest-client",
+    "42crunch.vscode-openapi",
+    
+    // Git Tools
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+    
+    // Markdown Support
+    "yzhang.markdown-all-in-one",
+    "davidanson.vscode-markdownlint",
+    
+    // Code Quality
+    "sonarsource.sonarlint-vscode",
+    "editorconfig.editorconfig",
+    
+    // YAML Support
+    "redhat.vscode-yaml",
+    
+    // JSON Support
+    "zainchen.json",
+    
+    // Better Comments
+    "aaron-bond.better-comments",
+    
+    // File Utils
+    "sleistner.vscode-fileutils",
+    
+    // Jupyter Notebooks (for /notebooks directory)
+    "ms-toolsai.jupyter",
+    "ms-toolsai.jupyter-keymap",
+    "ms-toolsai.jupyter-renderers",
+    
+    // Environment Variables Support
+    "irongeek.vscode-env",
+    
+    // TODO Highlight
+    "wayou.vscode-todo-highlight",
+    
+    // Path Intellisense
+    "christian-kohler.path-intellisense",
+    
+    // Import Cost (for frontend)
+    "wix.vscode-import-cost",
+    
+    // Error Lens (inline error display)
+    "usernamehw.errorlens"
+  ],
+  "unwantedRecommendations": [
+    // Extensions that conflict with our setup
+    "ms-python.autopep8",
+    "ms-python.pylint"
+  ]
+}
