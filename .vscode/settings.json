@@ -4,9 +4,7 @@
   "python.terminal.activateEnvironment": true,
   "python.terminal.activateEnvInCurrentTerminal": true,
   
-  // Python Formatting
-  "python.formatting.provider": "black",
-  "python.formatting.blackArgs": ["--line-length", "100"],
+  // Python Formatting - using new format with defaultFormatter
   "[python]": {
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {

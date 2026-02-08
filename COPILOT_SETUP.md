@@ -58,7 +58,7 @@ The fastest way to get started with everything pre-configured:
 If you prefer working on your local machine:
 
 1. **Install VS Code Extensions**
-   
+
    Open VS Code and install:
    - [GitHub Copilot](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot)
    - [GitHub Copilot Chat](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat)
@@ -210,7 +210,7 @@ The dev container provides a complete development environment:
    ```bash
    # Backend
    python -m uvicorn src.api.app:app --reload --host 0.0.0.0 --port 8000
-   
+
    # Frontend
    cd src/ui/web && npm start
    ```

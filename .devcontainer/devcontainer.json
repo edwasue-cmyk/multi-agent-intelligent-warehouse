@@ -29,9 +29,11 @@
         "python.defaultInterpreterPath": "/usr/local/bin/python",
         "python.linting.enabled": true,
         "python.linting.flake8Enabled": true,
-        "python.formatting.provider": "black",
         "python.testing.pytestEnabled": true,
-        "terminal.integrated.defaultProfile.linux": "bash"
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter"
+        }
       }
     }
   },
