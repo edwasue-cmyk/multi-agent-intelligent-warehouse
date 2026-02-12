@@ -1,4 +1,4 @@
-# Multi-Agent-Intelligent-Warehouse 
+   # Multi-Agent-Intelligent-Warehouse 
 *NVIDIA Blueprint–aligned multi-agent assistant for warehouse operations.*
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
